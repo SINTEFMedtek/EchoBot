@@ -24,8 +24,9 @@ class RobotManualMoveLayout
         virtual ~RobotManualMoveLayout();
 
         QLayout* getLayout();
+        QWidget *tabWindow;
 
-    private slots:
+private slots:
         void moveButtonReleased();
         void jointButtonReleased();
 
@@ -70,6 +71,7 @@ class RobotManualMoveLayout
         void setMoveSettingsWidget(QVBoxLayout *vLayout);
         void setCoordInfoWidget(QVBoxLayout *vLayout);
         void setJointMoveWidget(QVBoxLayout *vLayout);
+
 
         QPushButton *negZButton, *posZButton, *posXButton, *negYButton, *posYButton, *negXButton;
         QPushButton *rotNegZButton, *rotPosZButton, *rotPosXButton, *rotNegYButton, *rotPosYButton, *rotNegXButton;

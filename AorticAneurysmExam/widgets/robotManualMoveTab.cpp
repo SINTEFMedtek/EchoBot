@@ -32,14 +32,14 @@ QLayout* RobotManualMoveLayout::getLayout()
 
 void RobotManualMoveLayout::setupLayout()
 {
+    tabWindow = new QWidget;
+
     mainLayout = new QHBoxLayout();
 
     QWidget *leftColumnWidgets = new QWidget();
-    leftColumnWidgets->setFixedWidth(300);
     QVBoxLayout *leftColumnLayout = new QVBoxLayout(leftColumnWidgets);
 
     QWidget *rightColumnWidgets = new QWidget();
-    rightColumnWidgets->setFixedWidth(220);
     QVBoxLayout *rightColumnLayout = new QVBoxLayout(rightColumnWidgets);
 
     setMoveToolLayout(leftColumnLayout);
@@ -50,15 +50,14 @@ void RobotManualMoveLayout::setupLayout()
     mainLayout->addWidget(leftColumnWidgets,0,Qt::AlignTop|Qt::AlignLeft);
     mainLayout->addWidget(rightColumnWidgets,0,Qt::AlignTop|Qt::AlignLeft);
 
-    mainLayout->setAlignment(Qt::AlignBottom);
-    //mainLayout->setSpacing(5);
-    //mainLayout->setMargin(5);
+    tabWindow->setLayout(mainLayout);
 }
 
 
 void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Move Tool");
+    group->setFont(QFont("Arial",8));
     group->setFlat(true);
     parent->addWidget(group);
 
@@ -85,7 +84,7 @@ void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
     linearMotionButtons->addButton(negYButton);
 
     this->setAutoRepeat(true,linearMotionButtons);
-    this->setMaximumWidth(32,linearMotionButtons);
+    this->setMaximumWidth(46,linearMotionButtons);
 
     posZButton->setToolTip("Move in positive Z direction");
     negZButton->setToolTip("Move in negative Z direction");
@@ -111,7 +110,7 @@ void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
     rotationMotionButtons->addButton(rotNegZButton);
 
     this->setAutoRepeat(true, rotationMotionButtons);
-    this->setMaximumWidth(32, rotationMotionButtons);
+    this->setMaximumWidth(46, rotationMotionButtons);
 
     rotPosXButton->setToolTip("Rotate counter-clockwise around X axis");
     rotNegXButton->setToolTip("Rotate clockwise around X axis");
@@ -152,6 +151,7 @@ void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
 void RobotManualMoveLayout::setMoveSettingsWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Movement Settings");
+    group->setFont(QFont("Arial",8));
     group->setFlat(true);
     parent->addWidget(group);
 
@@ -190,6 +190,7 @@ void RobotManualMoveLayout::setMoveSettingsWidget(QVBoxLayout *parent)
 void RobotManualMoveLayout::setCoordInfoWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Tool Position");
+    group->setFont(QFont("Arial",8));
     group->setFlat(true);
     parent->addWidget(group);
 
@@ -248,6 +249,7 @@ void RobotManualMoveLayout::setCoordInfoWidget(QVBoxLayout *parent)
 void RobotManualMoveLayout::setJointMoveWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Move Joints");
+    group->setFont(QFont("Arial",8));
     group->setFlat(true);
     parent->addWidget(group);
 
