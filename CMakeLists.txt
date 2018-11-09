@@ -55,5 +55,13 @@ target_include_directories(fastromo
             /home/androst/dev/ROMO/FAST-ROMO/build/external/corah/include/QtWidgets
         )
 
+add_custom_command(TARGET fastromo PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/AorticAneurysmExam/visualization/CADModels
+        $<TARGET_FILE_DIR:fastromo>/AorticAneurysmExam/visualization/CADModels)
+
+add_custom_command(TARGET fastromo PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/AorticAneurysmExam/widgets/icons
+        $<TARGET_FILE_DIR:fastromo>/AorticAneurysmExam/widgets/icons)
+
 add_executable(aorticAneurysmExam AorticAneurysmExam/main.cpp)
 target_link_libraries(aorticAneurysmExam fastromo)
