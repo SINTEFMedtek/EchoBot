@@ -9,3 +9,4 @@ project_add_sources(
 )
 
 project_add_subdirectories(widgets)
+project_add_subdirectories(visualization)
