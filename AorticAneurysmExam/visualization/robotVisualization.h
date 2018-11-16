@@ -7,7 +7,7 @@
 #include "../RobotInterface.h"
 
 /**
- * Implementation of visualization of Robot Manipulator.
+ * Implementation of visualization of Robot Manipulator and tool.
  *
  * \author Andreas Østvik
  */
