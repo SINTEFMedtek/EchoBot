@@ -2,8 +2,8 @@ project_add_sources(
         main.cpp
         ApplicationGUI.cpp
         ApplicationGUI.hpp
-        KinectTracking.cpp
-        KinectTracking.hpp
+        CameraInterface.cpp
+        CameraInterface.hpp
         RobotInterface.cpp
         RobotInterface.h
 )
