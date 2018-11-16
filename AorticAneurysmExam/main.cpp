@@ -1,7 +1,4 @@
 #include "ApplicationGUI.hpp"
-#include "RobotInterface.h"
-
-using namespace fast;
 
 int main() {
     ApplicationGUI::pointer window = ApplicationGUI::New();
