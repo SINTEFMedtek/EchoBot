@@ -7,12 +7,12 @@ RobotManipulator::RobotManipulator(RobotInterfacePtr robotInterface):
     mRobotInterface(robotInterface)
 {
     RobotPart base = RobotPart("AorticAneurysmExam/visualization/CADModels/base.vtk");
-    RobotPart link1 = RobotPart("AorticAneurysmExam/visualization/CADModels/link1.vtk");
-    RobotPart link2 = RobotPart("AorticAneurysmExam/visualization/CADModels/link2.vtk");
-    RobotPart link3 = RobotPart("AorticAneurysmExam/visualization/CADModels/link3.vtk");
-    RobotPart link4 = RobotPart("AorticAneurysmExam/visualization/CADModels/link4.vtk");
-    RobotPart link5 = RobotPart("AorticAneurysmExam/visualization/CADModels/link5.vtk");
-    RobotPart endeffector = RobotPart("AorticAneurysmExam/visualization/CADModels/endeffector.vtk");
+    RobotPart link1 = RobotPart("AorticAneurysmExam/visualization/CADModels/shoulder.vtk");
+    RobotPart link2 = RobotPart("AorticAneurysmExam/visualization/CADModels/forearm.vtk");
+    RobotPart link3 = RobotPart("AorticAneurysmExam/visualization/CADModels/upperarm.vtk");
+    RobotPart link4 = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist1.vtk");
+    RobotPart link5 = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist2.vtk");
+    RobotPart endeffector = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist3.vtk");
 
     mParts.push_back(base);
     mParts.push_back(link1);
@@ -55,7 +55,7 @@ RobotPart::RobotPart(std::string filename)
     mMesh = getMeshFromFile(filename);
 
     mRenderer = fast::TriangleRenderer::New();
-    mRenderer->setDefaultColor(fast::Color::White());
+    mRenderer->setDefaultColor(fast::Color::Black());
     mRenderer->addInputData(mMesh);
 }
 
