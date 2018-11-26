@@ -19,6 +19,7 @@
 #include "FAST/Visualization/MultiViewWindow.hpp"
 #include <FAST/Visualization/SegmentationRenderer/SegmentationRenderer.hpp>
 #include <FAST/Visualization/VertexRenderer/VertexRenderer.hpp>
+#include <FAST/Visualization/LineRenderer/LineRenderer.hpp>
 #include <FAST/Streamers/MeshFileStreamer.hpp>
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
@@ -30,6 +31,7 @@ ApplicationGUI::ApplicationGUI() :
         mGraphicsFolderName("AorticAneurysmExam/widgets/icons/")
 {
     mRobotInterface = RobotInterfacePtr(new RobotInterface);
+    mCameraStreamer = KinectStreamer::New();
 
     setupUI();
     setupConnections();
@@ -48,6 +50,8 @@ void ApplicationGUI::setupConnections()
     QObject::connect(cameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
 
     QObject::connect(usConnectButton, &QPushButton::clicked, std::bind(&ApplicationGUI::connectToUltrasound, this));
+
+    QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
 
 }
 
@@ -71,6 +75,7 @@ void ApplicationGUI::robotConnectButtonSlot()
     View* view3D = getView(1);
     stopComputationThread();
     setupRobotManipulatorVisualization();
+    view3D->setLookAt(Vector3f(0, 0, -1000), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 4000);
     view3D->reinitialize();
     startComputationThread();
 }
@@ -100,16 +105,8 @@ void ApplicationGUI::setupRobotManipulatorVisualization() {
     View* view3D = getView(1);
 
     RobotManipulator *manipulator = new RobotManipulator(mRobotInterface);
-    view3D->addRenderer(manipulator->getRenderer(0));
-    view3D->addRenderer(manipulator->getRenderer(1));
-    view3D->addRenderer(manipulator->getRenderer(2));
-    view3D->addRenderer(manipulator->getRenderer(3));
-    view3D->addRenderer(manipulator->getRenderer(4));
-    view3D->addRenderer(manipulator->getRenderer(5));
-    view3D->addRenderer(manipulator->getRenderer(6));
+    view3D->addRenderer(manipulator->getRenderer());
 }
-
-
 
 // Camera
 
@@ -143,13 +140,34 @@ void ApplicationGUI::connectToCamera() {
     cloudRenderer->addInputConnection(mCameraInterface->getOutputPort(1));
     cloudRenderer->setDefaultSize(1.5);
 
+    Mesh::pointer mesh = Mesh::New();
+    std::vector<MeshVertex> vertices = {
+            MeshVertex(Vector3f(0, 0, 0)),
+            MeshVertex(Vector3f(25, 0, 0)),
+            MeshVertex(Vector3f(0, 25, 0)),
+            MeshVertex(Vector3f(0, 0, 25)),
+    };
+    std::vector<MeshLine> lines = {
+            MeshLine(0, 1),
+            MeshLine(0, 2),
+            MeshLine(0, 3),
+    };
+    mesh->create(vertices, lines);
+
+    LineRenderer::pointer lineRenderer = LineRenderer::New();
+    lineRenderer->addInputData(mesh);
+    lineRenderer->setDefaultLineWidth(20);
+    lineRenderer->setColor(0, Color::Red());
+
     view3D->set3DMode();
     view3D->setBackgroundColor(Color::White());
     view3D->addRenderer(cloudRenderer);
+    view3D->addRenderer(lineRenderer);
+    view3D->setLookAt(Vector3f(0, 0, -1000), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 4000);
     view3D->reinitialize();
 
     view2D->set2DMode();
-    view2D->setBackgroundColor(Color::Black());
+    view2D->setBackgroundColor(Color::White());
     view2D->addRenderer(renderer);
     view2D->reinitialize();
 
@@ -170,16 +188,15 @@ void ApplicationGUI::disconnectFromCamera() {
     mCameraInterface->stopPipeline();
 }
 
-void ApplicationGUI::updateCameraROI()
-{
+void ApplicationGUI::updateCameraROI(){
     mCameraStreamer->setMinRange(cameraMinDepthLineEdit->text().toFloat()/100);
     mCameraStreamer->setMaxRange(cameraMaxDepthLineEdit->text().toFloat()/100);
 }
 
 void ApplicationGUI::restartCamera() {
-    View* view3D = getView(0);
     stopComputationThread();
-    view3D->removeAllRenderers();
+    getView(0)->removeAllRenderers();
+    getView(1)->removeAllRenderers();
 
     // Setup streaming
     mCameraStreamer = KinectStreamer::New();
@@ -195,11 +212,29 @@ void ApplicationGUI::restartCamera() {
     ImageRenderer::pointer renderer = ImageRenderer::New();
     renderer->addInputConnection(mCameraInterface->getOutputPort(0));
 
-    view3D->set3DMode();
-    view3D->setBackgroundColor(Color::Black());
-    view3D->addRenderer(renderer);
-    view3D->reinitialize();
+    // Renderer point cloud
+    VertexRenderer::pointer cloudRenderer = VertexRenderer::New();
+    cloudRenderer->addInputConnection(mCameraInterface->getOutputPort(1));
+    cloudRenderer->setDefaultSize(1.5);
 
+    getView(0)->set2DMode();
+    getView(0)->setBackgroundColor(Color::White());
+    getView(0)->addRenderer(renderer);
+    getView(0)->reinitialize();
+
+    getView(1)->set3DMode();
+    getView(1)->addRenderer(cloudRenderer);
+    getView(1)->reinitialize();
+
+    startComputationThread();
+}
+
+void ApplicationGUI::stopStreaming()
+{
+    stopComputationThread();
+    getView(0)->removeAllRenderers();
+    getView(1)->removeAllRenderers();
+    getView(2)->removeAllRenderers();
     startComputationThread();
 }
 
@@ -212,7 +247,7 @@ void ApplicationGUI::connectToUltrasound() {
     viewUS->removeAllRenderers();
 
     mUltrasoundStreamer = IGTLinkStreamer::New();
-    mUltrasoundStreamer->setConnectionAddress("localhost");
+    mUltrasoundStreamer->setConnectionAddress(usIPLineEdit->text().toStdString());
     mUltrasoundStreamer->setConnectionPort(18944);
 
     ImageRenderer::pointer renderer = ImageRenderer::New();
@@ -220,10 +255,27 @@ void ApplicationGUI::connectToUltrasound() {
     mUltrasoundStreamer->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
 
     viewUS->set2DMode();
-    viewUS->setBackgroundColor(Color::Black());
+    viewUS->setBackgroundColor(Color::White());
     viewUS->addRenderer(renderer);
     viewUS->reinitialize();
     startComputationThread();
+}
+
+// Calibration
+void ApplicationGUI::calibrateSystem()
+{
+    Eigen::Affine3d calibrationMatrix = Eigen::Affine3d::Identity();
+    Eigen::Vector3d translation(500,0,600);
+
+    Eigen::Matrix3d m;
+    m = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ())*
+        Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())*
+        Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+
+    calibrationMatrix.translate(translation);
+    calibrationMatrix.linear() = calibrationMatrix.linear()*m;
+
+    mRobotInterface->robot.set_rMb(calibrationMatrix);
 }
 
 
@@ -263,7 +315,7 @@ void ApplicationGUI::playRecording() {
     if(!mPlaying) {
         mPlayButton->setText("Play");
         mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-        restartCamera();
+        stopStreaming();
     } else {
         auto selectedItems = mRecordingsList->selectedItems();
         if(selectedItems.size() == 0) {
@@ -275,8 +327,7 @@ void ApplicationGUI::playRecording() {
             return;
         }
 
-        //std::cout << "Enters" << std::endl;
-        //mCameraStreamer->stop();
+        mCameraStreamer->stop();
 
         std::string selectedRecording = (
                 mStorageDir->text() +
@@ -284,6 +335,8 @@ void ApplicationGUI::playRecording() {
                 selectedItems[0]->text() +
                 QDir::separator()
         ).toUtf8().constData();
+
+        selectedRecording = selectedRecording + "/PointClouds/";
 
         // Set up streaming from disk
         auto streamer = MeshFileStreamer::New();
@@ -317,6 +370,7 @@ void ApplicationGUI::playRecording() {
         progress.setValue(numFiles);
 
         stopComputationThread();
+        getView(0)->removeAllRenderers();
         getView(1)->removeAllRenderers();
 
         auto cloudRenderer = VertexRenderer::New();
@@ -325,7 +379,8 @@ void ApplicationGUI::playRecording() {
 
         getView(1)->set3DMode();
         getView(1)->addRenderer(cloudRenderer);
-        getView(1)->setLookAt(Vector3f(0, -500, -500), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 5000);
+
+        getView(1)->setLookAt(Vector3f(0, 0, -1000), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 4000);
         getView(1)->reinitialize();
 
         startComputationThread();
@@ -342,8 +397,6 @@ void ApplicationGUI::extractPointCloud() {
 
     mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
     mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
-
-    std::cout << mRecording << std::endl;
 
     // If recording is enabled: Store the target cloud, then activate recording on tracking object
     if(mRecording) {
@@ -377,7 +430,7 @@ void ApplicationGUI::extractPointCloud() {
     getView(1)->reinitialize();
 
     getView(0)->set2DMode();
-    getView(0)->setBackgroundColor(Color::Black());
+    getView(0)->setBackgroundColor(Color::White());
     getView(0)->addRenderer(renderer);
     getView(0)->reinitialize();
 
@@ -405,11 +458,11 @@ void ApplicationGUI::setupUI()
     view3D->setFixedWidth(720);
 
     view2D->set2DMode();
-    view2D->setBackgroundColor(Color::Black());
+    view2D->setBackgroundColor(Color::White());
     view2D->setFixedWidth(550);
 
     viewUS->set2DMode();
-    viewUS->setBackgroundColor(Color::Black());
+    viewUS->setBackgroundColor(Color::White());
     viewUS->setFixedWidth(550);
 
     QVBoxLayout* menuLayout = new QVBoxLayout;
@@ -420,19 +473,27 @@ void ApplicationGUI::setupUI()
     title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Aortic Aneurysm Exam</div>");
     menuLayout->addWidget(title);
 
-    setRobotConnectionLayout(menuLayout);
-    setCameraConnectionLayout(menuLayout);
-    setUltrasoundConnectionLayout(menuLayout);
-    setRecordingLayout(menuLayout);
+    QTabWidget *connectionsTabWidget = new QTabWidget;
+    QWidget *robotConnectionWidget = getRobotConnectionWidget();
+    QWidget *cameraConnectionWidget = getCameraConnectionWidget();
+    QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
+
+    connectionsTabWidget->addTab(robotConnectionWidget, "Robot");
+    connectionsTabWidget->addTab(cameraConnectionWidget, "Camera");
+    connectionsTabWidget->addTab(usConnectionWidget, "Ultrasound");
+    menuLayout->addWidget(connectionsTabWidget);
 
     mMoveLayout = new RobotManualMoveLayout(mRobotInterface);
 
-    QWidget *testWidget = new QWidget;
-
+    QWidget *workflowWidget = getWorkflowWidget();
     tabWidget = new QTabWidget;
-    tabWidget->addTab(testWidget, "Workflow");
+    tabWidget->addTab(workflowWidget, "Workflow");
     tabWidget->addTab(mMoveLayout->tabWindow, "Robot manual motion");
     menuLayout->addWidget(tabWidget);
+
+    QWidget *recordingWidget = getRecordingWidget();
+    menuLayout->addWidget(recordingWidget);
+
 
     // Quit button
     QPushButton* quitButton = new QPushButton;
@@ -456,11 +517,9 @@ void ApplicationGUI::setupUI()
     mWidget->setLayout(layout);
 }
 
-void ApplicationGUI::setCameraConnectionLayout(QVBoxLayout *parent)
+QWidget* ApplicationGUI::getCameraConnectionWidget()
 {
-    QGroupBox* group = new QGroupBox("Camera");
-    group->setFlat(true);
-    parent->addWidget(group,0,Qt::AlignTop);
+    QWidget *group = new QWidget;
 
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
@@ -489,14 +548,13 @@ void ApplicationGUI::setCameraConnectionLayout(QVBoxLayout *parent)
 
     cameraDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
     mainLayout->addWidget(cameraDisconnectButton,1,2,1,1);
+
+    return group;
 }
 
-void ApplicationGUI::setRobotConnectionLayout(QVBoxLayout *parent)
+QWidget* ApplicationGUI::getRobotConnectionWidget()
 {
-    QGroupBox* group = new QGroupBox("Robot");
-    group->setFlat(true);
-    parent->addWidget(group,0,Qt::AlignTop);
-
+    QWidget *group = new QWidget;
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
 
@@ -524,13 +582,13 @@ void ApplicationGUI::setRobotConnectionLayout(QVBoxLayout *parent)
     robotDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
     mainLayout->addWidget(robotShutdownButton,row,0,1,1);
     mainLayout->addWidget(robotDisconnectButton,row,2,1,1);
+
+    return group;
 }
 
-void ApplicationGUI::setUltrasoundConnectionLayout(QVBoxLayout *parent)
+QWidget* ApplicationGUI::getUltrasoundConnectionWidget()
 {
-    QGroupBox* group = new QGroupBox("Ultrasound");
-    group->setFlat(true);
-    parent->addWidget(group,0,Qt::AlignTop);
+    QWidget *group = new QWidget;
 
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
@@ -557,58 +615,76 @@ void ApplicationGUI::setUltrasoundConnectionLayout(QVBoxLayout *parent)
     row++;
     usDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
     mainLayout->addWidget(usDisconnectButton,row,2,1,1);
+
+    return group;
 }
 
 
-void ApplicationGUI::setRecordingLayout(QVBoxLayout *parent)
+QWidget* ApplicationGUI::getRecordingWidget()
 {
     QGroupBox* group = new QGroupBox("Record exam");
     group->setFlat(true);
-    parent->addWidget(group,0,Qt::AlignTop);
 
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
 
-    QLabel* storageDirLabel = new QLabel;
-    storageDirLabel->setText("Storage directory");
-    mainLayout->addWidget(storageDirLabel);
-
     mRecordTimer = new QElapsedTimer;
+
+    QLabel* storageDirLabel = new QLabel;
+    storageDirLabel->setText("Storage directory:");
+    mainLayout->addWidget(storageDirLabel, 0, 0, 1, 1);
 
     mStorageDir = new QLineEdit;
     mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("FAST_Kinect_Recordings"));
-    mainLayout->addWidget(mStorageDir);
+    mainLayout->addWidget(mStorageDir, 0, 1, 1, 1);
 
     QLabel* recordingNameLabel = new QLabel;
-    recordingNameLabel->setText("Recording name");
-    mainLayout->addWidget(recordingNameLabel);
+    recordingNameLabel->setText("Subject name:");
+    mainLayout->addWidget(recordingNameLabel, 1, 0, 1, 1);
 
     mRecordingNameLineEdit = new QLineEdit;
-    mainLayout->addWidget(mRecordingNameLineEdit);
+    mainLayout->addWidget(mRecordingNameLineEdit, 1, 1, 1, 1);
 
     mRecordButton = new QPushButton;
     mRecordButton->setText("Record");
     mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
     QObject::connect(mRecordButton, &QPushButton::clicked, std::bind(&ApplicationGUI::toggleRecord, this));
-    mainLayout->addWidget(mRecordButton);
+    mainLayout->addWidget(mRecordButton, 2, 0, 1, 1);
+
+    mPlayButton = new QPushButton;
+    mPlayButton->setText("Play");
+    mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
+    mainLayout->addWidget(mPlayButton, 2, 1, 1, 1);
+    QObject::connect(mPlayButton, &QPushButton::clicked, std::bind(&ApplicationGUI::playRecording, this));
 
     mRecordingInformation = new QLabel;
     mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
     mainLayout->addWidget(mRecordingInformation);
 
     mRecordingsList = new QListWidget;
-    mainLayout->addWidget(mRecordingsList);
+    mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
     mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     mRecordingsList->setFixedHeight(100);
     mRecordingsList->setSortingEnabled(true);
     refreshRecordingsList();
 
-    mPlayButton = new QPushButton;
-    mPlayButton->setText("Play");
-    mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-    mainLayout->addWidget(mPlayButton);
-    QObject::connect(mPlayButton, &QPushButton::clicked, std::bind(&ApplicationGUI::playRecording, this));
+    return group;
 }
 
+QWidget* ApplicationGUI::getWorkflowWidget()
+{
+    QWidget *group = new QWidget;
+
+    QGridLayout *mainLayout = new QGridLayout();
+    group->setLayout(mainLayout);
+
+    int row = 0;
+    calibrateButton = new QPushButton();
+    mainLayout->addWidget(calibrateButton,row,2,1,1);
+    calibrateButton->setText("Calibrate");
+    calibrateButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
+    return group;
+}
 
 }

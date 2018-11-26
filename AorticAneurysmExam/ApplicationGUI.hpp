@@ -40,6 +40,7 @@ private:
 
     void connectToCamera();
     void disconnectFromCamera();
+    void stopStreaming();
 
     void connectToUltrasound();
 
@@ -50,6 +51,7 @@ private:
     QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
     QPushButton *cameraConnectButton, *cameraDisconnectButton;
     QPushButton *usConnectButton, *usDisconnectButton;
+    QPushButton *calibrateButton;
     QTabWidget *tabWidget;
 
     QPushButton *mRecordButton, *mPlayButton;
@@ -65,10 +67,12 @@ private:
     bool mRecording = false;
     bool mPlaying = false;
 
-    void setRobotConnectionLayout(QVBoxLayout *parent);
-    void setCameraConnectionLayout(QVBoxLayout *parent);
-    void setUltrasoundConnectionLayout(QVBoxLayout *parent);
-    void setRecordingLayout(QVBoxLayout *parent);
+    QWidget* getRobotConnectionWidget();
+    QWidget* getCameraConnectionWidget();
+    QWidget* getUltrasoundConnectionWidget();
+    QWidget* getRecordingWidget();
+    QWidget* getWorkflowWidget();
+
     void restartCamera();
 
     void setupRobotToolVisualization();
@@ -79,6 +83,8 @@ private:
     void updateCameraROI();
     void refreshRecordingsList();
     void toggleRecord();
+
+    void calibrateSystem();
 };
 
 }
