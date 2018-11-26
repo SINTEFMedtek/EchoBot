@@ -6,6 +6,7 @@
 #include "FAST/Data/Mesh.hpp"
 #include "FAST/Algorithms/IterativeClosestPoint/IterativeClosestPoint.hpp"
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
+#include <FAST/Exporters/MetaImageExporter.hpp>
 #include <QDir>
 
 namespace fast {
@@ -29,6 +30,9 @@ void CameraInterface::startRecording(std::string path) {
     mStoragePath = path;
     mFrameCounter = 0;
     mRecording = true;
+
+    createDirectories((mStoragePath + "/PointClouds"));
+    createDirectories((mStoragePath + "/CameraImages"));
 }
 
 void CameraInterface::stopRecording() {
@@ -36,17 +40,21 @@ void CameraInterface::stopRecording() {
 }
 
 void CameraInterface::execute() {
-    std::cout << "Enters execute " << mRecording << std::endl;
-
     Image::pointer input = getInputData<Image>(0);
     Mesh::pointer meshInput = getInputData<Mesh>(1);
 
     if(mRecording) {
-        VTKMeshFileExporter::pointer exporter = VTKMeshFileExporter::New();
-        exporter->setInputData(meshInput);
-        exporter->setWriteNormals(false);
-        exporter->setFilename(mStoragePath + std::to_string(mFrameCounter) + ".vtk");
-        exporter->update(0);
+        VTKMeshFileExporter::pointer meshExporter = VTKMeshFileExporter::New();
+        meshExporter->setInputData(meshInput);
+        meshExporter->setWriteNormals(false);
+        meshExporter->setWriteColors(true);
+        meshExporter->setFilename(mStoragePath + "/PointClouds/" + std::to_string(mFrameCounter) + ".vtk");
+        meshExporter->update(0);
+
+        MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
+        imageExporter->setInputData(input);
+        imageExporter->setFilename(mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
+        imageExporter->update(0);
         ++mFrameCounter;
     }
 
