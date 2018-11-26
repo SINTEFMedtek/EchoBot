@@ -6,21 +6,26 @@
 RobotManipulator::RobotManipulator(RobotInterfacePtr robotInterface):
     mRobotInterface(robotInterface)
 {
-    RobotPart base = RobotPart("AorticAneurysmExam/visualization/CADModels/base.vtk");
-    RobotPart link1 = RobotPart("AorticAneurysmExam/visualization/CADModels/shoulder.vtk");
-    RobotPart link2 = RobotPart("AorticAneurysmExam/visualization/CADModels/forearm.vtk");
-    RobotPart link3 = RobotPart("AorticAneurysmExam/visualization/CADModels/upperarm.vtk");
-    RobotPart link4 = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist1.vtk");
-    RobotPart link5 = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist2.vtk");
-    RobotPart endeffector = RobotPart("AorticAneurysmExam/visualization/CADModels/wrist3.vtk");
+    std::string CADModelPath = "/home/androst/Data/CADModels/UR5/subdivided/";
 
-    mParts.push_back(base);
-    mParts.push_back(link1);
-    mParts.push_back(link2);
-    mParts.push_back(link3);
-    mParts.push_back(link4);
-    mParts.push_back(link5);
-    mParts.push_back(endeffector);
+    RobotPart base = RobotPart(CADModelPath + "base.vtk");
+    RobotPart shoulder = RobotPart(CADModelPath + "shoulder.vtk");
+    RobotPart forearm = RobotPart(CADModelPath + "forearm.vtk");
+    RobotPart upperarm = RobotPart(CADModelPath + "upperarm.vtk");
+    RobotPart wrist1 = RobotPart(CADModelPath + "wrist1.vtk");
+    RobotPart wrist2 = RobotPart(CADModelPath + "wrist2.vtk");
+    RobotPart wrist3 = RobotPart(CADModelPath + "wrist3.vtk");
+
+    mRenderer = fast::TriangleRenderer::New();
+    mRenderer->setDefaultColor(Color::Black());
+
+    addPart(base);
+    addPart(shoulder);
+    addPart(forearm);
+    addPart(upperarm);
+    addPart(wrist1);
+    addPart(wrist2);
+    addPart(wrist3);
 
     QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotManipulator::updatePositions, this));
 }
@@ -45,9 +50,15 @@ void RobotManipulator::updatePositions()
     mParts[6].setTransformation(rMb*currentState.getTransformToJoint(6));
 }
 
-TriangleRenderer::pointer RobotManipulator::getRenderer(uint linknr)
+void RobotManipulator::addPart(RobotPart part)
 {
-    return mParts[linknr].getRenderer();
+    mParts.push_back(part);
+    mRenderer->addInputData(part.getMesh());
+}
+
+TriangleRenderer::pointer RobotManipulator::getRenderer()
+{
+    return mRenderer;
 }
 
 RobotPart::RobotPart(std::string filename)
@@ -57,6 +68,11 @@ RobotPart::RobotPart(std::string filename)
     mRenderer = fast::TriangleRenderer::New();
     mRenderer->setDefaultColor(fast::Color::Black());
     mRenderer->addInputData(mMesh);
+}
+
+Mesh::pointer RobotPart::getMesh()
+{
+    return mMesh;
 }
 
 TriangleRenderer::pointer RobotPart::getRenderer()

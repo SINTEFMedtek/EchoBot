@@ -27,6 +27,7 @@ public:
 
     Mesh::pointer getMesh();
     TriangleRenderer::pointer getRenderer();
+
 private:
     TriangleRenderer::pointer mRenderer;
     Mesh::pointer mMesh;
@@ -50,10 +51,14 @@ public:
     RobotManipulator(RobotInterfacePtr robotInterface);
     ~RobotManipulator();
 
-    TriangleRenderer::pointer getRenderer(uint linknr = 0);
+    TriangleRenderer::pointer getRenderer();
 
 private:
+    TriangleRenderer::pointer mRenderer;
+
+    void addPart(RobotPart part);
     std::vector<RobotPart> mParts;
+
     void updatePositions();
 
     RobotInterfacePtr mRobotInterface;
