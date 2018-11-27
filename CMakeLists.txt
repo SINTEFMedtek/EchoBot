@@ -43,16 +43,15 @@ message("-- LIBS: ${LIBRARIES} ${FASTROMO_SYSTEM_LIBRARIES}")
 
 target_link_libraries(fastromo PUBLIC ${LIBRARIES} ${FAST_LIBRARIES} orocos-kdl)
 
+message("-- INCLUDE directories: ${FASTROMO_EXTERNAL_INSTALL_DIR}")
+
 target_include_directories(fastromo
         PUBLIC
             ${FASTROMO_INCLUDE_DIRS}
-            ${FASTROMO_EXTERNAL_INSTALL_DIR}/include
-            corah
-            /home/androst/dev/ROMO/FAST-ROMO/build/external/corah/include/kdl
-            /home/androst/dev/ROMO/FAST-ROMO/build/external/corah
-            /home/androst/dev/ROMO/FAST-ROMO/build/external/corah/src/corah/corah
-            /home/androst/dev/ROMO/FAST-ROMO/build/external/corah/include/QtNetwork
-            /home/androst/dev/ROMO/FAST-ROMO/build/external/corah/include/QtWidgets
+            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah
+            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/src/corah/corah
+            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/include/kdl
+            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/include/QtNetwork
         )
 
 add_custom_command(TARGET fastromo PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
