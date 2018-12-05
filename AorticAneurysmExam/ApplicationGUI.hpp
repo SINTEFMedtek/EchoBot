@@ -17,10 +17,10 @@ class QListWidget;
 
 namespace fast {
 
-class KinectStreamer;
 class CameraInterface;
+class KinectStreamer;
 
-class ApplicationGUI : public MultiViewWindow {
+class ApplicationGUI : public Window {
     FAST_OBJECT(ApplicationGUI)
 
 private slots:
@@ -51,7 +51,7 @@ private:
     QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
     QPushButton *cameraConnectButton, *cameraDisconnectButton;
     QPushButton *usConnectButton, *usDisconnectButton;
-    QPushButton *calibrateButton;
+    QPushButton *calibrateButton, *registerTargetButton;
     QTabWidget *tabWidget;
 
     QPushButton *mRecordButton, *mPlayButton;
@@ -60,7 +60,6 @@ private:
     QElapsedTimer* mRecordTimer;
     QListWidget* mRecordingsList;
     std::string mRecordingName;
-
 
     void playRecording();
     void extractPointCloud();
@@ -75,7 +74,6 @@ private:
 
     void restartCamera();
 
-    void setupRobotToolVisualization();
     void setupRobotManipulatorVisualization();
 
     void setupConnections();
@@ -85,6 +83,9 @@ private:
     void toggleRecord();
 
     void calibrateSystem();
+    void registerTarget();
+
+    void updateRenderers();
 };
 
 }
