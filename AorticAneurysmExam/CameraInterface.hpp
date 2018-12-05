@@ -17,11 +17,22 @@ class CameraInterface : public ProcessObject {
         void stopRecording();
         uint getFramesStored() const;
         bool isRecording() const;
-    private:
+
+        void calculateTargetCloud(SharedPointer<KinectStreamer> streamer);
+
+        void addLine(Vector2i start, Vector2i end);
+private:
         CameraInterface();
         void execute();
 
+        SharedPointer<Image> mCurrentImage;
         SharedPointer<Mesh> mCurrentCloud;
+
+        SharedPointer<Image> mAnnotationImage;
+        SharedPointer<Mesh> mTargetCloud;
+
+        bool mTargetCloudExtracted = false;
+
         bool mRecording = false;
         std::string mStoragePath;
         std::string mRecordingName;
