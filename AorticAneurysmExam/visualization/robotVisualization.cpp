@@ -3,10 +3,9 @@
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/SceneGraph.hpp"
 
-RobotManipulator::RobotManipulator(RobotInterfacePtr robotInterface):
-    mRobotInterface(robotInterface)
+RobotManipulator::RobotManipulator()
 {
-    std::string CADModelPath = "/home/androst/Data/CADModels/UR5/subdivided/";
+    std::string CADModelPath = "AorticAneurysmExam/visualization/CADModels/with_normals_new/";
 
     RobotPart base = RobotPart(CADModelPath + "base.vtk");
     RobotPart shoulder = RobotPart(CADModelPath + "shoulder.vtk");
@@ -17,7 +16,6 @@ RobotManipulator::RobotManipulator(RobotInterfacePtr robotInterface):
     RobotPart wrist3 = RobotPart(CADModelPath + "wrist3.vtk");
 
     mRenderer = fast::TriangleRenderer::New();
-    mRenderer->setDefaultColor(Color::Black());
 
     addPart(base);
     addPart(shoulder);
@@ -27,12 +25,20 @@ RobotManipulator::RobotManipulator(RobotInterfacePtr robotInterface):
     addPart(wrist2);
     addPart(wrist3);
 
+    mTool = RobotTool(CADModelPath + "5S-Probe.vtk");
+}
+
+void RobotManipulator::setInterface(RobotInterfacePtr robotInterface)
+{
+    mRobotInterface = robotInterface;
     QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotManipulator::updatePositions, this));
 }
 
 void RobotManipulator::updatePositions()
 {
     corah::Transform3d rMb = mRobotInterface->robot.get_rMb();
+    corah::Transform3d eeMt = mRobotInterface->robot.get_eeMt();
+
     corah::RobotState currentState = mRobotInterface->robot.getCurrentState();
 
     Eigen::Vector3d translation(0.0,0.0,121.0);
@@ -48,6 +54,8 @@ void RobotManipulator::updatePositions()
     mParts[4].setTransformation(rMb*currentState.getTransformToJoint(4));
     mParts[5].setTransformation(rMb*currentState.getTransformToJoint(5));
     mParts[6].setTransformation(rMb*currentState.getTransformToJoint(6));
+
+    mTool.setTransformation(rMb*currentState.getTransformToJoint(6)*eeMt);
 }
 
 void RobotManipulator::addPart(RobotPart part)
@@ -61,23 +69,24 @@ TriangleRenderer::pointer RobotManipulator::getRenderer()
     return mRenderer;
 }
 
+RobotPart::RobotPart()
+{
+}
+
 RobotPart::RobotPart(std::string filename)
 {
-    mMesh = getMeshFromFile(filename);
+    this->setMeshFile(filename);
+}
 
-    mRenderer = fast::TriangleRenderer::New();
-    mRenderer->setDefaultColor(fast::Color::Black());
-    mRenderer->addInputData(mMesh);
+
+void RobotPart::setMeshFile(std::string filename)
+{
+    mMesh = getMeshFromFile(filename);
 }
 
 Mesh::pointer RobotPart::getMesh()
 {
     return mMesh;
-}
-
-TriangleRenderer::pointer RobotPart::getRenderer()
-{
-    return mRenderer;
 }
 
 void RobotPart::setTransformation(Eigen::Affine3d transform)
@@ -123,4 +132,22 @@ Mesh::pointer RobotPart::getMeshFromFile(std::string filename)
     importer->update(0);
 
     return importPort->getNextFrame<fast::Mesh>();
+}
+
+RobotTool::RobotTool():
+        RobotPart()
+{
+}
+
+RobotTool::RobotTool(std::string filename):
+    RobotPart(filename)
+{
+    mRenderer = fast::TriangleRenderer::New();
+    mRenderer->setOpacity(0,1.0);
+    mRenderer->addInputData(this->getMesh());
+}
+
+TriangleRenderer::pointer RobotTool::getRenderer()
+{
+    return mRenderer;
 }
