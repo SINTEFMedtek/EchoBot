@@ -7,7 +7,7 @@
 #include "../RobotInterface.h"
 
 /**
- * Implementation of visualization of Robot Manipulator and tool.
+ * Implementation of visualization of Robot Visualizator and tool.
  *
  * \author Andreas Østvik
  */
@@ -18,7 +18,7 @@ class RobotPart
 {
 public:
     RobotPart();
-    RobotPart(std::string filename);
+    RobotPart(std::string name, std::string meshfile);
 
     ~RobotPart(){};
 
@@ -29,10 +29,14 @@ public:
     void setTransformation(Eigen::Affine3d transform);
 
     Mesh::pointer getMesh();
+    std::string getName() const;
+
 
 private:
     Mesh::pointer mMesh;
     Mesh::pointer getMeshFromFile(std::string filename);
+
+    std::string mPartName;
 
 };
 
@@ -51,12 +55,12 @@ private:
     TriangleRenderer::pointer mRenderer;
 };
 
-class RobotManipulator
+class RobotVisualizator
 {
 
 public:
-    RobotManipulator();
-    ~RobotManipulator(){};
+    RobotVisualizator();
+    ~RobotVisualizator(){};
 
     void setInterface(RobotInterfacePtr robotInterface);
 
@@ -67,7 +71,7 @@ private:
     TriangleRenderer::pointer mRenderer;
 
     void addPart(RobotPart part);
-    std::vector<RobotPart> mParts;
+    std::map<std::string, RobotPart> mParts;
 
     RobotTool mTool;
 

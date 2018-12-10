@@ -3,38 +3,29 @@
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/SceneGraph.hpp"
 
-RobotManipulator::RobotManipulator()
+RobotVisualizator::RobotVisualizator()
 {
-    std::string CADModelPath = "AorticAneurysmExam/visualization/CADModels/with_normals_new/";
+    std::string CADModelPath = "AorticAneurysmExam/visualization/CADModels/";
 
-    RobotPart base = RobotPart(CADModelPath + "base.vtk");
-    RobotPart shoulder = RobotPart(CADModelPath + "shoulder.vtk");
-    RobotPart forearm = RobotPart(CADModelPath + "forearm.vtk");
-    RobotPart upperarm = RobotPart(CADModelPath + "upperarm.vtk");
-    RobotPart wrist1 = RobotPart(CADModelPath + "wrist1.vtk");
-    RobotPart wrist2 = RobotPart(CADModelPath + "wrist2.vtk");
-    RobotPart wrist3 = RobotPart(CADModelPath + "wrist3.vtk");
+    addPart(RobotPart("base", CADModelPath + "base.vtk"));
+    addPart(RobotPart("shoulder", CADModelPath + "shoulder.vtk"));
+    addPart(RobotPart("forearm", CADModelPath + "forearm.vtk"));
+    addPart(RobotPart("upperarm", CADModelPath + "upperarm.vtk"));
+    addPart(RobotPart("wrist1", CADModelPath + "wrist1.vtk"));
+    addPart(RobotPart("wrist2", CADModelPath + "wrist2.vtk"));
+    addPart(RobotPart("wrist3", CADModelPath + "wrist3.vtk"));
 
-    mRenderer = fast::TriangleRenderer::New();
-
-    addPart(base);
-    addPart(shoulder);
-    addPart(forearm);
-    addPart(upperarm);
-    addPart(wrist1);
-    addPart(wrist2);
-    addPart(wrist3);
-
+    mRenderer = TriangleRenderer::New();
     mTool = RobotTool(CADModelPath + "5S-Probe.vtk");
 }
 
-void RobotManipulator::setInterface(RobotInterfacePtr robotInterface)
+void RobotVisualizator::setInterface(RobotInterfacePtr robotInterface)
 {
     mRobotInterface = robotInterface;
-    QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotManipulator::updatePositions, this));
+    QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotVisualizator::updatePositions, this));
 }
 
-void RobotManipulator::updatePositions()
+void RobotVisualizator::updatePositions()
 {
     corah::Transform3d rMb = mRobotInterface->robot.get_rMb();
     corah::Transform3d eeMt = mRobotInterface->robot.get_eeMt();
@@ -45,27 +36,34 @@ void RobotManipulator::updatePositions()
     Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
     offset_link2.translate(translation);
 
-    mParts[0].setTransformation(rMb);
-    mParts[1].setTransformation(rMb*currentState.getTransformToJoint(1));
-    mParts[2].setTransformation(rMb*currentState.getTransformToJoint(1)*offset_link2);
-    mParts[2].rotate(0,0, currentState.jointConfiguration(1)*180/M_PI+90);
-    mParts[3].setTransformation(rMb*currentState.getTransformToJoint(2));
-    mParts[3].rotate(0,0, currentState.jointConfiguration(2)*180/M_PI);
-    mParts[4].setTransformation(rMb*currentState.getTransformToJoint(4));
-    mParts[5].setTransformation(rMb*currentState.getTransformToJoint(5));
-    mParts[6].setTransformation(rMb*currentState.getTransformToJoint(6));
+    mParts["base"].setTransformation(rMb);
+    mParts["shoulder"].setTransformation(rMb*currentState.getTransformToJoint(1));
+    mParts["forearm"].setTransformation(rMb*currentState.getTransformToJoint(1)*offset_link2);
+    mParts["forearm"].rotate(0,0, currentState.jointConfiguration(1)*180/M_PI+90);
+    mParts["upperarm"].setTransformation(rMb*currentState.getTransformToJoint(2));
+    mParts["upperarm"].rotate(0,0, currentState.jointConfiguration(2)*180/M_PI);
+    mParts["wrist1"].setTransformation(rMb*currentState.getTransformToJoint(4));
+    mParts["wrist2"].setTransformation(rMb*currentState.getTransformToJoint(5));
+    mParts["wrist3"].setTransformation(rMb*currentState.getTransformToJoint(6));
 
     mTool.setTransformation(rMb*currentState.getTransformToJoint(6)*eeMt);
 }
 
-void RobotManipulator::addPart(RobotPart part)
+void RobotVisualizator::addPart(RobotPart part)
 {
-    mParts.push_back(part);
-    mRenderer->addInputData(part.getMesh());
+    mParts[part.getName()] = part;
 }
 
-TriangleRenderer::pointer RobotManipulator::getRenderer()
+TriangleRenderer::pointer RobotVisualizator::getRenderer()
 {
+    mRenderer = TriangleRenderer::New();
+    mRenderer->addInputData(mParts["base"].getMesh());
+    mRenderer->addInputData(mParts["shoulder"].getMesh());
+    mRenderer->addInputData(mParts["forearm"].getMesh());
+    mRenderer->addInputData(mParts["upperarm"].getMesh());
+    mRenderer->addInputData(mParts["wrist1"].getMesh());
+    mRenderer->addInputData(mParts["wrist2"].getMesh());
+    mRenderer->addInputData(mParts["wrist3"].getMesh());
     return mRenderer;
 }
 
@@ -73,9 +71,10 @@ RobotPart::RobotPart()
 {
 }
 
-RobotPart::RobotPart(std::string filename)
+RobotPart::RobotPart(std::string name, std::string meshfile)
 {
-    this->setMeshFile(filename);
+    mPartName = name;
+    this->setMeshFile(meshfile);
 }
 
 
@@ -84,9 +83,14 @@ void RobotPart::setMeshFile(std::string filename)
     mMesh = getMeshFromFile(filename);
 }
 
-Mesh::pointer RobotPart::getMesh()
+Mesh::pointer RobotPart::getMesh ()
 {
     return mMesh;
+}
+
+std::string RobotPart::getName() const
+{
+    return mPartName;
 }
 
 void RobotPart::setTransformation(Eigen::Affine3d transform)
@@ -137,17 +141,17 @@ Mesh::pointer RobotPart::getMeshFromFile(std::string filename)
 RobotTool::RobotTool():
         RobotPart()
 {
+    mRenderer = fast::TriangleRenderer::New();
 }
 
-RobotTool::RobotTool(std::string filename):
-    RobotPart(filename)
+RobotTool::RobotTool(std::string meshfile):
+    RobotPart("tool", meshfile)
 {
-    mRenderer = fast::TriangleRenderer::New();
-    mRenderer->setOpacity(0,1.0);
-    mRenderer->addInputData(this->getMesh());
 }
 
 TriangleRenderer::pointer RobotTool::getRenderer()
 {
+    mRenderer = fast::TriangleRenderer::New();
+    mRenderer->addInputData(this->getMesh());
     return mRenderer;
 }
