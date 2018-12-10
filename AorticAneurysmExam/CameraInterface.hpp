@@ -1,5 +1,5 @@
-#ifndef FAST_KINECT_TRACKING_HPP_
-#define FAST_KINECT_TRACKING_HPP_
+#ifndef FASTROMO_CAMERAINTERFACE_H
+#define FASTROMO_CAMERAINTERFACE_H
 
 #include "FAST/ProcessObject.hpp"
 
@@ -19,6 +19,9 @@ class CameraInterface : public ProcessObject {
         bool isRecording() const;
 
         void calculateTargetCloud(SharedPointer<KinectStreamer> streamer);
+        void removeTargetCloud();
+
+        SharedPointer<Mesh> getTargetCloud();
 
         void addLine(Vector2i start, Vector2i end);
 private:

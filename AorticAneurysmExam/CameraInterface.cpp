@@ -28,7 +28,6 @@ CameraInterface::CameraInterface() {
     mTargetCloud->create(0, 0, 0, false, false, false);
     mTargetCloudExtracted = false;
 
-    getReporter().setReportMethod(Reporter::COUT);
 }
 
 void CameraInterface::restart() {
@@ -57,19 +56,19 @@ void CameraInterface::execute() {
 
     if(mTargetCloudExtracted)
     {
-        reportInfo() << "Running ICP" << reportEnd();
+        //reportInfo() << "Running ICP" << reportEnd();
         IterativeClosestPoint::pointer icp = IterativeClosestPoint::New();
-        icp->enableRuntimeMeasurements();
+        //icp->enableRuntimeMeasurements();
         icp->setFixedMesh(meshInput);
         icp->setMovingMesh(mTargetCloud);
-        icp->setDistanceThreshold(150); // All points further away than 10 cm from the centroid is removed
+        icp->setDistanceThreshold(100); // All points further away than 10 cm from the centroid is removed
         //icp->setMinimumErrorChange(0.5);
         icp->setRandomPointSampling(300);
-        icp->getReporter().setReportMethod(Reporter::COUT);
+        //icp->getReporter().setReportMethod(Reporter::COUT);
         icp->setMaximumNrOfIterations(10);
         icp->update(0);
-        reportInfo() << "Finished ICP in: " << reportEnd();
-        icp->getAllRuntimes()->printAll();
+        //reportInfo() << "Finished ICP in: " << reportEnd();
+        //icp->getAllRuntimes()->printAll();
         AffineTransformation::pointer currentTransform = mTargetCloud->getSceneGraphNode()->getTransformation();
         AffineTransformation::pointer newTransform = icp->getOutputTransformation();
         mTargetCloud->getSceneGraphNode()->setTransformation(newTransform->multiply(currentTransform));
@@ -157,4 +156,16 @@ void CameraInterface::calculateTargetCloud(KinectStreamer::pointer streamer) {
     std::cout << "Created target cloud." << std::endl;
     mTargetCloudExtracted = true;
 }
+
+SharedPointer<Mesh> CameraInterface::getTargetCloud(){
+    return mTargetCloud;
+}
+
+void CameraInterface::removeTargetCloud()
+{
+    mTargetCloudExtracted = false;
+    mAnnotationImage->fill(0);
+}
+
+
 }
