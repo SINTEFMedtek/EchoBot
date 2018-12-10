@@ -1,13 +1,15 @@
-#ifndef FAST_KINECT_TRACKING_GUI_HPP_
-#define FAST_KINECT_TRACKING_GUI_HPP_
+#ifndef FASTROMO_APPLICATIONGUI_H
+#define FASTROMO_APPLICATIONGUI_H
 
-#include "FAST/Visualization/MultiViewWindow.hpp"
+#include "FAST/Visualization/Window.hpp"
 #include "FAST/Streamers/IGTLinkStreamer.hpp"
-#include "visualization/robotVisualization.h"
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 
-#include "widgets/robotManualMoveTab.h"
 #include "RobotInterface.h"
+#include "UltrasoundInterface.hpp"
+#include "CameraInterface.hpp"
+#include "visualization/robotVisualization.h"
+#include "widgets/robotManualMoveTab.h"
 
 class QPushButton;
 class QLabel;
@@ -17,7 +19,6 @@ class QListWidget;
 
 namespace fast {
 
-class CameraInterface;
 class KinectStreamer;
 
 class ApplicationGUI : public Window {
@@ -35,6 +36,9 @@ private:
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<KinectStreamer> mCameraStreamer;
     SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+    SharedPointer<UltrasoundInterface> mUltrasoundInterface;
+
+    RobotVisualizator *mRobotVisualizator;
 
     RobotManualMoveLayout* mMoveLayout;
 
@@ -51,7 +55,7 @@ private:
     QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
     QPushButton *cameraConnectButton, *cameraDisconnectButton;
     QPushButton *usConnectButton, *usDisconnectButton;
-    QPushButton *calibrateButton, *registerTargetButton;
+    QPushButton *calibrateButton, *registerTargetButton, *moveToolButton;
     QTabWidget *tabWidget;
 
     QPushButton *mRecordButton, *mPlayButton;
@@ -65,6 +69,10 @@ private:
     void extractPointCloud();
     bool mRecording = false;
     bool mPlaying = false;
+    bool mCameraStreaming = false;
+    bool mUltrasoundStreaming = false;
+    bool mTargetRegistered = false;
+    bool mMovingToTarget = false;
 
     QWidget* getRobotConnectionWidget();
     QWidget* getCameraConnectionWidget();
@@ -75,6 +83,8 @@ private:
     void restartCamera();
 
     void setupRobotManipulatorVisualization();
+    void setupCameraVisualization();
+    void setupUltrasoundVisualization();
 
     void setupConnections();
 
@@ -84,8 +94,18 @@ private:
 
     void calibrateSystem();
     void registerTarget();
+    void moveToolToTarget();
 
-    void updateRenderers();
+    std::vector<Renderer::pointer> mView3DRenderers;
+    std::vector<Renderer::pointer> mView2DRenderers;
+    std::vector<Renderer::pointer> mViewUSRenderers;
+    void clearRenderVectors();
+
+
+
+    void updateRenderers(std::vector<Renderer::pointer> view3DRenderers,
+                         std::vector<Renderer::pointer> view2DRenderers = std::vector<Renderer::pointer>(),
+                         std::vector<Renderer::pointer> viewUSRenderers = std::vector<Renderer::pointer>());
 };
 
 }
