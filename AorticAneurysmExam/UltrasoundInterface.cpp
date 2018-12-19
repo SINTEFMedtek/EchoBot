@@ -26,10 +26,10 @@ void UltrasoundInterface::setRobotInterface(RobotInterfacePtr robotInterface)
 
 void UltrasoundInterface::transformImageToProbeCenter(){
     Eigen::Affine3d offset = Eigen::Affine3d::Identity();
-    Eigen::Vector3d translation(0,-(double)(mCurrentImage->getWidth()*mCurrentImage->getSpacing()(0)/2),0);
+    Eigen::Vector3d translation((double)(mCurrentImage->getWidth()*mCurrentImage->getSpacing()(0)/2),0,-40);
 
     Eigen::Matrix3d m;
-    m = Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ())*
+    m = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ())*
         Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitX())*
         Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
 
