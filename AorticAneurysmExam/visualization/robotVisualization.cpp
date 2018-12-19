@@ -32,9 +32,8 @@ void RobotVisualizator::updatePositions()
 
     corah::RobotState currentState = mRobotInterface->robot.getCurrentState();
 
-    Eigen::Vector3d translation(0.0,0.0,121.0);
     Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
-    offset_link2.translate(translation);
+    offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
 
     mParts["base"].setTransformation(rMb);
     mParts["shoulder"].setTransformation(rMb*currentState.getTransformToJoint(1));
@@ -46,7 +45,15 @@ void RobotVisualizator::updatePositions()
     mParts["wrist2"].setTransformation(rMb*currentState.getTransformToJoint(5));
     mParts["wrist3"].setTransformation(rMb*currentState.getTransformToJoint(6));
 
-    mTool.setTransformation(rMb*currentState.getTransformToJoint(6)*eeMt);
+    Eigen::Affine3d transformFixProbe = Eigen::Affine3d::Identity();
+
+    Eigen::Matrix3d rotProbe;
+    rotProbe = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ())*
+               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())*
+               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+    transformFixProbe.linear() = transformFixProbe.linear()*rotProbe;
+
+    mTool.setTransformation(rMb*currentState.getTransformToJoint(6)*eeMt*transformFixProbe);
 }
 
 void RobotVisualizator::addPart(RobotPart part)
