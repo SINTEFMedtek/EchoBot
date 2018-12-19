@@ -2,6 +2,10 @@
 #define FASTROMO_APPLICATIONGUI_H
 
 #include "FAST/Visualization/Window.hpp"
+#include "FAST/Streamers/Streamer.hpp"
+#include "FAST/Streamers/FileStreamer.hpp"
+#include "FAST/Streamers/ImageFileStreamer.hpp"
+#include "FAST/Streamers/MeshFileStreamer.hpp"
 #include "FAST/Streamers/IGTLinkStreamer.hpp"
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 
@@ -20,6 +24,7 @@ class QListWidget;
 namespace fast {
 
 class KinectStreamer;
+class MouseListener;
 
 class ApplicationGUI : public Window {
     FAST_OBJECT(ApplicationGUI)
@@ -34,12 +39,14 @@ private:
 
     SharedPointer<RobotInterface> mRobotInterface;
     SharedPointer<CameraInterface> mCameraInterface;
-    SharedPointer<KinectStreamer> mCameraStreamer;
-    SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
 
-    RobotVisualizator *mRobotVisualizator;
+    SharedPointer<KinectStreamer> mCameraStreamer;
+    std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
+    SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+
+    RobotVisualizator *mRobotVisualizator;
     RobotManualMoveLayout* mMoveLayout;
 
     void connectToCamera();
@@ -52,10 +59,11 @@ private:
 
     QString mGraphicsFolderName;
     QLineEdit *robotIPLineEdit, *cameraMinDepthLineEdit,*cameraMaxDepthLineEdit, *usIPLineEdit;
+    QLineEdit *cameraMinXLineEdit, *cameraMaxXLineEdit, *cameraMinYLineEdit, *cameraMaxYLineEdit;
     QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
     QPushButton *cameraConnectButton, *cameraDisconnectButton;
     QPushButton *usConnectButton, *usDisconnectButton;
-    QPushButton *calibrateButton, *registerTargetButton, *moveToolButton;
+    QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolButton;
     QTabWidget *tabWidget;
 
     QPushButton *mRecordButton, *mPlayButton;
@@ -68,7 +76,7 @@ private:
     void playRecording();
     void extractPointCloud();
     bool mRecording = false;
-    bool mPlaying = false;
+    bool mCameraPlayback = false;
     bool mCameraStreaming = false;
     bool mUltrasoundStreaming = false;
     bool mTargetRegistered = false;
@@ -95,17 +103,21 @@ private:
     void calibrateSystem();
     void registerTarget();
     void moveToolToTarget();
+    void registerCloudToData();
 
     std::vector<Renderer::pointer> mView3DRenderers;
     std::vector<Renderer::pointer> mView2DRenderers;
     std::vector<Renderer::pointer> mViewUSRenderers;
+
     void clearRenderVectors();
-
-
 
     void updateRenderers(std::vector<Renderer::pointer> view3DRenderers,
                          std::vector<Renderer::pointer> view2DRenderers = std::vector<Renderer::pointer>(),
                          std::vector<Renderer::pointer> viewUSRenderers = std::vector<Renderer::pointer>());
+
+    void loadPreoperativeData();
+    Mesh::pointer mPreoperativeData;
+
 };
 
 }

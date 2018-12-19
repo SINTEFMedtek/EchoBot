@@ -13,6 +13,8 @@
 #include <QProgressDialog>
 #include <QDir>
 #include <QTabWidget>
+#include <QFileDialog>
+#include <Eigen/Dense>
 
 #include "FAST/Visualization/MultiViewWindow.hpp"
 #include <FAST/Visualization/SegmentationRenderer/SegmentationRenderer.hpp>
@@ -25,6 +27,12 @@
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
 #include "FAST/Streamers/KinectStreamer.hpp"
 #include "FAST/Visualization/ImageRenderer/ImageRenderer.hpp"
+#include "FAST/Importers/ImageFileImporter.hpp"
+#include "FAST/Algorithms/SurfaceExtraction/SurfaceExtraction.hpp"
+#include "FAST/Algorithms/ImageResizer/ImageResizer.hpp"
+#include "FAST/Algorithms/CoherentPointDrift/CoherentPointDrift.hpp"
+#include "FAST/Algorithms/CoherentPointDrift/Rigid.hpp"
+
 
 namespace fast {
 
@@ -47,8 +55,6 @@ ApplicationGUI::ApplicationGUI() :
 
     mRobotVisualizator = new RobotVisualizator();
     mRobotVisualizator->setInterface(mRobotInterface);
-
-    mCameraStreamer = KinectStreamer::New();
 
     setupUI();
     setupConnections();
@@ -79,10 +85,15 @@ void ApplicationGUI::setupConnections()
 
     QObject::connect(cameraMinDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
     QObject::connect(cameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(cameraMinXLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(cameraMaxXLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(cameraMinYLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(cameraMaxYLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
 
     QObject::connect(usConnectButton, &QPushButton::clicked, std::bind(&ApplicationGUI::connectToUltrasound, this));
 
     QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
+    QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
     QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
     QObject::connect(moveToolButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToTarget, this));
 }
@@ -108,13 +119,12 @@ void ApplicationGUI::robotConnectButtonSlot()
     clearRenderVectors();
     setupRobotManipulatorVisualization();
 
-    if(mCameraStreaming)
+    if(mCameraStreaming || mCameraPlayback)
         setupCameraVisualization();
 
-    if(mUltrasoundStreamer)
+    if(mUltrasoundStreaming)
         setupUltrasoundVisualization();
 
-    // TODO: Add camera and ultrasound if available..
     updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
     startComputationThread();
 }
@@ -162,12 +172,9 @@ void ApplicationGUI::connectToCamera() {
     mCameraStreamer = KinectStreamer::New();
     mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
     mCameraStreamer->setPointCloudFiltering(true);
-    mCameraStreamer->setMaxRange(2); // All points above x meters are excluded
 
     // Tracking
     mCameraInterface = CameraInterface::New();
-    mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-    mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
 
     clearRenderVectors();
     setupCameraVisualization();
@@ -175,13 +182,29 @@ void ApplicationGUI::connectToCamera() {
     if(mRobotInterface->robot.isConnected())
         setupRobotManipulatorVisualization();
 
+    if(mUltrasoundStreaming)
+        setupUltrasoundVisualization();
+
     updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+    getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
 
     mCameraStreaming = true;
+
     startComputationThread();
 }
 
 void ApplicationGUI::setupCameraVisualization() {
+
+    if(mCameraPlayback){
+        for(auto it: mCameraPlaybackStreamers){
+            mCameraInterface->setInputConnection(it.first, it.second->getOutputPort(0));
+        }
+    }
+    else{
+        mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
+        mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
+    }
+
     // Renderer RGB image
     ImageRenderer::pointer imageRenderer = ImageRenderer::New();
     imageRenderer->addInputConnection(mCameraInterface->getOutputPort(0));
@@ -198,9 +221,17 @@ void ApplicationGUI::setupCameraVisualization() {
 
     mView3DRenderers.push_back(cloudRenderer);
     mView2DRenderers.push_back(imageRenderer);
-    mView2DRenderers.push_back(annotationRenderer);
 
-    getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
+    // Render target cloud if exists
+    if(mCameraInterface->isTargetCloudExtracted()){
+        VertexRenderer::pointer targetCloudRenderer = VertexRenderer::New();
+        targetCloudRenderer->addInputConnection(mCameraInterface->getOutputPort(3));
+        targetCloudRenderer->setDefaultSize(1.5);
+        targetCloudRenderer->setDefaultColor(Color::Green());
+        mView3DRenderers.push_back(targetCloudRenderer);
+    } else {
+        mView2DRenderers.push_back(annotationRenderer);
+    }
 }
 
 void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRenderers,
@@ -210,8 +241,10 @@ void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRende
     getView(0)->removeAllRenderers();
     getView(0)->set2DMode();
     getView(0)->setBackgroundColor(Color::White());
-    for(auto it: mView2DRenderers)
+    for(auto it: mView2DRenderers) {
+        std::cout << "2D: " << it->getNameOfClass() << std::endl;
         getView(0)->addRenderer(it);
+    }
     getView(0)->reinitialize();
 
     getView(1)->removeAllRenderers();
@@ -219,6 +252,7 @@ void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRende
     getView(1)->setBackgroundColor(Color::White());
 
     for(auto it: mView3DRenderers){
+        std::cout << "3D: " << it->getNameOfClass() << std::endl;
         getView(1)->addRenderer(it);
     }
 
@@ -229,6 +263,7 @@ void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRende
     getView(2)->setBackgroundColor(Color::White());
 
     for(auto it: mViewUSRenderers){
+        std::cout << "US: " << it->getNameOfClass() << std::endl;
         getView(2)->addRenderer(it);
     }
 
@@ -246,15 +281,22 @@ void ApplicationGUI::disconnectFromCamera() {
 void ApplicationGUI::updateCameraROI(){
     mCameraStreamer->setMinRange(cameraMinDepthLineEdit->text().toFloat()/100);
     mCameraStreamer->setMaxRange(cameraMaxDepthLineEdit->text().toFloat()/100);
+    mCameraStreamer->setXLimit(cameraMinXLineEdit->text().toFloat()/100, cameraMaxXLineEdit->text().toFloat()/100);
+    mCameraStreamer->setYLimit(cameraMinYLineEdit->text().toFloat()/100, cameraMaxYLineEdit->text().toFloat()/100);
 }
 
 void ApplicationGUI::restartCamera() {
 
     stopComputationThread();
+    clearRenderVectors();
+
     setupCameraVisualization();
 
     if(mRobotInterface->robot.isConnected())
         setupRobotManipulatorVisualization();
+
+    if(mUltrasoundStreaming)
+        setupUltrasoundVisualization();
 
     updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
     startComputationThread();
@@ -273,23 +315,23 @@ void ApplicationGUI::stopStreaming()
 void ApplicationGUI::connectToUltrasound() {
     usConnectButton->setChecked(0);
 
-    stopComputationThread();
-    clearRenderVectors();
-
     mUltrasoundStreamer = IGTLinkStreamer::New();
     mUltrasoundStreamer->setConnectionAddress(usIPLineEdit->text().toStdString());
     mUltrasoundStreamer->setConnectionPort(18944);
 
     mUltrasoundInterface = UltrasoundInterface::New();
     mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
-    mUltrasoundInterface->setRobotInterface(mRobotInterface);
+
+    stopComputationThread();
+    clearRenderVectors();
 
     setupUltrasoundVisualization();
 
     if(mRobotInterface->robot.isConnected())
         setupRobotManipulatorVisualization();
+        mUltrasoundInterface->setRobotInterface(mRobotInterface);
 
-    if(mCameraStreaming)
+    if(mCameraStreaming || mCameraPlayback)
         setupCameraVisualization();
 
     updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
@@ -300,6 +342,22 @@ void ApplicationGUI::connectToUltrasound() {
 
 void ApplicationGUI::setupUltrasoundVisualization()
 {
+    if(mUltrasoundStreaming) {
+        mUltrasoundStreamer->stop();
+        mUltrasoundStreamer->stopPipeline();
+        mUltrasoundInterface->stopPipeline();
+
+        mUltrasoundStreamer = IGTLinkStreamer::New();
+        mUltrasoundStreamer->setConnectionAddress(usIPLineEdit->text().toStdString());
+        mUltrasoundStreamer->setConnectionPort(18944);
+
+        mUltrasoundInterface = UltrasoundInterface::New();
+        mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
+
+        if(mRobotInterface->robot.isConnected())
+            mUltrasoundInterface->setRobotInterface(mRobotInterface);
+    }
+
     ImageRenderer::pointer usRenderer = ImageRenderer::New();
     usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort());
 
@@ -311,22 +369,26 @@ void ApplicationGUI::setupUltrasoundVisualization()
 void ApplicationGUI::calibrateSystem()
 {
     Eigen::Affine3d rMb = Eigen::Affine3d::Identity();
-    Eigen::Vector3d translation(-500,350,1000);
 
     Eigen::Matrix3d m;
-    m = Eigen::AngleAxisd(0.55*M_PI, Eigen::Vector3d::UnitZ())*
+    m = Eigen::AngleAxisd(0.53*M_PI, Eigen::Vector3d::UnitZ())*
         Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())*
         Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
 
-    rMb.translate(translation);
+    rMb.translate(Eigen::Vector3d(-500,370,1000));
     rMb.linear() = rMb.linear()*m;
 
     mRobotInterface->robot.set_rMb(rMb);
 
     Eigen::Affine3d eeMt = Eigen::Affine3d::Identity();
-    //Eigen::Vector3d translation(0,0,500);
 
-    eeMt.translate(Eigen::Vector3d(-120,0,150));
+    Eigen::Matrix3d rotProbe;
+    rotProbe = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ())*
+               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())*
+               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+
+    eeMt.translate(Eigen::Vector3d(-150,0,130));
+    eeMt.linear() = eeMt.linear()*rotProbe;
 
     mRobotInterface->robot.set_eeMt(eeMt);
 }
@@ -348,6 +410,50 @@ void ApplicationGUI::registerTarget()
     }
     mTargetRegistered = !mTargetRegistered;
 }
+
+void ApplicationGUI::registerCloudToData()
+{
+    auto registration_model_file = "/home/androst/dev/ROMO/FAST-ROMO/data/CT-Abdomen-surface-front.vtk";
+
+    auto importer = VTKMeshFileImporter::New();
+    importer->setFilename(registration_model_file);
+
+    auto port = importer->getOutputPort();
+    importer->update(0);
+    auto registrationCloud = port->getNextFrame<Mesh>();
+
+    auto streamPort = mCameraStreamer->getOutputPort(2);
+    auto currentCloud = streamPort->getNextFrame<Mesh>();
+
+    // Modify point clouds
+    auto regCloudReduced = mCameraInterface->createReducedSample(registrationCloud, (double)1500/registrationCloud->getNrOfVertices());
+    auto currentCloudReduced = mCameraInterface->createReducedSample(currentCloud, (double)1500.0/currentCloud->getNrOfVertices());
+
+    // Set registration settings
+    float uniformWeight = 0.5;
+    double tolerance = 1e-3;
+
+    // Run Coherent Point Drift
+    auto cpd = CoherentPointDriftRigid::New();
+    cpd->setFixedMesh(regCloudReduced);
+    cpd->setMovingMesh(currentCloudReduced);
+    cpd->setMaximumIterations(10);
+    cpd->setTolerance(tolerance);
+    cpd->setUniformWeight(uniformWeight);
+    auto cpdPort = cpd->getOutputPort();
+    cpd->update(0);
+    Mesh::pointer mesh = cpdPort->getNextFrame<Mesh>();
+
+    Eigen::Affine3f eigtransform = mesh->getSceneGraphNode()->getTransformation()->getTransform();
+    std::cout << eigtransform.translation() << std::endl;
+    //eigtransform.translation() =  eigtransform.translation();
+
+    AffineTransformation::pointer transform = AffineTransformation::New();
+    transform->setTransform(eigtransform);
+
+    mPreoperativeData->getSceneGraphNode()->setTransformation(transform);
+}
+
 
 // Motion
 
@@ -400,7 +506,21 @@ void ApplicationGUI::toggleRecord() {
         mRecordButton->setStyleSheet("QPushButton { background-color: red; color: white; }");
         mStorageDir->setDisabled(true);
         mRecordTimer->start();
-        extractPointCloud();
+
+        // Create recording path
+        std::string path = mStorageDir->text().toUtf8().constData();
+        if(mRecordingNameLineEdit->text() != "") {
+            mRecordingName =  currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
+        } else {
+            mRecordingName = currentDateTime();
+        }
+        std::string recordingPath = (QString(path.c_str()) + QDir::separator() + QString(mRecordingName.c_str()) + QDir::separator()).toUtf8().constData();
+        createDirectories(recordingPath);
+
+        std::cout << "Getting ready to start recording..." << std::endl;
+        // Start saving point clouds
+        mCameraInterface->startRecording(recordingPath);
+
     } else {
         mRecordButton->setText("Record");
         mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
@@ -423,8 +543,8 @@ void ApplicationGUI::refreshRecordingsList() {
 }
 
 void ApplicationGUI::playRecording() {
-    mPlaying = !mPlaying;
-    if(!mPlaying) {
+    mCameraPlayback = !mCameraPlayback;
+    if(!mCameraPlayback) {
         mPlayButton->setText("Play");
         mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
         stopStreaming();
@@ -439,7 +559,8 @@ void ApplicationGUI::playRecording() {
             return;
         }
 
-        mCameraStreamer->stop();
+        if(mCameraStreaming)
+            mCameraStreamer->stop();
 
         std::string selectedRecording = (
                 mStorageDir->text() +
@@ -452,12 +573,12 @@ void ApplicationGUI::playRecording() {
         std::string selectedRecordingImages = selectedRecording + "/CameraImages/";
 
         // Set up streaming from disk
-        auto meshStreamer = MeshFileStreamer::New();
+        MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
         meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
         meshStreamer->enableLooping();
         meshStreamer->update(0);
 
-        auto imageStreamer = ImageFileStreamer::New();
+        ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
         imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
         imageStreamer->enableLooping();
         imageStreamer->setSleepTime(100);
@@ -466,6 +587,9 @@ void ApplicationGUI::playRecording() {
         mCameraInterface = CameraInterface::New();
         mCameraInterface->setInputConnection(0, imageStreamer->getOutputPort());
         mCameraInterface->setInputConnection(1, meshStreamer->getOutputPort());
+
+        mCameraPlaybackStreamers[0] = imageStreamer;
+        mCameraPlaybackStreamers[1] = meshStreamer;
 
         stopComputationThread();
         clearRenderVectors();
@@ -486,44 +610,19 @@ void ApplicationGUI::playRecording() {
 
 void ApplicationGUI::extractPointCloud() {
     stopComputationThread();
+    clearRenderVectors();
 
     mCameraInterface->calculateTargetCloud(mCameraStreamer);
-    mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-    mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
+    //mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
+    //mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
 
-    // If recording is enabled: Store the target cloud, then activate recording on tracking object
-    if(mRecording) {
-        // Create recording path
-        std::string path = mStorageDir->text().toUtf8().constData();
-        if(mRecordingNameLineEdit->text() != "") {
-            mRecordingName =  currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
-        } else {
-            mRecordingName = currentDateTime();
-        }
-        std::string recordingPath = (QString(path.c_str()) + QDir::separator() + QString(mRecordingName.c_str()) + QDir::separator()).toUtf8().constData();
-        createDirectories(recordingPath);
-
-        std::cout << "Getting ready to start recording..." << std::endl;
-        // Start saving point clouds
-        mCameraInterface->startRecording(recordingPath);
-    }
-
-    // Renderer RGB image
-    ImageRenderer::pointer imageRenderer = ImageRenderer::New();
-    imageRenderer->addInputConnection(mCameraInterface->getOutputPort(0));
-
-    // Renderer point cloud
-    VertexRenderer::pointer cloudRenderer = VertexRenderer::New();
-    uint port = cloudRenderer->addInputConnection(mCameraInterface->getOutputPort(2));
-    cloudRenderer->setDefaultSize(1.5);
-    cloudRenderer->setColor(port, Color::Green());
-    cloudRenderer->addInputConnection(mCameraStreamer->getOutputPort(2));
-
-    mView3DRenderers = {cloudRenderer};
-    mView2DRenderers = {imageRenderer};
+    setupCameraVisualization();
 
     if(mRobotInterface->robot.isConnected())
         setupRobotManipulatorVisualization();
+
+    if(mUltrasoundStreaming)
+        setupUltrasoundVisualization();
 
     updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
 
@@ -539,7 +638,7 @@ void ApplicationGUI::setupUI()
     View* view3D = createView();
     View* viewUS = createView();
 
-    const int menuWidth = 300;
+    const int menuWidth = 520;
 
     setTitle("Aortic Aneurysm Exam");
     setWidth(1920);
@@ -548,15 +647,15 @@ void ApplicationGUI::setupUI()
 
     view3D->set3DMode();
     view3D->setBackgroundColor(Color::White());
-    view3D->setFixedWidth(720);
+    view3D->setFixedWidth(760);
 
     view2D->set2DMode();
     view2D->setBackgroundColor(Color::White());
-    view2D->setFixedWidth(550);
+    view2D->setFixedWidth(580);
 
     viewUS->set2DMode();
     viewUS->setBackgroundColor(Color::White());
-    viewUS->setFixedWidth(550);
+    viewUS->setFixedWidth(580);
 
     QVBoxLayout* menuLayout = new QVBoxLayout;
     menuLayout->setAlignment(Qt::AlignTop);
@@ -574,6 +673,7 @@ void ApplicationGUI::setupUI()
     connectionsTabWidget->addTab(robotConnectionWidget, "Robot");
     connectionsTabWidget->addTab(cameraConnectionWidget, "Camera");
     connectionsTabWidget->addTab(usConnectionWidget, "Ultrasound");
+    connectionsTabWidget->setFixedWidth(menuWidth);
     menuLayout->addWidget(connectionsTabWidget);
 
     mMoveLayout = new RobotManualMoveLayout(mRobotInterface);
@@ -592,7 +692,6 @@ void ApplicationGUI::setupUI()
     QPushButton* quitButton = new QPushButton;
     quitButton->setText("Quit (q)");
     quitButton->setStyleSheet("QPushButton { background-color: red; color: white; }");
-    quitButton->setFixedWidth(menuWidth);
     QObject::connect(quitButton, &QPushButton::clicked, std::bind(&Window::stop, this));
     menuLayout->addWidget(quitButton,0,Qt::AlignBottom);
 
@@ -617,18 +716,34 @@ QWidget* ApplicationGUI::getCameraConnectionWidget()
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
 
-    cameraConnectButton = new QPushButton();
     cameraMinDepthLineEdit = new QLineEdit();
     cameraMaxDepthLineEdit = new QLineEdit();
     cameraMinDepthLineEdit->setText(QString("0"));
     cameraMaxDepthLineEdit->setText(QString("200"));
 
-    mainLayout->addWidget(new QLabel("Min Depth [cm]: "), 0, 0, 1, 1);
-    mainLayout->addWidget(cameraMinDepthLineEdit,0,1,1,1);
-    mainLayout->addWidget(cameraConnectButton,0,2,1,1);
+    cameraMinXLineEdit = new QLineEdit();
+    cameraMaxXLineEdit = new QLineEdit();
+    cameraMinXLineEdit->setText(QString("-100"));
+    cameraMaxXLineEdit->setText(QString("100"));
 
-    mainLayout->addWidget(new QLabel("Max Depth [cm]: "), 1, 0, 1, 1);
-    mainLayout->addWidget(cameraMaxDepthLineEdit,1,1,1,1);
+    cameraMinYLineEdit = new QLineEdit();
+    cameraMaxYLineEdit = new QLineEdit();
+    cameraMinYLineEdit->setText(QString("-100"));
+    cameraMaxYLineEdit->setText(QString("100"));
+
+    mainLayout->addWidget(new QLabel("Depth range [cm]: "), 0, 0, 1, 1);
+    mainLayout->addWidget(cameraMinDepthLineEdit,0,1,1,1);
+    mainLayout->addWidget(cameraMaxDepthLineEdit,0,2,1,1);
+
+    mainLayout->addWidget(new QLabel("Width range [cm]: "), 1, 0, 1, 1);
+    mainLayout->addWidget(cameraMinXLineEdit,1,1,1,1);
+    mainLayout->addWidget(cameraMaxXLineEdit,1,2,1,1);
+
+    mainLayout->addWidget(new QLabel("Height range [cm]: "), 2, 0, 1, 1);
+    mainLayout->addWidget(cameraMinYLineEdit,2,1,1,1);
+    mainLayout->addWidget(cameraMaxYLineEdit,2,2,1,1);
+
+    cameraConnectButton = new QPushButton();
 
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
@@ -639,8 +754,10 @@ QWidget* ApplicationGUI::getCameraConnectionWidget()
     cameraConnectButton->setCheckable(true);
     cameraConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
+    mainLayout->addWidget(cameraConnectButton,0,3,1,1);
+
     cameraDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-    mainLayout->addWidget(cameraDisconnectButton,1,2,1,1);
+    mainLayout->addWidget(cameraDisconnectButton,2,3,1,1);
 
     return group;
 }
@@ -773,19 +890,30 @@ QWidget* ApplicationGUI::getWorkflowWidget()
 
     int row = 0;
     calibrateButton = new QPushButton();
-    mainLayout->addWidget(calibrateButton,row,2,1,1);
+    mainLayout->addWidget(calibrateButton,row,0,1,2);
     calibrateButton->setText("Calibrate");
     calibrateButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     row++;
+    QPushButton* loadPreopDataButton = new QPushButton;
+    loadPreopDataButton->setText("Load preoperative data");
+    QObject::connect(loadPreopDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::loadPreoperativeData, this));
+    mainLayout->addWidget(loadPreopDataButton,row,0,1,2);
+
+    row++;
+    registerDataButton = new QPushButton();
+    mainLayout->addWidget(registerDataButton,row,0,1,1);
+    registerDataButton->setText("Register data");
+    registerDataButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
     registerTargetButton = new QPushButton();
-    mainLayout->addWidget(registerTargetButton,row,2,1,1);
-    registerTargetButton->setText("Register target");
+    mainLayout->addWidget(registerTargetButton,row,1,1,1);
+    registerTargetButton->setText("Register manual target");
     registerTargetButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     row++;
     moveToolButton = new QPushButton();
-    mainLayout->addWidget(moveToolButton,row,2,1,1);
+    mainLayout->addWidget(moveToolButton,row,0,1,2);
     moveToolButton->setText("Move to target");
     moveToolButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
@@ -821,6 +949,75 @@ bool MouseListener::eventFilter(QObject *obj, QEvent *event) {
     // standard event processing
     return QObject::eventFilter(obj, event);
 }
+
+void ApplicationGUI::loadPreoperativeData() {
+    QFileDialog fileDialog(mWidget);
+    fileDialog.setNameFilter("Data (*.mhd *.vtk)");
+    QStringList filenames;
+    if(fileDialog.exec()) {
+        filenames = fileDialog.selectedFiles();
+        for(QString qfilename : filenames) {
+            std::string filename = qfilename.toUtf8().constData();
+
+            QFileInfo fi(qfilename);
+            QString extension = fi.suffix();
+
+            stopComputationThread();
+            clearRenderVectors();
+
+            DataPort::pointer port;
+
+            if (extension.toStdString() == "mhd") {
+                ImageFileImporter::pointer importer = ImageFileImporter::New();
+                importer->setFilename(filename);
+
+                ImageResizer::pointer resizer = ImageResizer::New();
+                resizer->setInputConnection(importer->getOutputPort());
+                resizer->setDepth(150);
+                resizer->setWidth(150);
+                resizer->setHeight(150);
+
+                // Extract surface mesh using a threshold value
+                SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
+                extraction->setInputConnection(resizer->getOutputPort());
+                extraction->setThreshold(300);
+                port = extraction->getOutputPort();
+                extraction->update(0);
+
+                mPreoperativeData = port->getNextFrame<Mesh>();
+
+                auto surfaceRenderer = TriangleRenderer::New();
+                surfaceRenderer->setInputData(mPreoperativeData);
+                mView3DRenderers.push_back(surfaceRenderer);
+
+            } else{
+                auto importer = VTKMeshFileImporter::New();
+                importer->setFilename(filename);
+                port = importer->getOutputPort();
+                importer->update(0);
+
+                mPreoperativeData = port->getNextFrame<Mesh>();
+                auto vertexRenderer = VertexRenderer::New();
+                vertexRenderer->addInputData(mPreoperativeData, Color::Green(), 3.0);
+                mView3DRenderers.push_back(vertexRenderer);
+            }
+
+            if(mUltrasoundStreaming)
+                setupUltrasoundVisualization();
+
+            if(mRobotInterface->robot.isConnected())
+                setupRobotManipulatorVisualization();
+
+            if(mCameraStreaming)
+                setupCameraVisualization();
+
+            updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+            startComputationThread();
+        }
+    }
+}
+
+
 
 
 }
