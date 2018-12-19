@@ -1,6 +1,7 @@
 #ifndef FASTROMO_CAMERAINTERFACE_H
 #define FASTROMO_CAMERAINTERFACE_H
 
+#include <FAST/Data/Mesh.hpp>
 #include "FAST/ProcessObject.hpp"
 
 namespace fast {
@@ -20,10 +21,15 @@ class CameraInterface : public ProcessObject {
 
         void calculateTargetCloud(SharedPointer<KinectStreamer> streamer);
         void removeTargetCloud();
+        bool isTargetCloudExtracted(){return mTargetCloudExtracted;};
 
         SharedPointer<Mesh> getTargetCloud();
 
         void addLine(Vector2i start, Vector2i end);
+
+        Mesh::pointer createReducedSample(SharedPointer<Mesh> pointCloud, double fractionOfPointsToKeep);
+
+
 private:
         CameraInterface();
         void execute();
@@ -35,6 +41,8 @@ private:
         SharedPointer<Mesh> mTargetCloud;
 
         bool mTargetCloudExtracted = false;
+        bool mTargetRegistered = false;
+        bool mTargetCloudPlaced = false;
 
         bool mRecording = false;
         std::string mStoragePath;

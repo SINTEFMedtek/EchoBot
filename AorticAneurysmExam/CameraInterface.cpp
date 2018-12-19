@@ -17,7 +17,8 @@ CameraInterface::CameraInterface() {
 
     createOutputPort<Image>(0);
     createOutputPort<Image>(1); // Annotation image
-    createOutputPort<Mesh>(2); // Annotated cloud
+    createOutputPort<Mesh>(2);
+    createOutputPort<Mesh>(3); // Annotated cloud
 
     // Create annotation image
     mAnnotationImage = Image::New();
@@ -65,13 +66,16 @@ void CameraInterface::execute() {
         //icp->setMinimumErrorChange(0.5);
         icp->setRandomPointSampling(300);
         //icp->getReporter().setReportMethod(Reporter::COUT);
-        icp->setMaximumNrOfIterations(10);
+        icp->setMaximumNrOfIterations(20);
         icp->update(0);
         //reportInfo() << "Finished ICP in: " << reportEnd();
         //icp->getAllRuntimes()->printAll();
-        AffineTransformation::pointer currentTransform = mTargetCloud->getSceneGraphNode()->getTransformation();
-        AffineTransformation::pointer newTransform = icp->getOutputTransformation();
-        mTargetCloud->getSceneGraphNode()->setTransformation(newTransform->multiply(currentTransform));
+        if(!mTargetCloudPlaced){
+            AffineTransformation::pointer currentTransform = mTargetCloud->getSceneGraphNode()->getTransformation();
+            AffineTransformation::pointer newTransform = icp->getOutputTransformation();
+            mTargetCloud->getSceneGraphNode()->setTransformation(newTransform->multiply(currentTransform));
+            mTargetCloudPlaced = true;
+        }
     } else{
         mTargetCloud = meshInput;
     }
@@ -88,12 +92,14 @@ void CameraInterface::execute() {
         imageExporter->setInputData(input);
         imageExporter->setFilename(mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
         imageExporter->update(0);
+
         ++mFrameCounter;
     }
 
     addOutputData(0, mCurrentImage);
     addOutputData(1, mAnnotationImage);
-    addOutputData(2, mTargetCloud);
+    addOutputData(2, mCurrentCloud);
+    addOutputData(3, mTargetCloud);
 }
 
 uint CameraInterface::getFramesStored() const {
@@ -166,6 +172,52 @@ void CameraInterface::removeTargetCloud()
     mTargetCloudExtracted = false;
     mAnnotationImage->fill(0);
 }
+
+Mesh::pointer CameraInterface::createReducedSample(Mesh::pointer pointCloud, double fractionOfPointsToKeep) {
+    MeshAccess::pointer accessFixedSet = pointCloud->getMeshAccess(ACCESS_READ);
+    std::vector<MeshVertex> vertices = accessFixedSet->getVertices();
+
+    // Sample the preferred amount of points from the point cloud
+    auto numVertices = (unsigned int) vertices.size();
+    auto numSamplePoints = (unsigned int) ceil(fractionOfPointsToKeep * numVertices);
+    std::vector<MeshVertex> newVertices;
+
+    std::unordered_set<int> movingIndices;
+    unsigned int sampledPoints = 0;
+    std::default_random_engine distributionEngine;
+    std::uniform_int_distribution<unsigned int> distribution(0, numVertices - 1);
+    while (sampledPoints < numSamplePoints) {
+        unsigned int index = distribution(distributionEngine);
+        if (movingIndices.count(index) < 1 && vertices.at(index).getPosition().array().isNaN().sum() == 0) {
+            newVertices.push_back(vertices.at(index));
+            movingIndices.insert(index);
+            ++sampledPoints;
+        }
+    }
+
+    // Add noise to point cloud
+    float minX, minY, minZ;
+    Vector3f position0 = vertices[0].getPosition();
+    minX = position0[0];
+    minY = position0[1];
+    minZ = position0[2];
+    float maxX = minX, maxY = minY, maxZ = minZ;
+    for (auto &vertex : vertices) {
+        Vector3f position = vertex.getPosition();
+        if (position[0] < minX) { minX = position[0]; }
+        if (position[0] > maxX) { maxX = position[0]; }
+        if (position[1] < minY) { minY = position[1]; }
+        if (position[1] > maxY) { maxY = position[1]; }
+        if (position[2] < minZ) { minZ = position[2]; }
+        if (position[2] > maxZ) { maxZ = position[2]; }
+    }
+    Mesh::pointer newCloud = Mesh::New();
+    newCloud->create(newVertices);
+    // Update point cloud to include the removed points and added noise
+    return newCloud;
+}
+
+
 
 
 }
