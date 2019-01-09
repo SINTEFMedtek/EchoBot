@@ -25,13 +25,14 @@
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
-#include "FAST/Streamers/KinectStreamer.hpp"
+#include "FAST/Streamers/RealSenseStreamer.hpp"
 #include "FAST/Visualization/ImageRenderer/ImageRenderer.hpp"
 #include "FAST/Importers/ImageFileImporter.hpp"
 #include "FAST/Algorithms/SurfaceExtraction/SurfaceExtraction.hpp"
 #include "FAST/Algorithms/ImageResizer/ImageResizer.hpp"
 #include "FAST/Algorithms/CoherentPointDrift/CoherentPointDrift.hpp"
 #include "FAST/Algorithms/CoherentPointDrift/Rigid.hpp"
+#include "FAST/Algorithms/SegmentationVolumeReconstructor/SegmentationVolumeReconstructor.hpp"
 
 
 namespace fast {
@@ -83,19 +84,20 @@ void ApplicationGUI::setupConnections()
     QObject::connect(cameraConnectButton, &QPushButton::clicked, std::bind(&ApplicationGUI::connectToCamera, this));
     QObject::connect(cameraDisconnectButton, &QPushButton::clicked, std::bind(&ApplicationGUI::disconnectFromCamera, this));
 
-    QObject::connect(cameraMinDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-    QObject::connect(cameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-    QObject::connect(cameraMinXLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-    QObject::connect(cameraMaxXLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-    QObject::connect(cameraMinYLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-    QObject::connect(cameraMaxYLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
+    QObject::connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
 
     QObject::connect(usConnectButton, &QPushButton::clicked, std::bind(&ApplicationGUI::connectToUltrasound, this));
 
     QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
     QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
     QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
-    QObject::connect(moveToolButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToTarget, this));
+    QObject::connect(moveToolManualButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToManualTarget, this));
+    QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
 }
 
 
@@ -103,7 +105,7 @@ void ApplicationGUI::setupConnections()
 
 void ApplicationGUI::robotConnectButtonSlot()
 {
-    mRobotInterface->robot.configure(corah::Manipulator::UR5,robotIPLineEdit->text(),30003);
+    mRobotInterface->robot.configure(corah::Manipulator::UR5,mRobotIPLineEdit->text(),30003);
     mRobotInterface->robot.start();
 
     if(mRobotInterface->robot.isConnected() && !robotConnectButton->isChecked())
@@ -169,9 +171,9 @@ void ApplicationGUI::connectToCamera() {
 
     stopComputationThread();
 
-    mCameraStreamer = KinectStreamer::New();
+    mCameraStreamer = RealSenseStreamer::New();
     mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
-    mCameraStreamer->setPointCloudFiltering(true);
+    //mCameraStreamer->setPointCloudFiltering(true);
 
     // Tracking
     mCameraInterface = CameraInterface::New();
@@ -279,10 +281,12 @@ void ApplicationGUI::disconnectFromCamera() {
 }
 
 void ApplicationGUI::updateCameraROI(){
-    mCameraStreamer->setMinRange(cameraMinDepthLineEdit->text().toFloat()/100);
-    mCameraStreamer->setMaxRange(cameraMaxDepthLineEdit->text().toFloat()/100);
-    mCameraStreamer->setXLimit(cameraMinXLineEdit->text().toFloat()/100, cameraMaxXLineEdit->text().toFloat()/100);
-    mCameraStreamer->setYLimit(cameraMinYLineEdit->text().toFloat()/100, cameraMaxYLineEdit->text().toFloat()/100);
+    mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
+    mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
+    mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
+    mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
+    mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
+    mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
 }
 
 void ApplicationGUI::restartCamera() {
@@ -316,7 +320,7 @@ void ApplicationGUI::connectToUltrasound() {
     usConnectButton->setChecked(0);
 
     mUltrasoundStreamer = IGTLinkStreamer::New();
-    mUltrasoundStreamer->setConnectionAddress(usIPLineEdit->text().toStdString());
+    mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
     mUltrasoundStreamer->setConnectionPort(18944);
 
     mUltrasoundInterface = UltrasoundInterface::New();
@@ -348,7 +352,7 @@ void ApplicationGUI::setupUltrasoundVisualization()
         mUltrasoundInterface->stopPipeline();
 
         mUltrasoundStreamer = IGTLinkStreamer::New();
-        mUltrasoundStreamer->setConnectionAddress(usIPLineEdit->text().toStdString());
+        mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
         mUltrasoundStreamer->setConnectionPort(18944);
 
         mUltrasoundInterface = UltrasoundInterface::New();
@@ -359,10 +363,25 @@ void ApplicationGUI::setupUltrasoundVisualization()
     }
 
     ImageRenderer::pointer usRenderer = ImageRenderer::New();
-    usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort());
+    usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(0));
+
+    SegmentationRenderer::pointer segmentationRenderer = SegmentationRenderer::New();
+    segmentationRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(1));
+
+    SegmentationVolumeReconstructor::pointer reconstructor = SegmentationVolumeReconstructor::New();
+    reconstructor->setInputConnection(mUltrasoundInterface->getOutputPort(1));
+
+    SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
+    extraction->setInputConnection(reconstructor->getOutputPort());
+
+    TriangleRenderer::pointer surfaceRenderer = TriangleRenderer::New();
+    surfaceRenderer->addInputConnection(extraction->getOutputPort());
 
     mViewUSRenderers.push_back(usRenderer);
     mView3DRenderers.push_back(usRenderer);
+
+    mViewUSRenderers.push_back(segmentationRenderer);
+    mView3DRenderers.push_back(surfaceRenderer);
 }
 
 // Calibration
@@ -371,11 +390,11 @@ void ApplicationGUI::calibrateSystem()
     Eigen::Affine3d rMb = Eigen::Affine3d::Identity();
 
     Eigen::Matrix3d m;
-    m = Eigen::AngleAxisd(0.53*M_PI, Eigen::Vector3d::UnitZ())*
-        Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())*
-        Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+    m = Eigen::AngleAxisd(0.51*M_PI, Eigen::Vector3d::UnitZ())*
+        Eigen::AngleAxisd(0.96*M_PI, Eigen::Vector3d::UnitX())*
+        Eigen::AngleAxisd(0.0*M_PI, Eigen::Vector3d::UnitY());
 
-    rMb.translate(Eigen::Vector3d(-500,370,1000));
+    rMb.translate(Eigen::Vector3d(-800,150,950)); // -500, 370, 1000 (y,x,z)
     rMb.linear() = rMb.linear()*m;
 
     mRobotInterface->robot.set_rMb(rMb);
@@ -387,7 +406,7 @@ void ApplicationGUI::calibrateSystem()
                Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())*
                Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
 
-    eeMt.translate(Eigen::Vector3d(-150,0,130));
+    eeMt.translate(Eigen::Vector3d(-100,0,100));
     eeMt.linear() = eeMt.linear()*rotProbe;
 
     mRobotInterface->robot.set_eeMt(eeMt);
@@ -422,34 +441,54 @@ void ApplicationGUI::registerCloudToData()
     importer->update(0);
     auto registrationCloud = port->getNextFrame<Mesh>();
 
-    auto streamPort = mCameraStreamer->getOutputPort(2);
+    DataPort::pointer streamPort;
+    if(mCameraStreaming){
+        streamPort = mCameraStreamer->getOutputPort(2);
+    } else{
+        streamPort = mCameraPlaybackStreamers[1]->getOutputPort();
+    }
     auto currentCloud = streamPort->getNextFrame<Mesh>();
 
     // Modify point clouds
-    auto regCloudReduced = mCameraInterface->createReducedSample(registrationCloud, (double)1500/registrationCloud->getNrOfVertices());
-    auto currentCloudReduced = mCameraInterface->createReducedSample(currentCloud, (double)1500.0/currentCloud->getNrOfVertices());
+    auto regCloudReduced = mCameraInterface->createReducedSample(registrationCloud, (double)2500.0/registrationCloud->getNrOfVertices());
+    //auto regCloudReduced = mCameraInterface->createReducedSample(mPreoperativeData, (double)2500.0/mPreoperativeData->getNrOfVertices());
+    auto currentCloudReduced = mCameraInterface->createReducedSample(currentCloud, (double)2500.0/currentCloud->getNrOfVertices());
 
     // Set registration settings
     float uniformWeight = 0.5;
     double tolerance = 1e-3;
 
+    std::cout << regCloudReduced->getSceneGraphNode()->getTransformation()->getTransform().matrix()  << "\n" << std::endl;
+    std::cout << currentCloudReduced->getSceneGraphNode()->getTransformation()->getTransform().matrix()  << "\n" << std::endl;
+
     // Run Coherent Point Drift
     auto cpd = CoherentPointDriftRigid::New();
     cpd->setFixedMesh(regCloudReduced);
     cpd->setMovingMesh(currentCloudReduced);
-    cpd->setMaximumIterations(10);
+    cpd->setMaximumIterations(50);
     cpd->setTolerance(tolerance);
     cpd->setUniformWeight(uniformWeight);
+
     auto cpdPort = cpd->getOutputPort();
     cpd->update(0);
     Mesh::pointer mesh = cpdPort->getNextFrame<Mesh>();
+    //mPreoperativeData = mesh;
 
-    Eigen::Affine3f eigtransform = mesh->getSceneGraphNode()->getTransformation()->getTransform();
-    std::cout << eigtransform.translation() << std::endl;
-    //eigtransform.translation() =  eigtransform.translation();
+    Eigen::Affine3f eigtransform = mesh->getSceneGraphNode()->getTransformation()->getTransform().inverse();
+    Eigen::Affine3f offset = Eigen::Affine3f::Identity();
+
+    Eigen::Matrix3f m;
+    m = Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ())*
+        Eigen::AngleAxisf(0, Eigen::Vector3f::UnitX())*
+        Eigen::AngleAxisf(0, Eigen::Vector3f::UnitY());
+
+    offset.translate(Eigen::Vector3f(163,302,-570));
+    offset.linear() = offset.linear()*m;
+
+    std::cout << eigtransform.matrix()  << "\n" << std::endl;
 
     AffineTransformation::pointer transform = AffineTransformation::New();
-    transform->setTransform(eigtransform);
+    transform->setTransform(eigtransform*offset);
 
     mPreoperativeData->getSceneGraphNode()->setTransformation(transform);
 }
@@ -471,11 +510,11 @@ Vector3f getCentroid(const MatrixXf m) {
 }
 
 
-void ApplicationGUI::moveToolToTarget()
+void ApplicationGUI::moveToolToManualTarget()
 {
     if(mMovingToTarget)
     {
-        moveToolButton->setText("Move to target");
+        moveToolManualButton->setText("Move to target");
         mRobotInterface->robot.stopMove(corah::MotionType::stopj, 50);
     }else{
         Mesh::pointer targetCloud = mCameraInterface->getTargetCloud();
@@ -488,10 +527,41 @@ void ApplicationGUI::moveToolToTarget()
         rMtarget.translation() = pointCloudCentroid.cast<double>();
 
         Eigen::Affine3d new_bMee = mRobotInterface->robot.get_rMb().inverse()*rMtarget*mRobotInterface->robot.get_eeMt().inverse();
-        new_bMee.linear() = mRobotInterface->robot.getCurrentState().bMee.linear();
 
         mRobotInterface->robot.move(corah::MotionType::movep, new_bMee, 50, 25);
-        moveToolButton->setText("Abort move");
+        moveToolManualButton->setText("Abort move");
+    }
+    mMovingToTarget = !mMovingToTarget;
+}
+
+void ApplicationGUI::moveToolToRegisteredTarget()
+{
+    if(mMovingToTarget)
+    {
+        moveToolRegisteredButton->setText("Move to registered target");
+        mRobotInterface->robot.stopMove(corah::MotionType::stopj, 50);
+    }else{
+        Eigen::Affine3f rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
+        Eigen::Affine3d dataMtarget;
+//        dataMtarget.matrix() <<  0.08,   0.04,  -0.89, 160.6,
+//                                 0.99,   1.  ,   0.01,  88.2 ,
+//                                 0.13,   0.06,   0.46, 216.0,
+//                                 0.  ,   0.  ,   0.  ,   1.;
+
+        dataMtarget.matrix() <<  -1.,   0.,  0., 160.6,
+                                 0.,   0.,  1.,  88.2,
+                                 0.,  1., 0., 216.0,
+                                 0.,   0.,  0.,   1.;
+
+
+        Eigen::Affine3d rMtarget = rMdata.cast<double>()*dataMtarget;
+        Eigen::Affine3d new_bMee = mRobotInterface->robot.get_rMb().inverse()*rMtarget*mRobotInterface->robot.get_eeMt().inverse();
+
+        std::cout << new_bMee.matrix() << std::endl;
+
+        mRobotInterface->robot.move(corah::MotionType::movep, new_bMee, 50, 25);
+        moveToolManualButton->setText("Abort move");
+
     }
     mMovingToTarget = !mMovingToTarget;
 }
@@ -507,7 +577,7 @@ void ApplicationGUI::toggleRecord() {
         mStorageDir->setDisabled(true);
         mRecordTimer->start();
 
-        // Create recording path
+        // Create recording pathkom
         std::string path = mStorageDir->text().toUtf8().constData();
         if(mRecordingNameLineEdit->text() != "") {
             mRecordingName =  currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
@@ -599,6 +669,7 @@ void ApplicationGUI::playRecording() {
             setupRobotManipulatorVisualization();
 
         updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+        getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
 
         startComputationThread();
 
@@ -612,9 +683,12 @@ void ApplicationGUI::extractPointCloud() {
     stopComputationThread();
     clearRenderVectors();
 
-    mCameraInterface->calculateTargetCloud(mCameraStreamer);
-    //mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-    //mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
+    if(mCameraPlayback)
+    {
+        std::cout << "Point cloud from playback not implemented." << std::endl;
+    } else {
+        mCameraInterface->calculateTargetCloud(mCameraStreamer);
+    }
 
     setupCameraVisualization();
 
@@ -716,32 +790,32 @@ QWidget* ApplicationGUI::getCameraConnectionWidget()
     QGridLayout *mainLayout = new QGridLayout();
     group->setLayout(mainLayout);
 
-    cameraMinDepthLineEdit = new QLineEdit();
-    cameraMaxDepthLineEdit = new QLineEdit();
-    cameraMinDepthLineEdit->setText(QString("0"));
-    cameraMaxDepthLineEdit->setText(QString("200"));
+    mCameraMinDepthLineEdit = new QLineEdit();
+    mCameraMaxDepthLineEdit = new QLineEdit();
+    mCameraMinDepthLineEdit->setText(QString("0"));
+    mCameraMaxDepthLineEdit->setText(QString("2000"));
 
-    cameraMinXLineEdit = new QLineEdit();
-    cameraMaxXLineEdit = new QLineEdit();
-    cameraMinXLineEdit->setText(QString("-100"));
-    cameraMaxXLineEdit->setText(QString("100"));
+    mCameraMinWidthLineEdit = new QLineEdit();
+    mCameraMaxWidthLineEdit = new QLineEdit();
+    mCameraMinWidthLineEdit->setText(QString("-1000"));
+    mCameraMaxWidthLineEdit->setText(QString("1000"));
 
-    cameraMinYLineEdit = new QLineEdit();
-    cameraMaxYLineEdit = new QLineEdit();
-    cameraMinYLineEdit->setText(QString("-100"));
-    cameraMaxYLineEdit->setText(QString("100"));
+    mCameraMinHeightLineEdit = new QLineEdit();
+    mCameraMaxHeightLineEdit = new QLineEdit();
+    mCameraMinHeightLineEdit->setText(QString("-1000"));
+    mCameraMaxHeightLineEdit->setText(QString("1000"));
 
-    mainLayout->addWidget(new QLabel("Depth range [cm]: "), 0, 0, 1, 1);
-    mainLayout->addWidget(cameraMinDepthLineEdit,0,1,1,1);
-    mainLayout->addWidget(cameraMaxDepthLineEdit,0,2,1,1);
+    mainLayout->addWidget(new QLabel("Depth range [mm]: "), 0, 0, 1, 1);
+    mainLayout->addWidget(mCameraMinDepthLineEdit,0,1,1,1);
+    mainLayout->addWidget(mCameraMaxDepthLineEdit,0,2,1,1);
 
-    mainLayout->addWidget(new QLabel("Width range [cm]: "), 1, 0, 1, 1);
-    mainLayout->addWidget(cameraMinXLineEdit,1,1,1,1);
-    mainLayout->addWidget(cameraMaxXLineEdit,1,2,1,1);
+    mainLayout->addWidget(new QLabel("Width range [mm]: "), 1, 0, 1, 1);
+    mainLayout->addWidget(mCameraMinWidthLineEdit,1,1,1,1);
+    mainLayout->addWidget(mCameraMaxWidthLineEdit,1,2,1,1);
 
-    mainLayout->addWidget(new QLabel("Height range [cm]: "), 2, 0, 1, 1);
-    mainLayout->addWidget(cameraMinYLineEdit,2,1,1,1);
-    mainLayout->addWidget(cameraMaxYLineEdit,2,2,1,1);
+    mainLayout->addWidget(new QLabel("Height range [mm]: "), 2, 0, 1, 1);
+    mainLayout->addWidget(mCameraMinHeightLineEdit,2,1,1,1);
+    mainLayout->addWidget(mCameraMaxHeightLineEdit,2,2,1,1);
 
     cameraConnectButton = new QPushButton();
 
@@ -769,14 +843,14 @@ QWidget* ApplicationGUI::getRobotConnectionWidget()
     group->setLayout(mainLayout);
 
     int row = 0;
-    robotIPLineEdit = new QLineEdit();
+    mRobotIPLineEdit = new QLineEdit();
     robotConnectButton = new QPushButton();
     mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
-    mainLayout->addWidget(robotIPLineEdit, row, 1,1,1);
+    mainLayout->addWidget(mRobotIPLineEdit, row, 1,1,1);
     mainLayout->addWidget(robotConnectButton,row,2,1,1);
 
-    robotIPLineEdit->setText("10.218.140.123"); // 10.218.140.114
-    robotIPLineEdit->setAlignment(Qt::AlignCenter);
+    mRobotIPLineEdit->setText("10.218.140.123"); // 10.218.140.114
+    mRobotIPLineEdit->setAlignment(Qt::AlignCenter);
 
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
@@ -804,14 +878,14 @@ QWidget* ApplicationGUI::getUltrasoundConnectionWidget()
     group->setLayout(mainLayout);
 
     int row = 0;
-    usIPLineEdit = new QLineEdit();
+    mUsIPLineEdit = new QLineEdit();
     usConnectButton = new QPushButton();
     mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
-    mainLayout->addWidget(usIPLineEdit, row, 1,1,1);
+    mainLayout->addWidget(mUsIPLineEdit, row, 1,1,1);
     mainLayout->addWidget(usConnectButton,row,2,1,1);
 
-    usIPLineEdit->setText("192.168.140.116"); // 10.218.140.114
-    usIPLineEdit->setAlignment(Qt::AlignCenter);
+    mUsIPLineEdit->setText("192.168.140.116"); // 10.218.140.114
+    mUsIPLineEdit->setAlignment(Qt::AlignCenter);
 
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
@@ -912,10 +986,15 @@ QWidget* ApplicationGUI::getWorkflowWidget()
     registerTargetButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     row++;
-    moveToolButton = new QPushButton();
-    mainLayout->addWidget(moveToolButton,row,0,1,2);
-    moveToolButton->setText("Move to target");
-    moveToolButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+    moveToolManualButton = new QPushButton();
+    mainLayout->addWidget(moveToolManualButton,row,1,1,1);
+    moveToolManualButton->setText("Move to manual target");
+    moveToolManualButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
+    moveToolRegisteredButton = new QPushButton();
+    mainLayout->addWidget(moveToolRegisteredButton,row,0,1,1);
+    moveToolRegisteredButton->setText("Move to registered target");
+    moveToolRegisteredButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     return group;
 }
@@ -1008,7 +1087,7 @@ void ApplicationGUI::loadPreoperativeData() {
             if(mRobotInterface->robot.isConnected())
                 setupRobotManipulatorVisualization();
 
-            if(mCameraStreaming)
+            if(mCameraStreaming || mCameraPlayback)
                 setupCameraVisualization();
 
             updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
@@ -1017,26 +1096,38 @@ void ApplicationGUI::loadPreoperativeData() {
     }
 }
 
+LineRenderer::pointer ApplicationGUI::createCoordinateFrameRenderer(Eigen::Affine3f transform)
+{
+    Mesh::pointer mesh = Mesh::New();
+
+//    std::vector<MeshVertex> vertices = {
+//            MeshVertex(transform.translation()),
+//            MeshVertex(transform.linear().col(0)*100),
+//            MeshVertex(transform.linear().col(1)*100),
+//            MeshVertex(transform.linear().col(2)*100),
+//    };
+
+    std::vector<MeshVertex> vertices = {
+            MeshVertex(Vector3f(0, 0, 0)),
+            MeshVertex(Vector3f(500, 0, 0)),
+            MeshVertex(Vector3f(0, 500, 0)),
+            MeshVertex(Vector3f(0, 0, 500)),
+    };
 
 
+    std::vector<MeshLine> lines = {
+            MeshLine(0, 1),
+            MeshLine(0, 2),
+            MeshLine(0, 3),
+    };
+    mesh->create(vertices, lines);
 
+    LineRenderer::pointer lineRenderer = LineRenderer::New();
+    lineRenderer->addInputData(mesh);
+    lineRenderer->setDefaultLineWidth(100);
+    lineRenderer->setColor(0, Color::Red());
+
+    return lineRenderer;
 }
 
-//    Mesh::pointer mesh = Mesh::New();
-//    std::vector<MeshVertex> vertices = {
-//            MeshVertex(Vector3f(0, 0, 0)),
-//            MeshVertex(Vector3f(25, 0, 0)),
-//            MeshVertex(Vector3f(0, 25, 0)),
-//            MeshVertex(Vector3f(0, 0, 25)),
-//    };
-//    std::vector<MeshLine> lines = {
-//            MeshLine(0, 1),
-//            MeshLine(0, 2),
-//            MeshLine(0, 3),
-//    };
-//    mesh->create(vertices, lines);
-//
-//    LineRenderer::pointer lineRenderer = LineRenderer::New();
-//    lineRenderer->addInputData(mesh);
-//    lineRenderer->setDefaultLineWidth(20);
-//    lineRenderer->setColor(0, Color::Red());
+}

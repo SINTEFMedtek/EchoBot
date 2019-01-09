@@ -5,7 +5,7 @@
 #include "FAST/Algorithms/IterativeClosestPoint/IterativeClosestPoint.hpp"
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
 #include <FAST/Exporters/MetaImageExporter.hpp>
-#include <FAST/Streamers/KinectStreamer.hpp>
+#include <FAST/Streamers/RealSenseStreamer.hpp>
 #include <QDir>
 
 namespace fast {
@@ -136,7 +136,7 @@ void CameraInterface::addLine(Vector2i start, Vector2i end) {
     }
 }
 
-void CameraInterface::calculateTargetCloud(KinectStreamer::pointer streamer) {
+void CameraInterface::calculateTargetCloud(RealSenseStreamer::pointer streamer) {
     std::cout << "Creating target cloud..." << std::endl;
     ImageAccess::pointer access = mAnnotationImage->getImageAccess(ACCESS_READ);
     MeshAccess::pointer meshAccess = mCurrentCloud->getMeshAccess(ACCESS_READ);

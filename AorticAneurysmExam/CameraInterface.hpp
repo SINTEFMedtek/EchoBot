@@ -8,7 +8,7 @@ namespace fast {
 
 class Image;
 class Mesh;
-class KinectStreamer;
+class RealSenseStreamer;
 
 class CameraInterface : public ProcessObject {
     FAST_OBJECT(CameraInterface)
@@ -19,7 +19,7 @@ class CameraInterface : public ProcessObject {
         uint getFramesStored() const;
         bool isRecording() const;
 
-        void calculateTargetCloud(SharedPointer<KinectStreamer> streamer);
+        void calculateTargetCloud(SharedPointer<RealSenseStreamer> streamer);
         void removeTargetCloud();
         bool isTargetCloudExtracted(){return mTargetCloudExtracted;};
 

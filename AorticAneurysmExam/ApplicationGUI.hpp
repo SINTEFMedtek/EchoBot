@@ -8,6 +8,7 @@
 #include "FAST/Streamers/MeshFileStreamer.hpp"
 #include "FAST/Streamers/IGTLinkStreamer.hpp"
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
+#include "FAST/Visualization/LineRenderer/LineRenderer.hpp"
 
 #include "RobotInterface.h"
 #include "UltrasoundInterface.hpp"
@@ -23,7 +24,7 @@ class QListWidget;
 
 namespace fast {
 
-class KinectStreamer;
+class RealSenseStreamer;
 class MouseListener;
 
 class ApplicationGUI : public Window {
@@ -41,7 +42,7 @@ private:
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
 
-    SharedPointer<KinectStreamer> mCameraStreamer;
+    SharedPointer<RealSenseStreamer> mCameraStreamer;
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
     SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
@@ -58,12 +59,12 @@ private:
     void setupUI();
 
     QString mGraphicsFolderName;
-    QLineEdit *robotIPLineEdit, *cameraMinDepthLineEdit,*cameraMaxDepthLineEdit, *usIPLineEdit;
-    QLineEdit *cameraMinXLineEdit, *cameraMaxXLineEdit, *cameraMinYLineEdit, *cameraMaxYLineEdit;
+    QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
+    QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
     QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
     QPushButton *cameraConnectButton, *cameraDisconnectButton;
     QPushButton *usConnectButton, *usDisconnectButton;
-    QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolButton;
+    QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolManualButton, *moveToolRegisteredButton;
     QTabWidget *tabWidget;
 
     QPushButton *mRecordButton, *mPlayButton;
@@ -102,7 +103,8 @@ private:
 
     void calibrateSystem();
     void registerTarget();
-    void moveToolToTarget();
+    void moveToolToManualTarget();
+    void moveToolToRegisteredTarget();
     void registerCloudToData();
 
     std::vector<Renderer::pointer> mView3DRenderers;
@@ -118,6 +120,8 @@ private:
     void loadPreoperativeData();
     Mesh::pointer mPreoperativeData;
 
+
+    static LineRenderer::pointer createCoordinateFrameRenderer(Eigen::Affine3f transform);
 };
 
 }
