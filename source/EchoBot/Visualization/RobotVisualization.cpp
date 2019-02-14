@@ -1,11 +1,11 @@
-#include "robotVisualization.h"
+#include "RobotVisualization.h"
 
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/SceneGraph.hpp"
 
 RobotVisualizator::RobotVisualizator()
 {
-    std::string CADModelPath = "AorticAneurysmExam/visualization/CADModels/";
+    std::string CADModelPath = "/home/androst/dev/ROMO/EchoBot/source/EchoBot/Visualization/CADModels/";
 
     addPart(RobotPart("base", CADModelPath + "base.vtk"));
     addPart(RobotPart("shoulder", CADModelPath + "shoulder.vtk"));

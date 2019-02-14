@@ -7,7 +7,7 @@
 #include <QScrollBar>
 #include <QButtonGroup>
 
-#include "../RobotInterface.h"
+#include "EchoBot/Interfaces/RobotInterface.h"
 
 /**
  * Implementation of Manual motion GUI tab.

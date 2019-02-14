@@ -2,7 +2,7 @@
 
 #include "FAST/Data/Image.hpp"
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
-#include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
+//#include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 
 namespace fast {
@@ -48,10 +48,11 @@ void UltrasoundInterface::execute() {
 
     Image::pointer segmentation;
     if(mSegmentationEnabled){
-        mPixelClassifier->setInputData(mCurrentImage);
-        DataPort::pointer port = mPixelClassifier->getOutputPort(0);
-        mPixelClassifier->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
-        segmentation = port->getNextFrame<Image>();
+        //mPixelClassifier->setInputData(mCurrentImage);
+        //DataPort::pointer port = mPixelClassifier->getOutputPort(0);
+        //mPixelClassifier->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
+        //segmentation = port->getNextFrame<Image>();
+        segmentation = mCurrentImage;
     } else{
         segmentation = mCurrentImage;
     }
@@ -99,12 +100,12 @@ void UltrasoundInterface::segmentationThread() {
 }
 
 void UltrasoundInterface::setupNeuralNetworks() {
-    mPixelClassifier = PixelClassifier::New();
-    mPixelClassifier->setNrOfClasses(2);
-    mPixelClassifier->setResizeBackToOriginalSize(false);
-    mPixelClassifier->load("/home/androst/Data/NNModels/phantom.pb");
-    mPixelClassifier->setScaleFactor(1.0f/255.0f);
-    mPixelClassifier->addOutputNode(0, "conv2d_23/truediv");
+//    mPixelClassifier = PixelClassifier::New();
+//    mPixelClassifier->setNrOfClasses(2);
+//    mPixelClassifier->setResizeBackToOriginalSize(false);
+//    mPixelClassifier->load("/home/androst/Data/NNModels/phantom.pb");
+//    mPixelClassifier->setScaleFactor(1.0f/255.0f);
+//    mPixelClassifier->addOutputNode(0, "conv2d_23/truediv");
 }
 
 }

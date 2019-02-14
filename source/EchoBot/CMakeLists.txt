@@ -1,0 +1,3 @@
+project_add_subdirectories(Interfaces)
+project_add_subdirectories(GUI)
+project_add_subdirectories(Visualization)

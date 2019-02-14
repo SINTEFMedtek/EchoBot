@@ -1,4 +1,4 @@
-#include "robotManualMoveTab.h"
+#include "RobotManualMoveTab.h"
 
 #include <QWidget>
 #include <QGridLayout>
