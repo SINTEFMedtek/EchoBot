@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.10)
-project(fastromo)
+project(EchoBot)
 
 include(cmake/Macros.cmake)
 
@@ -11,56 +11,57 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     add_definitions("-fPIC")
 endif()
 
-#### Source and includes
-set(FASTROMO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fastromo ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+#### Paths
+set(ECHOBOT_TEST_DATA_DIR "" CACHE PATH "Directory of test data. Default is ROOT/data/.")
+set(ECHOBOT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source/EchoBot")
+set(ECHOBOT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source/ ${CMAKE_CURRENT_BINARY_DIR})
 
 #### Setup all external depedencies
 find_package(orocos_kdl)
 include(cmake/Requirements.cmake)
 
 #### Set include dirs
-message("-- INCLUDES: ${FASTROMO_INCLUDE_DIRS}")
-include_directories(${FASTROMO_INCLUDE_DIRS})
+message("-- INCLUDES: ${ECHOBOT_INCLUDE_DIRS}")
+include_directories(${ECHOBOT_INCLUDE_DIRS})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
-    set(FASTROMO_INCLUDE_DIRS ${FASTROMO_INCLUDE_DIRS} PARENT_SCOPE)
+    set(ECHOBOT_INCLUDE_DIRS ${ECHOBOT_INCLUDE_DIRS} PARENT_SCOPE)
 endif()
 
 #### Add all subdirs
-project_add_subdirectories(AorticAneurysmExam)
+project_add_subdirectories(source/EchoBot)
 
-message("-- Dependencies: ${FASTROMO_EXTERNAL_DEPENDENCIES}")
+message("-- Dependencies: ${ECHOBOT_EXTERNAL_DEPENDENCIES}")
 
 #### Create library and executables
-add_library(fastromo SHARED ${FASTROMO_SOURCE_FILES} ${HEADERS_MOC})
-add_dependencies(fastromo ${FASTROMO_EXTERNAL_DEPENDENCIES})
+add_library(EchoBot SHARED ${ECHOBOT_SOURCE_FILES} ${HEADERS_MOC})
+add_dependencies(EchoBot ${ECHOBOT_EXTERNAL_DEPENDENCIES})
+
 include(GenerateExportHeader)
-generate_export_header(fastromo EXPORT_FILE_NAME fastromoExport.hpp)
+generate_export_header(EchoBot EXPORT_FILE_NAME EchoBotExport.hpp)
 
 ## Link everything
-message("-- LIBS: ${LIBRARIES} ${FASTROMO_SYSTEM_LIBRARIES}")
+message("-- LIBS: ${LIBRARIES} ${ECHOBOT_SYSTEM_LIBRARIES}")
 
-target_link_libraries(fastromo PUBLIC ${LIBRARIES} ${FAST_LIBRARIES} orocos-kdl)
+target_link_libraries(EchoBot PUBLIC ${LIBRARIES} ${FAST_LIBRARIES} orocos-kdl)
+message("-- INCLUDE directories: ${ECHOBOT_EXTERNAL_INSTALL_DIR}")
 
-message("-- INCLUDE directories: ${FASTROMO_EXTERNAL_INSTALL_DIR}")
-
-target_include_directories(fastromo
+target_include_directories(EchoBot
         PUBLIC
-            ${FASTROMO_INCLUDE_DIRS}
-            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah
-            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/src/corah/corah
-            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/include/kdl
-            ${FASTROMO_EXTERNAL_INSTALL_DIR}/external/corah/include/QtNetwork
-        )
+            ${ECHOBOT_INCLUDE_DIRS}
+            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah
+            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/src/corah/corah
+            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/include/kdl
+            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/include/QtNetwork
+)
 
-add_custom_command(TARGET fastromo PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/AorticAneurysmExam/visualization/CADModels
-        $<TARGET_FILE_DIR:fastromo>/AorticAneurysmExam/visualization/CADModels)
+add_custom_command(TARGET EchoBot PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/source/EchoBot/Visualization/CADModels
+        $<TARGET_FILE_DIR:EchoBot>/source/EchoBot/Visualization/CADModels)
 
-add_custom_command(TARGET fastromo PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/AorticAneurysmExam/widgets/icons
-        $<TARGET_FILE_DIR:fastromo>/AorticAneurysmExam/widgets/icons)
+add_custom_command(TARGET EchoBot PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/source/EchoBot/GUI/Widgets/Icons
+        $<TARGET_FILE_DIR:EchoBot>/source/EchoBot/GUI/Widgets/Icons)
 
-add_executable(aorticAneurysmExam AorticAneurysmExam/main.cpp)
-target_link_libraries(aorticAneurysmExam fastromo)
+project_add_subdirectories(applications)

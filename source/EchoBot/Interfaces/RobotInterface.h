@@ -5,8 +5,11 @@
 #ifndef FASTROMO_ROBOTINTERFACE_H
 #define FASTROMO_ROBOTINTERFACE_H
 
-#include "Robot.h"
+#include <iostream>
+#include <memory>
+#include <QObject>
 
+#include <corah/Robot.h>
 
 typedef std::shared_ptr<class RobotInterface> RobotInterfacePtr;
 

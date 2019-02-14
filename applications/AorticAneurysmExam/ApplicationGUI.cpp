@@ -52,10 +52,15 @@ private:
 ApplicationGUI::ApplicationGUI() :
     mGraphicsFolderName("AorticAneurysmExam/widgets/icons/")
 {
+    std::cout << "Enters" << std::endl;
     mRobotInterface = RobotInterfacePtr(new RobotInterface);
+
+    std::cout << "Interface setup" << std::endl;
 
     mRobotVisualizator = new RobotVisualizator();
     mRobotVisualizator->setInterface(mRobotInterface);
+
+    std::cout << "Vis setup" << std::endl;
 
     setupUI();
     setupConnections();
@@ -281,12 +286,12 @@ void ApplicationGUI::disconnectFromCamera() {
 }
 
 void ApplicationGUI::updateCameraROI(){
-    mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
-    mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
-    mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
-    mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
-    mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
-    mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
+    //mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
+    //mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
+    //mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
+    //mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
+    //mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
+    //mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
 }
 
 void ApplicationGUI::restartCamera() {

@@ -1,5 +1,5 @@
-#ifndef FASTROMO_APPLICATIONGUI_H
-#define FASTROMO_APPLICATIONGUI_H
+#ifndef ECHOBOT_APPLICATIONGUI_H
+#define ECHOBOT_APPLICATIONGUI_H
 
 #include "FAST/Visualization/Window.hpp"
 #include "FAST/Streamers/Streamer.hpp"
@@ -10,11 +10,11 @@
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 #include "FAST/Visualization/LineRenderer/LineRenderer.hpp"
 
-#include "RobotInterface.h"
-#include "UltrasoundInterface.hpp"
-#include "CameraInterface.hpp"
-#include "visualization/robotVisualization.h"
-#include "widgets/robotManualMoveTab.h"
+#include "EchoBot/Interfaces/RobotInterface.h"
+#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Visualization/RobotVisualization.h"
+#include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
 
 class QPushButton;
 class QLabel;

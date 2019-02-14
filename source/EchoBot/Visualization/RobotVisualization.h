@@ -4,7 +4,7 @@
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
 
-#include "../RobotInterface.h"
+#include "EchoBot/Interfaces/RobotInterface.h"
 
 /**
  * Implementation of visualization of Robot Visualizator and tool.
