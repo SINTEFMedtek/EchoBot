@@ -14,7 +14,9 @@
 #include "EchoBot/Interfaces/UltrasoundInterface.hpp"
 #include "EchoBot/Interfaces/CameraInterface.hpp"
 #include "EchoBot/Visualization/RobotVisualization.h"
+
 #include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
+#include "EchoBot/GUI/Widgets/ConnectionWidget.h"
 
 class QPushButton;
 class QLabel;
@@ -49,6 +51,7 @@ private:
 
     RobotVisualizator *mRobotVisualizator;
     RobotManualMoveLayout* mMoveLayout;
+    ConnectionWidget* mConnectionWidget;
 
     void connectToCamera();
     void disconnectFromCamera();
@@ -59,11 +62,11 @@ private:
     void setupUI();
 
     QString mGraphicsFolderName;
-    QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
-    QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
-    QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
-    QPushButton *cameraConnectButton, *cameraDisconnectButton;
-    QPushButton *usConnectButton, *usDisconnectButton;
+    //QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
+    //QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
+    //QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
+    //QPushButton *cameraConnectButton, *cameraDisconnectButton;
+    //QPushButton *usConnectButton, *usDisconnectButton;
     QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolManualButton, *moveToolRegisteredButton;
     QTabWidget *tabWidget;
 
@@ -83,9 +86,6 @@ private:
     bool mTargetRegistered = false;
     bool mMovingToTarget = false;
 
-    QWidget* getRobotConnectionWidget();
-    QWidget* getCameraConnectionWidget();
-    QWidget* getUltrasoundConnectionWidget();
     QWidget* getRecordingWidget();
     QWidget* getWorkflowWidget();
 
