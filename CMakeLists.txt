@@ -1,7 +1,12 @@
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.1)
 project(EchoBot)
 
 include(cmake/Macros.cmake)
+
+#### Options
+option(ECHOBOT_BUILD_QT5 "Download and build Qt. Turn OFF if you want to use pre-built binaries existing on your machine." ON)
+option(ECHOBOT_BUILD_FAST "Download and build FAST." OFF)
+option(ECHOBOT_BUILD_CORAH "Download and build Corah." ON)
 
 # Enable C++ 11
 set(CMAKE_CXX_STANDARD 11)
@@ -32,6 +37,9 @@ endif()
 #### Add all subdirs
 project_add_subdirectories(source/EchoBot)
 
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+SET(CMAKE_AUTOMOC ON)
+
 message("-- Dependencies: ${ECHOBOT_EXTERNAL_DEPENDENCIES}")
 
 #### Create library and executables
@@ -42,19 +50,10 @@ include(GenerateExportHeader)
 generate_export_header(EchoBot EXPORT_FILE_NAME EchoBotExport.hpp)
 
 ## Link everything
-message("-- LIBS: ${LIBRARIES} ${ECHOBOT_SYSTEM_LIBRARIES}")
+message("-- LIBS: ${LIBRARIES}")
+target_link_libraries(EchoBot PUBLIC ${LIBRARIES})
 
-target_link_libraries(EchoBot PUBLIC ${LIBRARIES} ${FAST_LIBRARIES} orocos-kdl)
-message("-- INCLUDE directories: ${ECHOBOT_EXTERNAL_INSTALL_DIR}")
-
-target_include_directories(EchoBot
-        PUBLIC
-            ${ECHOBOT_INCLUDE_DIRS}
-            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah
-            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/src/corah/corah
-            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/include/kdl
-            ${ECHOBOT_EXTERNAL_INSTALL_DIR}/external/corah/include/QtNetwork
-)
+target_include_directories(EchoBot PUBLIC ${ECHOBOT_INCLUDE_DIRS})
 
 add_custom_command(TARGET EchoBot PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/source/EchoBot/Visualization/CADModels
