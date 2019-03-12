@@ -1,13 +1,14 @@
-#ifndef FASTROMO_ULTRASOUNDINTERFACE_H
-#define FASTROMO_ULTRASOUNDINTERFACE_H
+#ifndef ECHOBOT_ULTRASOUNDINTERFACE_H
+#define ECHOBOT_ULTRASOUNDINTERFACE_H
 
 #include "FAST/ProcessObject.hpp"
+#include "FAST/Data/Image.hpp"
+
 #include "RobotInterface.h"
 #include <thread>
 
-namespace fast {
+using namespace fast;
 
-class Image;
 class PixelClassifier;
 
 class UltrasoundInterface : public ProcessObject {
@@ -32,12 +33,10 @@ class UltrasoundInterface : public ProcessObject {
         std::mutex mFrameBufferMutex;
         bool mSegmentationEnabled = true;
 
-        static SharedPointer<PixelClassifier> mPixelClassifier;
+        SharedPointer<PixelClassifier> mPixelClassifier;
         void setupNeuralNetworks();
 
         bool mStop = false;
 };
-
-}
 
 #endif
