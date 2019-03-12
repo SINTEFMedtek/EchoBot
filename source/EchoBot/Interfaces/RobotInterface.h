@@ -20,9 +20,6 @@ class RobotInterface
         ~RobotInterface();
 
         corah::Robot robot;
-
-    signals:
-        void startVisualization();
 };
 
 
