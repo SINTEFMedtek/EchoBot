@@ -22,15 +22,15 @@ RobotVisualizator::RobotVisualizator()
 void RobotVisualizator::setInterface(RobotInterfacePtr robotInterface)
 {
     mRobotInterface = robotInterface;
-    QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotVisualizator::updatePositions, this));
+    QObject::connect(mRobotInterface->robot.get(), &corah::Robot::stateUpdated, std::bind(&RobotVisualizator::updatePositions, this));
 }
 
 void RobotVisualizator::updatePositions()
 {
-    corah::Transform3d rMb = mRobotInterface->robot.get_rMb();
-    corah::Transform3d eeMt = mRobotInterface->robot.get_eeMt();
+    corah::Transform3d rMb = mRobotInterface->robot->get_rMb();
+    corah::Transform3d eeMt = mRobotInterface->robot->get_eeMt();
 
-    corah::RobotState currentState = mRobotInterface->robot.getCurrentState();
+    corah::RobotState currentState = mRobotInterface->robot->getCurrentState();
 
     Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
     offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
