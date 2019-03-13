@@ -127,7 +127,7 @@ void ApplicationGUI::robotDisconnectButtonSlot()
 
 void ApplicationGUI::robotShutdownButtonSlot()
 {
-    mRobotInterface->robot.shutdown();
+    mRobotInterface->robot->shutdown();
 }
 
 void ApplicationGUI::setupRobotManipulatorVisualization()
@@ -158,7 +158,7 @@ void ApplicationGUI::connectToCamera() {
     clearRenderVectors();
     setupCameraVisualization();
 
-    if(mRobotInterface->robot.isConnected())
+    if(mRobotInterface->robot->isConnected())
         setupRobotManipulatorVisualization();
 
     if(mUltrasoundStreaming)
@@ -273,7 +273,7 @@ void ApplicationGUI::restartCamera() {
 
     setupCameraVisualization();
 
-    if(mRobotInterface->robot.isConnected())
+    if(mRobotInterface->robot->isConnected())
         setupRobotManipulatorVisualization();
 
     if(mUltrasoundStreaming)
@@ -296,9 +296,9 @@ void ApplicationGUI::stopStreaming()
 void ApplicationGUI::connectToUltrasound() {
     //usConnectButton->setChecked(0);
 
-    mUltrasoundStreamer = IGTLinkStreamer::New();
+    mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
     //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
-    mUltrasoundStreamer->setConnectionPort(18944);
+    //mUltrasoundStreamer->setConnectionPort(18944);
 
     mUltrasoundInterface = UltrasoundInterface::New();
     mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
@@ -308,7 +308,7 @@ void ApplicationGUI::connectToUltrasound() {
 
     setupUltrasoundVisualization();
 
-    if(mRobotInterface->robot.isConnected())
+    if(mRobotInterface->robot->isConnected())
         setupRobotManipulatorVisualization();
         mUltrasoundInterface->setRobotInterface(mRobotInterface);
 
@@ -328,21 +328,21 @@ void ApplicationGUI::setupUltrasoundVisualization()
         mUltrasoundStreamer->stopPipeline();
         mUltrasoundInterface->stopPipeline();
 
-        mUltrasoundStreamer = IGTLinkStreamer::New();
+        mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
         //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
-        mUltrasoundStreamer->setConnectionPort(18944);
+        //mUltrasoundStreamer->setConnectionPort(18944);
 
         mUltrasoundInterface = UltrasoundInterface::New();
         mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
 
-        if(mRobotInterface->robot.isConnected())
+        if(mRobotInterface->robot->isConnected())
             mUltrasoundInterface->setRobotInterface(mRobotInterface);
     }
 
-    ImageRenderer::pointer usRenderer = ImageRenderer::New();
+    auto usRenderer = ImageRenderer::New();
     usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(0));
 
-    SegmentationRenderer::pointer segmentationRenderer = SegmentationRenderer::New();
+    auto segmentationRenderer = SegmentationRenderer::New();
     segmentationRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(1));
 
     SegmentationVolumeReconstructor::pointer reconstructor = SegmentationVolumeReconstructor::New();
@@ -374,7 +374,7 @@ void ApplicationGUI::calibrateSystem()
     rMb.translate(Eigen::Vector3d(-800,150,950)); // -500, 370, 1000 (y,x,z)
     rMb.linear() = rMb.linear()*m;
 
-    mRobotInterface->robot.set_rMb(rMb);
+    mRobotInterface->robot->set_rMb(rMb);
 
     Eigen::Affine3d eeMt = Eigen::Affine3d::Identity();
 
@@ -386,7 +386,7 @@ void ApplicationGUI::calibrateSystem()
     eeMt.translate(Eigen::Vector3d(-100,0,100));
     eeMt.linear() = eeMt.linear()*rotProbe;
 
-    mRobotInterface->robot.set_eeMt(eeMt);
+    mRobotInterface->robot->set_eeMt(eeMt);
 }
 
 
@@ -492,7 +492,7 @@ void ApplicationGUI::moveToolToManualTarget()
     if(mMovingToTarget)
     {
         moveToolManualButton->setText("Move to target");
-        mRobotInterface->robot.stopMove(corah::MotionType::stopj, 50);
+        mRobotInterface->robot->stopMove(corah::MotionType::stopj, 50);
     }else{
         Mesh::pointer targetCloud = mCameraInterface->getTargetCloud();
         MeshAccess::pointer targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
@@ -503,9 +503,9 @@ void ApplicationGUI::moveToolToManualTarget()
         Eigen::Affine3d rMtarget = Eigen::Affine3d::Identity();
         rMtarget.translation() = pointCloudCentroid.cast<double>();
 
-        Eigen::Affine3d new_bMee = mRobotInterface->robot.get_rMb().inverse()*rMtarget*mRobotInterface->robot.get_eeMt().inverse();
+        Eigen::Affine3d new_bMee = mRobotInterface->robot->get_rMb().inverse()*rMtarget*mRobotInterface->robot->get_eeMt().inverse();
 
-        mRobotInterface->robot.move(corah::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->robot->move(corah::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
     }
     mMovingToTarget = !mMovingToTarget;
@@ -516,7 +516,7 @@ void ApplicationGUI::moveToolToRegisteredTarget()
     if(mMovingToTarget)
     {
         moveToolRegisteredButton->setText("Move to registered target");
-        mRobotInterface->robot.stopMove(corah::MotionType::stopj, 50);
+        mRobotInterface->robot->stopMove(corah::MotionType::stopj, 50);
     }else{
         Eigen::Affine3f rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
         Eigen::Affine3d dataMtarget;
@@ -532,11 +532,11 @@ void ApplicationGUI::moveToolToRegisteredTarget()
 
 
         Eigen::Affine3d rMtarget = rMdata.cast<double>()*dataMtarget;
-        Eigen::Affine3d new_bMee = mRobotInterface->robot.get_rMb().inverse()*rMtarget*mRobotInterface->robot.get_eeMt().inverse();
+        Eigen::Affine3d new_bMee = mRobotInterface->robot->get_rMb().inverse()*rMtarget*mRobotInterface->robot->get_eeMt().inverse();
 
         std::cout << new_bMee.matrix() << std::endl;
 
-        mRobotInterface->robot.move(corah::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->robot->move(corah::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
 
     }
@@ -642,7 +642,7 @@ void ApplicationGUI::playRecording() {
         clearRenderVectors();
 
         setupCameraVisualization();
-        if(mRobotInterface->robot.isConnected())
+        if(mRobotInterface->robot->isConnected())
             setupRobotManipulatorVisualization();
 
         updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
@@ -669,7 +669,7 @@ void ApplicationGUI::extractPointCloud() {
 
     setupCameraVisualization();
 
-    if(mRobotInterface->robot.isConnected())
+    if(mRobotInterface->robot->isConnected())
         setupRobotManipulatorVisualization();
 
     if(mUltrasoundStreaming)
@@ -1062,7 +1062,7 @@ void ApplicationGUI::loadPreoperativeData() {
             if(mUltrasoundStreaming)
                 setupUltrasoundVisualization();
 
-            if(mRobotInterface->robot.isConnected())
+            if(mRobotInterface->robot->isConnected())
                 setupRobotManipulatorVisualization();
 
             if(mCameraStreaming || mCameraPlayback)
