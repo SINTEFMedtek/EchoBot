@@ -7,6 +7,7 @@
 #include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Streamers/MeshFileStreamer.hpp"
 #include "FAST/Streamers/IGTLinkStreamer.hpp"
+#include "FAST/Streamers/ClariusStreamer.hpp"
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 #include "FAST/Visualization/LineRenderer/LineRenderer.hpp"
 
@@ -47,7 +48,7 @@ private:
     SharedPointer<RealSenseStreamer> mCameraStreamer;
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
-    SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+    SharedPointer<ClariusStreamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
 
     RobotVisualizator *mRobotVisualizator;
     RobotManualMoveLayout* mMoveLayout;
