@@ -19,7 +19,7 @@ class RobotInterface
         RobotInterface();
         ~RobotInterface();
 
-        corah::Robot robot;
+        std::shared_ptr<corah::Robot> robot;
 };
 
 

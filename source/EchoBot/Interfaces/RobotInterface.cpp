@@ -5,7 +5,7 @@
 #include "RobotInterface.h"
 
 RobotInterface::RobotInterface() {
-
+    robot = std::shared_ptr<corah::Robot>(new corah::Robot);
 }
 
 RobotInterface::~RobotInterface() {
