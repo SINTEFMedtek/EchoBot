@@ -4,6 +4,7 @@
 
 #include <QLabel>
 #include <QGridLayout>
+#include <QApplication>
 
 #include "ConnectionWidget.h"
 
@@ -41,18 +42,19 @@ void ConnectionWidget::setupConnections()
 
     connect(mUSConnectButton, &QPushButton::clicked, this, &ConnectionWidget::usConnectSlot);
     connect(mUSDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::usDisconnectSlot);
+    connect(mUSStreamerOptionCBox, &QComboBox::currentTextChanged, this, &ConnectionWidget::usStreamerChangedSlot);
 }
 
 void ConnectionWidget::robotConnectSlot()
 {
-    mRobotInterface->robot.configure(corah::Manipulator::UR5, mRobotIPLineEdit->text(),30003);
-    mRobotInterface->robot.start();
+    mRobotInterface->robot->configure(corah::Manipulator::UR5, mRobotIPLineEdit->text(),30003);
+    mRobotInterface->robot->start();
 
-    if(mRobotInterface->robot.isConnected() && !mRobotConnectButton->isChecked())
+    if(mRobotInterface->robot->isConnected() && !mRobotConnectButton->isChecked())
     {
         mRobotConnectButton->toggle();
     }
-    else if(!mRobotInterface->robot.isConnected() && mRobotConnectButton->isChecked())
+    else if(!mRobotInterface->robot->isConnected() && mRobotConnectButton->isChecked())
     {
         mRobotConnectButton->toggle();
     }
@@ -61,9 +63,9 @@ void ConnectionWidget::robotConnectSlot()
 
 void ConnectionWidget::robotDisconnectSlot()
 {
-    mRobotInterface->robot.disconnectFromRobot();
+    mRobotInterface->robot->disconnectFromRobot();
 
-    if(!mRobotInterface->robot.isConnected() && mRobotConnectButton->isChecked())
+    if(!mRobotInterface->robot->isConnected() && mRobotConnectButton->isChecked())
         mRobotConnectButton->toggle();
 
     emit(this->robotDisconnected());
@@ -71,7 +73,7 @@ void ConnectionWidget::robotDisconnectSlot()
 
 void ConnectionWidget::robotShutdownSlot()
 {
-    mRobotInterface->robot.shutdown();
+    mRobotInterface->robot->shutdown();
     emit(this->robotShutdown());
 }
 
@@ -87,6 +89,7 @@ void ConnectionWidget::cameraDisconnectSlot()
 
 void ConnectionWidget::usConnectSlot()
 {
+    std::cout << mUSStreamerOptionCBox->currentText().toStdString() << std::endl;
     emit(this->usConnected());
 }
 
@@ -95,6 +98,10 @@ void ConnectionWidget::usDisconnectSlot()
     emit(this->usDisconnected());
 }
 
+void ConnectionWidget::usStreamerChangedSlot(const QString streamerName)
+{
+    // TODO: Remove IPLineEdit if Clarius etc
+}
 
 QWidget* ConnectionWidget::getRobotConnectionWidget()
 {
@@ -140,9 +147,21 @@ QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
     int row = 0;
     mUsIPLineEdit = new QLineEdit();
     mUSConnectButton = new QPushButton();
+    mUSStreamerOptionCBox = new QComboBox();
+
+    mainLayout->addWidget(new QLabel("Streamer: "), row, 0, 1, 1);
+    mainLayout->addWidget(mUSStreamerOptionCBox,row,1,1,1);
+    mainLayout->addWidget(mUSConnectButton,row,2,1,1);
+
+    row++;
     mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
     mainLayout->addWidget(mUsIPLineEdit, row, 1,1,1);
-    mainLayout->addWidget(mUSConnectButton,row,2,1,1);
+
+    mUSStreamerOptionCBox->setEditable(true);
+    mUSStreamerOptionCBox->lineEdit()->setReadOnly(true);
+    mUSStreamerOptionCBox->lineEdit()->setAlignment(Qt::AlignCenter);
+    mUSStreamerOptionCBox->addItem(tr("IGTLink"));
+    mUSStreamerOptionCBox->addItem(tr("Clarius"));
 
     mUsIPLineEdit->setText("192.168.140.116"); // 10.218.140.114
     mUsIPLineEdit->setAlignment(Qt::AlignCenter);

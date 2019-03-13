@@ -4,6 +4,7 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QComboBox>
 
 #include "EchoBot/Interfaces/RobotInterface.h"
 #include "EchoBot/Interfaces/UltrasoundInterface.hpp"
@@ -33,6 +34,7 @@ class ConnectionWidget : public QTabWidget
         void cameraDisconnectSlot();
         void usConnectSlot();
         void usDisconnectSlot();
+        void usStreamerChangedSlot(const QString streamerOption);
 
     private:
         void setupWidget();
@@ -48,6 +50,7 @@ class ConnectionWidget : public QTabWidget
         QPushButton *mRobotConnectButton, *mRobotDisconnectButton, *mRobotShutdownButton;
         QPushButton *mCameraConnectButton, *mCameraDisconnectButton;
         QPushButton *mUSConnectButton, *mUSDisconnectButton;
+        QComboBox *mUSStreamerOptionCBox;
         QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
 
         QString mGraphicsFolderName;
