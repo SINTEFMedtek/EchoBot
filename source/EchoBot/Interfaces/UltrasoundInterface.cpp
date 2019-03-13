@@ -29,30 +29,32 @@ UltrasoundInterface::~UltrasoundInterface() {
 void UltrasoundInterface::execute() {
     fast::Image::pointer input = getInputData<fast::Image>();
 
-    ImageCropper::pointer cropper = ImageCropper::New();
-    cropper->setInputData(input);
-    cropper->setOffset(Vector3i(50, 75, 0));
-    cropper->setSize(Vector3i(580, 470, 1));
-
-    auto cropPort = cropper->getOutputPort();
-    cropper->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
-
-    mCurrentImage = cropPort->getNextFrame<fast::Image>();
-    mCurrentImage->setSpacing(Vector3f(0.435, 0.435, 1)); // Bug hack spacing (spacing*10/2
-
-    if (mRobotInterface->robot.isConnected())
-        transformImageToProbeCenter();
-
-    Image::pointer segmentation;
-    if (mSegmentationEnabled) {
+//    ImageCropper::pointer cropper = ImageCropper::New();
+//    cropper->setInputData(input);
+//    cropper->setOffset(Vector3i(50, 75, 0));
+//    cropper->setSize(Vector3i(580, 470, 1));
+//
+//    auto cropPort = cropper->getOutputPort();
+//    cropper->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
+//
+//    mCurrentImage = cropPort->getNextFrame<fast::Image>();
+//    mCurrentImage->setSpacing(Vector3f(0.435, 0.435, 1)); // Bug hack spacing (spacing*10/2
+//
+//    if (mRobotInterface->robot.isConnected())
+//        transformImageToProbeCenter();
+//
+//    Image::pointer segmentation;
+//    if (mSegmentationEnabled) {
 //        mPixelClassifier->setInputData(mCurrentImage);
 //        DataPort::pointer port = mPixelClassifier->getOutputPort(0);
 //        mPixelClassifier->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
 //        segmentation = port->getNextFrame<Image>();
 //        segmentation = mCurrentImage;
-    } else {
-        segmentation = mCurrentImage;
-    }
+//    } else {
+//        segmentation = mCurrentImage;
+//    }
+    auto segmentation = input;
+    mCurrentImage = input;
 
     addOutputData(0, mCurrentImage);
     addOutputData(1, segmentation);
@@ -76,9 +78,9 @@ void UltrasoundInterface::transformImageToProbeCenter() {
     offset.translate(translation);
     offset.linear() = offset.linear() * m;
 
-    Eigen::Affine3d rMb = mRobotInterface->robot.get_rMb();
-    Eigen::Affine3d eeMt = mRobotInterface->robot.get_eeMt();
-    Eigen::Affine3d bMee = mRobotInterface->robot.getCurrentState().getTransformToJoint(6);
+    Eigen::Affine3d rMb = mRobotInterface->robot->get_rMb();
+    Eigen::Affine3d eeMt = mRobotInterface->robot->get_eeMt();
+    Eigen::Affine3d bMee = mRobotInterface->robot->getCurrentState().getTransformToJoint(6);
     Eigen::Affine3d transform = rMb * bMee * eeMt * offset;
 
     AffineTransformation::pointer T = AffineTransformation::New();
