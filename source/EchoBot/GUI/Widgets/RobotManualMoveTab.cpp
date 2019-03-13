@@ -16,7 +16,7 @@ RobotManualMoveLayout::RobotManualMoveLayout(RobotInterfacePtr robotInterface) :
     this->connectJointButtons();
 
     this->updatePositions();
-    QObject::connect(&mRobotInterface->robot, &corah::Robot::stateUpdated, std::bind(&RobotManualMoveLayout::updatePositions, this));
+    QObject::connect(mRobotInterface->robot.get(), &corah::Robot::stateUpdated, std::bind(&RobotManualMoveLayout::updatePositions, this));
 }
 
 RobotManualMoveLayout::~RobotManualMoveLayout()
@@ -371,18 +371,18 @@ void RobotManualMoveLayout::setMaximumWidth(int width, QButtonGroup *buttons)
 
 void RobotManualMoveLayout::updatePositions()
 {
-    xPosLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(0),'f',2));
-    yPosLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(1),'f',2));
-    zPosLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(2),'f',2));
-    rxLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(3),'f',4));
-    ryLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(4),'f',4));
-    rzLineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().operationalConfiguration(5),'f',4));
-    q1LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(0),'f',4));
-    q2LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(1),'f',4));
-    q3LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(2),'f',4));
-    q4LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(3),'f',4));
-    q5LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(4),'f',4));
-    q6LineEdit->setText(QString::number(mRobotInterface->robot.getCurrentState().jointConfiguration(5),'f',4));
+    xPosLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(0),'f',2));
+    yPosLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(1),'f',2));
+    zPosLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(2),'f',2));
+    rxLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(3),'f',4));
+    ryLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(4),'f',4));
+    rzLineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().operationalConfiguration(5),'f',4));
+    q1LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(0),'f',4));
+    q2LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(1),'f',4));
+    q3LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(2),'f',4));
+    q4LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(3),'f',4));
+    q5LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(4),'f',4));
+    q6LineEdit->setText(QString::number(mRobotInterface->robot->getCurrentState().jointConfiguration(5),'f',4));
 }
 
 
@@ -521,7 +521,7 @@ void RobotManualMoveLayout::coordButtonPressed(int axis, int sign)
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
     operationalVelocity(axis) = (sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot.move(corah::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->robot->move(corah::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveLayout::jointButtonPressed(int joint,int sign)
@@ -529,7 +529,7 @@ void RobotManualMoveLayout::jointButtonPressed(int joint,int sign)
     Eigen::RowVectorXd jointVelocity(6);
     jointVelocity << 0,0,0,0,0,0;
     jointVelocity(joint)=(sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot.move(corah::MotionType::speedj,jointVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->robot->move(corah::MotionType::speedj,jointVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveLayout::rotButtonPressed(int angle, int sign)
@@ -537,7 +537,7 @@ void RobotManualMoveLayout::rotButtonPressed(int angle, int sign)
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
     operationalVelocity(angle+3)=(sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot.move(corah::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->robot->move(corah::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveLayout::posZButtonPressed()
@@ -602,10 +602,10 @@ void RobotManualMoveLayout::negRZButtonPressed()
 
 void RobotManualMoveLayout::moveButtonReleased()
 {
-    mRobotInterface->robot.stopMove(corah::MotionType::stopl, accelerationLineEdit->text().toDouble());
+    mRobotInterface->robot->stopMove(corah::MotionType::stopl, accelerationLineEdit->text().toDouble());
 }
 
 void RobotManualMoveLayout::jointButtonReleased()
 {
-    mRobotInterface->robot.stopMove(corah::MotionType::stopj, accelerationLineEdit->text().toDouble());
+    mRobotInterface->robot->stopMove(corah::MotionType::stopj, accelerationLineEdit->text().toDouble());
 }
