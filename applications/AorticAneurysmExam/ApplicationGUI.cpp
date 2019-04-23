@@ -54,6 +54,8 @@ ApplicationGUI::ApplicationGUI() :
     mGraphicsFolderName("AorticAneurysmExam/widgets/icons/")
 {
     mRobotInterface = RobotInterfacePtr(new RobotInterface);
+    mCameraInterface = CameraInterface::New();
+
     mRobotVisualizator = new RobotVisualizator();
     mRobotVisualizator->setInterface(mRobotInterface);
 
@@ -83,6 +85,10 @@ void ApplicationGUI::setupConnections()
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraConnected, std::bind(&ApplicationGUI::connectToCamera, this));
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraDisconnected, std::bind(&ApplicationGUI::disconnectFromCamera, this));
 
+    connect(mRecordWidget, &RecordWidget::playbackStarted, this, &ApplicationGUI::playbackButtonSlot);
+    connect(mRecordWidget, &RecordWidget::playbackStopped, this, &ApplicationGUI::stopPlaybackButtonSlot);
+
+    //QObject::connect(mRecordWidget, &RecordWidget::playbackStarted, std::bind(&ApplicationGUI::playbackButtonSlot, this));
 //    QObject::connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
 //    QObject::connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
 //    QObject::connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
@@ -152,7 +158,7 @@ void ApplicationGUI::connectToCamera() {
     //mCameraStreamer->setPointCloudFiltering(true);
 
     // Tracking
-    mCameraInterface = CameraInterface::New();
+    //mCameraInterface = CameraInterface::New();
 
     stopComputationThread();
     clearRenderVectors();
@@ -172,10 +178,39 @@ void ApplicationGUI::connectToCamera() {
     startComputationThread();
 }
 
-void ApplicationGUI::setupCameraVisualization() {
+void ApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
+{
+    //mCameraInterface = CameraInterface::New();
+    mCameraInterface->setInputConnection(0, streamers[0]->getOutputPort());
+    mCameraInterface->setInputConnection(1, streamers[1]->getOutputPort());
 
-    if(mCameraPlayback){
+    mCameraPlaybackStreamers = streamers;
+
+    stopComputationThread();
+    clearRenderVectors();
+
+    setupCameraVisualization(true);
+    if(mRobotInterface->robot->isConnected())
+        setupRobotManipulatorVisualization();
+
+    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+    getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
+
+    startComputationThread();
+}
+
+void ApplicationGUI::stopPlaybackButtonSlot()
+{
+    mCameraPlaybackStreamers[0]->stopPipeline();
+    mCameraPlaybackStreamers[1]->stopPipeline();
+    this->stopStreaming();
+}
+
+void ApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
+
+    if(cameraPlayback){
         for(auto it: mCameraPlaybackStreamers){
+            std::cout << it.first << std::endl;
             mCameraInterface->setInputConnection(it.first, it.second->getOutputPort(0));
         }
     }
@@ -183,6 +218,7 @@ void ApplicationGUI::setupCameraVisualization() {
         mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
         mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
     }
+    std::cout << "Leaves" << std::endl;
 
     // Renderer RGB image
     ImageRenderer::pointer imageRenderer = ImageRenderer::New();
@@ -357,8 +393,8 @@ void ApplicationGUI::setupUltrasoundVisualization()
     mViewUSRenderers.push_back(usRenderer);
     mView3DRenderers.push_back(usRenderer);
 
-    mViewUSRenderers.push_back(segmentationRenderer);
-    mView3DRenderers.push_back(surfaceRenderer);
+    //mViewUSRenderers.push_back(segmentationRenderer);
+    //mView3DRenderers.push_back(surfaceRenderer);
 }
 
 // Calibration
@@ -543,119 +579,6 @@ void ApplicationGUI::moveToolToRegisteredTarget()
     mMovingToTarget = !mMovingToTarget;
 }
 
-
-// Recording
-
-void ApplicationGUI::toggleRecord() {
-    mRecording = !mRecording;
-    if(mRecording) {
-        mRecordButton->setText("Stop recording");
-        mRecordButton->setStyleSheet("QPushButton { background-color: red; color: white; }");
-        mStorageDir->setDisabled(true);
-        mRecordTimer->start();
-
-        // Create recording pathkom
-        std::string path = mStorageDir->text().toUtf8().constData();
-        if(mRecordingNameLineEdit->text() != "") {
-            mRecordingName =  currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
-        } else {
-            mRecordingName = currentDateTime();
-        }
-        std::string recordingPath = (QString(path.c_str()) + QDir::separator() + QString(mRecordingName.c_str()) + QDir::separator()).toUtf8().constData();
-        createDirectories(recordingPath);
-
-        std::cout << "Getting ready to start recording..." << std::endl;
-        // Start saving point clouds
-        mCameraInterface->startRecording(recordingPath);
-
-    } else {
-        mRecordButton->setText("Record");
-        mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-        mStorageDir->setDisabled(false);
-        mCameraInterface->stopRecording();
-        refreshRecordingsList();
-    }
-}
-
-void ApplicationGUI::refreshRecordingsList() {
-    // Get all folders in the folder mStorageDir
-    QDirIterator it(mStorageDir->text());
-    mRecordingsList->clear();
-    while(it.hasNext()) {
-        it.next();
-        QString next = it.fileName();
-        if(next.size() > 4)
-            mRecordingsList->addItem(next);
-    }
-}
-
-void ApplicationGUI::playRecording() {
-    mCameraPlayback = !mCameraPlayback;
-    if(!mCameraPlayback) {
-        mPlayButton->setText("Play");
-        mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-        stopStreaming();
-    } else {
-        auto selectedItems = mRecordingsList->selectedItems();
-        if(selectedItems.size() == 0) {
-            // Show error message
-            QMessageBox *message = new QMessageBox;
-            message->setWindowTitle("Error");
-            message->setText("You did not select a recording.");
-            message->show();
-            return;
-        }
-
-        if(mCameraStreaming)
-            mCameraStreamer->stop();
-
-        std::string selectedRecording = (
-                mStorageDir->text() +
-                QDir::separator() +
-                selectedItems[0]->text() +
-                QDir::separator()
-        ).toUtf8().constData();
-
-        std::string selectedRecordingPointClouds = selectedRecording + "/PointClouds/";
-        std::string selectedRecordingImages = selectedRecording + "/CameraImages/";
-
-        // Set up streaming from disk
-        MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
-        meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
-        meshStreamer->enableLooping();
-        meshStreamer->update(0);
-
-        ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
-        imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
-        imageStreamer->enableLooping();
-        imageStreamer->setSleepTime(100);
-        imageStreamer->update(0);
-
-        mCameraInterface = CameraInterface::New();
-        mCameraInterface->setInputConnection(0, imageStreamer->getOutputPort());
-        mCameraInterface->setInputConnection(1, meshStreamer->getOutputPort());
-
-        mCameraPlaybackStreamers[0] = imageStreamer;
-        mCameraPlaybackStreamers[1] = meshStreamer;
-
-        stopComputationThread();
-        clearRenderVectors();
-
-        setupCameraVisualization();
-        if(mRobotInterface->robot->isConnected())
-            setupRobotManipulatorVisualization();
-
-        updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
-        getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
-
-        startComputationThread();
-
-        mPlayButton->setText("Stop");
-        mPlayButton->setStyleSheet("QPushButton { background-color: red; color: white; }");
-    }
-}
-
-
 void ApplicationGUI::extractPointCloud() {
     stopComputationThread();
     clearRenderVectors();
@@ -689,8 +612,6 @@ void ApplicationGUI::setupUI()
     View* view3D = createView();
     View* viewUS = createView();
 
-    const int menuWidth = 520;
-
     setTitle("Aortic Aneurysm Exam");
     setWidth(1920);
     setHeight(1080);
@@ -698,15 +619,15 @@ void ApplicationGUI::setupUI()
 
     view3D->set3DMode();
     view3D->setBackgroundColor(Color::White());
-    view3D->setFixedWidth(760);
+    view3D->setFixedWidth(720);
 
     view2D->set2DMode();
     view2D->setBackgroundColor(Color::White());
-    view2D->setFixedWidth(580);
+    view2D->setFixedWidth(540);
 
     viewUS->set2DMode();
     viewUS->setBackgroundColor(Color::White());
-    viewUS->setFixedWidth(580);
+    viewUS->setFixedWidth(540);
 
     QVBoxLayout* menuLayout = new QVBoxLayout;
     menuLayout->setAlignment(Qt::AlignTop);
@@ -736,9 +657,11 @@ void ApplicationGUI::setupUI()
     tabWidget->addTab(mMoveLayout->tabWindow, "Robot manual motion");
     menuLayout->addWidget(tabWidget);
 
-    QWidget *recordingWidget = getRecordingWidget();
-    menuLayout->addWidget(recordingWidget);
+    mRecordWidget = new RecordWidget(mCameraInterface);
+    menuLayout->addWidget(mRecordWidget);
 
+    //QWidget *recordingWidget = getRecordingWidget();
+    //menuLayout->addWidget(recordingWidget);
 
     // Quit button
     QPushButton* quitButton = new QPushButton;
@@ -759,178 +682,6 @@ void ApplicationGUI::setupUI()
 
     layout->addWidget(imageWidget);
     mWidget->setLayout(layout);
-}
-
-//QWidget* ApplicationGUI::getCameraConnectionWidget()
-//{
-//    QWidget *group = new QWidget;
-//
-//    QGridLayout *mainLayout = new QGridLayout();
-//    group->setLayout(mainLayout);
-//
-//    mCameraMinDepthLineEdit = new QLineEdit();
-//    mCameraMaxDepthLineEdit = new QLineEdit();
-//    mCameraMinDepthLineEdit->setText(QString("0"));
-//    mCameraMaxDepthLineEdit->setText(QString("2000"));
-//
-//    mCameraMinWidthLineEdit = new QLineEdit();
-//    mCameraMaxWidthLineEdit = new QLineEdit();
-//    mCameraMinWidthLineEdit->setText(QString("-1000"));
-//    mCameraMaxWidthLineEdit->setText(QString("1000"));
-//
-//    mCameraMinHeightLineEdit = new QLineEdit();
-//    mCameraMaxHeightLineEdit = new QLineEdit();
-//    mCameraMinHeightLineEdit->setText(QString("-1000"));
-//    mCameraMaxHeightLineEdit->setText(QString("1000"));
-//
-//    mainLayout->addWidget(new QLabel("Depth range [mm]: "), 0, 0, 1, 1);
-//    mainLayout->addWidget(mCameraMinDepthLineEdit,0,1,1,1);
-//    mainLayout->addWidget(mCameraMaxDepthLineEdit,0,2,1,1);
-//
-//    mainLayout->addWidget(new QLabel("Width range [mm]: "), 1, 0, 1, 1);
-//    mainLayout->addWidget(mCameraMinWidthLineEdit,1,1,1,1);
-//    mainLayout->addWidget(mCameraMaxWidthLineEdit,1,2,1,1);
-//
-//    mainLayout->addWidget(new QLabel("Height range [mm]: "), 2, 0, 1, 1);
-//    mainLayout->addWidget(mCameraMinHeightLineEdit,2,1,1,1);
-//    mainLayout->addWidget(mCameraMaxHeightLineEdit,2,2,1,1);
-//
-//    cameraConnectButton = new QPushButton();
-//
-//    QIcon icon;
-//    icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
-//    icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-//    cameraConnectButton->setIcon(icon);
-//    cameraConnectButton->setToolTip("Connect to robot");
-//    cameraConnectButton->setText("Connect");
-//    cameraConnectButton->setCheckable(true);
-//    cameraConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
-//
-//    mainLayout->addWidget(cameraConnectButton,0,3,1,1);
-//
-//    cameraDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-//    mainLayout->addWidget(cameraDisconnectButton,2,3,1,1);
-//
-//    return group;
-//}
-//
-//QWidget* ApplicationGUI::getRobotConnectionWidget()
-//{
-//    QWidget *group = new QWidget;
-//    QGridLayout *mainLayout = new QGridLayout();
-//    group->setLayout(mainLayout);
-//
-//    int row = 0;
-//    mRobotIPLineEdit = new QLineEdit();
-//    robotConnectButton = new QPushButton();
-//    mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
-//    mainLayout->addWidget(mRobotIPLineEdit, row, 1,1,1);
-//    mainLayout->addWidget(robotConnectButton,row,2,1,1);
-//
-//    mRobotIPLineEdit->setText("10.218.140.123"); // 10.218.140.114
-//    mRobotIPLineEdit->setAlignment(Qt::AlignCenter);
-//
-//    QIcon icon;
-//    icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
-//    icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-//    robotConnectButton->setIcon(icon);
-//    robotConnectButton->setToolTip("Connect to robot");
-//    robotConnectButton->setText("Connect");
-//    robotConnectButton->setCheckable(true);
-//    robotConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
-//
-//    row++;
-//    robotShutdownButton = new QPushButton(QIcon(mGraphicsFolderName+"application-exit-4.png"),"Shutdown");
-//    robotDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-//    mainLayout->addWidget(robotShutdownButton,row,0,1,1);
-//    mainLayout->addWidget(robotDisconnectButton,row,2,1,1);
-//
-//    return group;
-//}
-//
-//QWidget* ApplicationGUI::getUltrasoundConnectionWidget()
-//{
-//    QWidget *group = new QWidget;
-//
-//    QGridLayout *mainLayout = new QGridLayout();
-//    group->setLayout(mainLayout);
-//
-//    int row = 0;
-//    mUsIPLineEdit = new QLineEdit();
-//    usConnectButton = new QPushButton();
-//    mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
-//    mainLayout->addWidget(mUsIPLineEdit, row, 1,1,1);
-//    mainLayout->addWidget(usConnectButton,row,2,1,1);
-//
-//    mUsIPLineEdit->setText("192.168.140.116"); // 10.218.140.114
-//    mUsIPLineEdit->setAlignment(Qt::AlignCenter);
-//
-//    QIcon icon;
-//    icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
-//    icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-//    usConnectButton->setIcon(icon);
-//    usConnectButton->setToolTip("Connect to US Scanner");
-//    usConnectButton->setText("Connect");
-//    usConnectButton->setCheckable(true);
-//    usConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
-//
-//    row++;
-//    usDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-//    mainLayout->addWidget(usDisconnectButton,row,2,1,1);
-//
-//    return group;
-//}
-
-
-QWidget* ApplicationGUI::getRecordingWidget()
-{
-    QGroupBox* group = new QGroupBox("Record exam");
-    group->setFlat(true);
-
-    QGridLayout *mainLayout = new QGridLayout();
-    group->setLayout(mainLayout);
-
-    mRecordTimer = new QElapsedTimer;
-
-    QLabel* storageDirLabel = new QLabel;
-    storageDirLabel->setText("Storage directory:");
-    mainLayout->addWidget(storageDirLabel, 0, 0, 1, 1);
-
-    mStorageDir = new QLineEdit;
-    mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("FAST_Kinect_Recordings"));
-    mainLayout->addWidget(mStorageDir, 0, 1, 1, 1);
-
-    QLabel* recordingNameLabel = new QLabel;
-    recordingNameLabel->setText("Subject name:");
-    mainLayout->addWidget(recordingNameLabel, 1, 0, 1, 1);
-
-    mRecordingNameLineEdit = new QLineEdit;
-    mainLayout->addWidget(mRecordingNameLineEdit, 1, 1, 1, 1);
-
-    mRecordButton = new QPushButton;
-    mRecordButton->setText("Record");
-    mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-    QObject::connect(mRecordButton, &QPushButton::clicked, std::bind(&ApplicationGUI::toggleRecord, this));
-    mainLayout->addWidget(mRecordButton, 2, 0, 1, 1);
-
-    mPlayButton = new QPushButton;
-    mPlayButton->setText("Play");
-    mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-    mainLayout->addWidget(mPlayButton, 2, 1, 1, 1);
-    QObject::connect(mPlayButton, &QPushButton::clicked, std::bind(&ApplicationGUI::playRecording, this));
-
-    mRecordingInformation = new QLabel;
-    mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
-    mainLayout->addWidget(mRecordingInformation);
-
-    mRecordingsList = new QListWidget;
-    mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
-    mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    mRecordingsList->setFixedHeight(100);
-    mRecordingsList->setSortingEnabled(true);
-    refreshRecordingsList();
-
-    return group;
 }
 
 QWidget* ApplicationGUI::getWorkflowWidget()
@@ -1074,38 +825,5 @@ void ApplicationGUI::loadPreoperativeData() {
     }
 }
 
-LineRenderer::pointer ApplicationGUI::createCoordinateFrameRenderer(Eigen::Affine3f transform)
-{
-    Mesh::pointer mesh = Mesh::New();
-
-//    std::vector<MeshVertex> vertices = {
-//            MeshVertex(transform.translation()),
-//            MeshVertex(transform.linear().col(0)*100),
-//            MeshVertex(transform.linear().col(1)*100),
-//            MeshVertex(transform.linear().col(2)*100),
-//    };
-
-    std::vector<MeshVertex> vertices = {
-            MeshVertex(Vector3f(0, 0, 0)),
-            MeshVertex(Vector3f(500, 0, 0)),
-            MeshVertex(Vector3f(0, 500, 0)),
-            MeshVertex(Vector3f(0, 0, 500)),
-    };
-
-
-    std::vector<MeshLine> lines = {
-            MeshLine(0, 1),
-            MeshLine(0, 2),
-            MeshLine(0, 3),
-    };
-    mesh->create(vertices, lines);
-
-    LineRenderer::pointer lineRenderer = LineRenderer::New();
-    lineRenderer->addInputData(mesh);
-    lineRenderer->setDefaultLineWidth(100);
-    lineRenderer->setColor(0, Color::Red());
-
-    return lineRenderer;
-}
 
 }

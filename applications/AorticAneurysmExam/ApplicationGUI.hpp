@@ -18,6 +18,7 @@
 
 #include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
+#include "EchoBot/GUI/Widgets/RecordWidget.h"
 
 class QPushButton;
 class QLabel;
@@ -37,6 +38,8 @@ private slots:
     void robotConnectButtonSlot();
     void robotDisconnectButtonSlot();
     void robotShutdownButtonSlot();
+    void playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers);
+    void stopPlaybackButtonSlot();
 
 private:
     ApplicationGUI();
@@ -53,6 +56,7 @@ private:
     RobotVisualizator *mRobotVisualizator;
     RobotManualMoveLayout* mMoveLayout;
     ConnectionWidget* mConnectionWidget;
+    RecordWidget* mRecordWidget;
 
     void connectToCamera();
     void disconnectFromCamera();
@@ -63,44 +67,27 @@ private:
     void setupUI();
 
     QString mGraphicsFolderName;
-    //QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
-    //QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
-    //QPushButton *robotConnectButton, *robotDisconnectButton, *robotShutdownButton;
-    //QPushButton *cameraConnectButton, *cameraDisconnectButton;
-    //QPushButton *usConnectButton, *usDisconnectButton;
     QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolManualButton, *moveToolRegisteredButton;
     QTabWidget *tabWidget;
 
-    QPushButton *mRecordButton, *mPlayButton;
-    QLineEdit* mStorageDir, *mRecordingNameLineEdit;
-    QLabel* mRecordingInformation;
-    QElapsedTimer* mRecordTimer;
-    QListWidget* mRecordingsList;
-    std::string mRecordingName;
-
-    void playRecording();
     void extractPointCloud();
-    bool mRecording = false;
     bool mCameraPlayback = false;
     bool mCameraStreaming = false;
     bool mUltrasoundStreaming = false;
     bool mTargetRegistered = false;
     bool mMovingToTarget = false;
 
-    QWidget* getRecordingWidget();
     QWidget* getWorkflowWidget();
 
     void restartCamera();
 
     void setupRobotManipulatorVisualization();
-    void setupCameraVisualization();
+    void setupCameraVisualization(bool cameraPlayback = false);
     void setupUltrasoundVisualization();
 
     void setupConnections();
 
     void updateCameraROI();
-    void refreshRecordingsList();
-    void toggleRecord();
 
     void calibrateSystem();
     void registerTarget();
@@ -120,9 +107,6 @@ private:
 
     void loadPreoperativeData();
     Mesh::pointer mPreoperativeData;
-
-
-    static LineRenderer::pointer createCoordinateFrameRenderer(Eigen::Affine3f transform);
 };
 
 }
