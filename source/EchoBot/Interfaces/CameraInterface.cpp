@@ -7,6 +7,7 @@
 #include <FAST/Exporters/MetaImageExporter.hpp>
 #include <FAST/Streamers/RealSenseStreamer.hpp>
 #include <QDir>
+#include <random>
 
 namespace fast {
 
