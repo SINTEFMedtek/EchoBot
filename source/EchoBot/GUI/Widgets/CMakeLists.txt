@@ -3,4 +3,6 @@ project_add_sources(
         RobotManualMoveTab.h
         ConnectionWidget.cpp
         ConnectionWidget.h
+        RecordWidget.cpp
+        RecordWidget.h
 )
