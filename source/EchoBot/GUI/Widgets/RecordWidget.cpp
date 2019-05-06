@@ -35,62 +35,15 @@ void RecordWidget::setupWidget()
 {
     QWidget *recordWidget = getRecordWidget();
     this->addTab(recordWidget, "Record exam");
+
+    QWidget *settingsRecordWidget = getSettingsRecordWidget();
+    this->addTab(settingsRecordWidget, "Settings");
 }
 
 void RecordWidget::setupConnections()
 {
-
-}
-
-QWidget* RecordWidget::getRecordWidget()
-{
-    QGroupBox* group = new QGroupBox("Record exam");
-    group->setFlat(true);
-
-    QGridLayout *mainLayout = new QGridLayout();
-    group->setLayout(mainLayout);
-
-    mRecordTimer = new QElapsedTimer;
-
-    QLabel* storageDirLabel = new QLabel;
-    storageDirLabel->setText("Storage directory:");
-    mainLayout->addWidget(storageDirLabel, 0, 0, 1, 1);
-
-    mStorageDir = new QLineEdit;
-    mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("FAST_Kinect_Recordings"));
-    mainLayout->addWidget(mStorageDir, 0, 1, 1, 1);
-
-    QLabel* recordingNameLabel = new QLabel;
-    recordingNameLabel->setText("Subject name:");
-    mainLayout->addWidget(recordingNameLabel, 1, 0, 1, 1);
-
-    mRecordingNameLineEdit = new QLineEdit;
-    mainLayout->addWidget(mRecordingNameLineEdit, 1, 1, 1, 1);
-
-    mRecordButton = new QPushButton;
-    mRecordButton->setText("Record");
-    mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-    QObject::connect(mRecordButton, &QPushButton::clicked, std::bind(&RecordWidget::toggleRecord, this));
-    mainLayout->addWidget(mRecordButton, 2, 0, 1, 1);
-
-    mPlayButton = new QPushButton;
-    mPlayButton->setText("Play");
-    mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
-    mainLayout->addWidget(mPlayButton, 2, 1, 1, 1);
     QObject::connect(mPlayButton, &QPushButton::clicked, std::bind(&RecordWidget::playRecording, this));
-
-    mRecordingInformation = new QLabel;
-    mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
-    mainLayout->addWidget(mRecordingInformation);
-
-    mRecordingsList = new QListWidget;
-    mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
-    mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    mRecordingsList->setFixedHeight(40);
-    mRecordingsList->setSortingEnabled(true);
-    refreshRecordingsList();
-
-    return group;
+    QObject::connect(mRecordButton, &QPushButton::clicked, std::bind(&RecordWidget::toggleRecord, this));
 }
 
 void RecordWidget::toggleRecord() {
@@ -183,4 +136,61 @@ void RecordWidget::playRecording() {
         mPlayButton->setText("Stop");
         mPlayButton->setStyleSheet("QPushButton { background-color: red; color: white; }");
     }
+}
+
+QWidget* RecordWidget::getRecordWidget()
+{
+    QGroupBox* group = new QGroupBox();
+    group->setFlat(true);
+
+    QGridLayout *mainLayout = new QGridLayout();
+    group->setLayout(mainLayout);
+
+    mRecordTimer = new QElapsedTimer;
+
+    QLabel* storageDirLabel = new QLabel;
+    storageDirLabel->setText("Storage directory:");
+    mainLayout->addWidget(storageDirLabel, 0, 0, 1, 1);
+
+    mStorageDir = new QLineEdit;
+    mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("FAST_Kinect_Recordings"));
+    mainLayout->addWidget(mStorageDir, 0, 1, 1, 1);
+
+    QLabel* recordingNameLabel = new QLabel;
+    recordingNameLabel->setText("Subject name:");
+    mainLayout->addWidget(recordingNameLabel, 1, 0, 1, 1);
+
+    mRecordingNameLineEdit = new QLineEdit;
+    mainLayout->addWidget(mRecordingNameLineEdit, 1, 1, 1, 1);
+
+    mRecordButton = new QPushButton;
+    mRecordButton->setText("Record");
+    mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
+    mainLayout->addWidget(mRecordButton, 2, 0, 1, 1);
+
+    mPlayButton = new QPushButton;
+    mPlayButton->setText("Play");
+    mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
+    mainLayout->addWidget(mPlayButton, 2, 1, 1, 1);
+
+    mRecordingInformation = new QLabel;
+    mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
+    mainLayout->addWidget(mRecordingInformation);
+
+    mRecordingsList = new QListWidget;
+    mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
+    mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    mRecordingsList->setFixedHeight(40);
+    mRecordingsList->setSortingEnabled(true);
+    refreshRecordingsList();
+
+    return group;
+}
+
+QWidget* RecordWidget::getSettingsRecordWidget()
+{
+    QGroupBox* group = new QGroupBox();
+    group->setFlat(true);
+
+    return group;
 }

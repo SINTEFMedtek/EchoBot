@@ -49,6 +49,7 @@ class RecordWidget : public QTabWidget
         std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
         QWidget* getRecordWidget();
+        QWidget* getSettingsRecordWidget();
 
         void refreshRecordingsList();
         void toggleRecord();
