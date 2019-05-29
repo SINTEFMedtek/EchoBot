@@ -43,6 +43,13 @@ void ConnectionWidget::setupConnections()
     connect(mUSConnectButton, &QPushButton::clicked, this, &ConnectionWidget::usConnectSlot);
     connect(mUSDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::usDisconnectSlot);
     connect(mUSStreamerOptionCBox, &QComboBox::currentTextChanged, this, &ConnectionWidget::usStreamerChangedSlot);
+
+    connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+    connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+    connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+    connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+    connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+    connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
 }
 
 void ConnectionWidget::robotConnectSlot()
@@ -84,6 +91,7 @@ void ConnectionWidget::cameraConnectSlot()
 
 void ConnectionWidget::cameraDisconnectSlot()
 {
+    mCameraConnectButton->toggle();
     emit(this->cameraDisconnected());
 }
 
@@ -101,6 +109,12 @@ void ConnectionWidget::usDisconnectSlot()
 void ConnectionWidget::usStreamerChangedSlot(const QString streamerName)
 {
     // TODO: Remove IPLineEdit if Clarius etc
+}
+
+void ConnectionWidget::updateCameraROI(){
+    mCameraInterface->setCameraROI(mCameraMinDepthLineEdit->text().toFloat(), mCameraMaxDepthLineEdit->text().toFloat(),
+                                   mCameraMinWidthLineEdit->text().toFloat(), mCameraMaxWidthLineEdit->text().toFloat(),
+                                   mCameraMinHeightLineEdit->text().toFloat(),mCameraMaxHeightLineEdit->text().toFloat());
 }
 
 QWidget* ConnectionWidget::getRobotConnectionWidget()

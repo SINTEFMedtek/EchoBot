@@ -35,6 +35,7 @@ class ConnectionWidget : public QTabWidget
         void usConnectSlot();
         void usDisconnectSlot();
         void usStreamerChangedSlot(const QString streamerOption);
+        void updateCameraROI();
 
     private:
         void setupWidget();
