@@ -1,8 +1,8 @@
 # EchoBot
 
-** An open-source robotic ultrasound system
+** An open-source robotic ultrasound system **
 
-** Structure
+** Structure **
 EchoBot is written in C++ using CMake, Qt, Eigen, libromocc and FAST.
 
 
