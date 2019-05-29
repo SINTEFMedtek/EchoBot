@@ -12,7 +12,6 @@
 namespace fast {
 
 CameraInterface::CameraInterface() {
-
     createInputPort<Image>(0);
     createInputPort<Mesh>(1);
 
@@ -29,20 +28,28 @@ CameraInterface::CameraInterface() {
     mTargetCloud = Mesh::New();
     mTargetCloud->create(0, 0, 0, false, false, false);
     mTargetCloudExtracted = false;
-
 }
 
 void CameraInterface::restart() {
     stopRecording();
 }
 
-void CameraInterface::startRecording(std::string path) {
+void CameraInterface::startRecording(std::string path, bool recordPointClouds, bool recordImages) {
     mStoragePath = path;
     mFrameCounter = 0;
     mRecording = true;
 
-    createDirectories((mStoragePath + "/PointClouds"));
-    createDirectories((mStoragePath + "/CameraImages"));
+    if(recordPointClouds)
+    {
+        createDirectories((mStoragePath + "/PointClouds"));
+        mStorePointClouds = true;
+    }
+
+    if(recordImages)
+    {
+        createDirectories((mStoragePath + "/CameraImages"));
+        mStoreImages = true;
+    }
 }
 
 void CameraInterface::stopRecording() {
@@ -82,19 +89,26 @@ void CameraInterface::execute() {
     }
 
     if(mRecording) {
-        VTKMeshFileExporter::pointer meshExporter = VTKMeshFileExporter::New();
-        meshExporter->setInputData(meshInput);
-        meshExporter->setWriteNormals(false);
-        meshExporter->setWriteColors(true);
-        meshExporter->setFilename(mStoragePath + "/PointClouds/" + std::to_string(mFrameCounter) + ".vtk");
-        meshExporter->update(0);
+        if(mStorePointClouds)
+        {
+            VTKMeshFileExporter::pointer meshExporter = VTKMeshFileExporter::New();
+            meshExporter->setInputData(meshInput);
+            meshExporter->setWriteNormals(false);
+            meshExporter->setWriteColors(true);
+            meshExporter->setFilename(mStoragePath + "/PointClouds/" + std::to_string(mFrameCounter) + ".vtk");
+            meshExporter->update(0);
+        }
 
-        MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
-        imageExporter->setInputData(input);
-        imageExporter->setFilename(mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
-        imageExporter->update(0);
+        if(mStoreImages)
+        {
+            MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
+            imageExporter->setInputData(input);
+            imageExporter->setFilename(mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
+            imageExporter->update(0);
+        }
 
-        ++mFrameCounter;
+        if(mStoreImages || mStorePointClouds)
+            ++mFrameCounter;
     }
 
     addOutputData(0, mCurrentImage);
@@ -172,6 +186,21 @@ void CameraInterface::removeTargetCloud()
 {
     mTargetCloudExtracted = false;
     mAnnotationImage->fill(0);
+}
+
+void CameraInterface::setCameraStreamer(RealSenseStreamer::pointer streamer)
+{
+    mCameraStreamer = streamer;
+}
+
+void CameraInterface::setCameraROI(float minRange, float maxRange, float minWidth, float maxWidth, float minHeight, float maxHeight)
+{
+    mCameraStreamer->setMinRange(minRange);
+    mCameraStreamer->setMaxRange(maxRange);
+    mCameraStreamer->setMinWidth(minWidth);
+    mCameraStreamer->setMaxWidth(maxWidth);
+    mCameraStreamer->setMinHeight(minHeight);
+    mCameraStreamer->setMaxHeight(maxHeight);
 }
 
 Mesh::pointer CameraInterface::createReducedSample(Mesh::pointer pointCloud, double fractionOfPointsToKeep) {
