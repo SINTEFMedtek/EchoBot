@@ -20,11 +20,14 @@
 #include <QDir>
 #include <QTabWidget>
 #include <QFileDialog>
+#include <QCheckBox>
 
 #include "RecordWidget.h"
 
-RecordWidget::RecordWidget(SharedPointer<CameraInterface> cameraInterface, int widgetWidth) :
+RecordWidget::RecordWidget(SharedPointer<CameraInterface> cameraInterface, SharedPointer<UltrasoundInterface> usInterface,
+                            int widgetWidth) :
     mCameraInterface(cameraInterface),
+    mUltrasoundInterface(usInterface),
     mWidgetWidth(widgetWidth)
 {
     setupWidget();
@@ -66,7 +69,10 @@ void RecordWidget::toggleRecord() {
 
         std::cout << "Getting ready to start recording..." << std::endl;
         // Start saving point clouds
-        mCameraInterface->startRecording(recordingPath);
+        mCameraInterface->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
+
+        if(mUltrasoundDumpCheckBox->isChecked())
+            mUltrasoundInterface->startRecording(recordingPath);
 
     } else {
         mRecordButton->setText("Record");
@@ -191,6 +197,25 @@ QWidget* RecordWidget::getSettingsRecordWidget()
 {
     QGroupBox* group = new QGroupBox();
     group->setFlat(true);
+
+    QGridLayout *mainLayout = new QGridLayout();
+    group->setLayout(mainLayout);
+
+    mImageDumpCheckBox = new QCheckBox("Camera Images");
+    mImageDumpCheckBox->setLayoutDirection(Qt::RightToLeft);
+    mImageDumpCheckBox->setChecked(true);
+
+    mPointCloudDumpCheckBox = new QCheckBox("Camera point clouds");
+    mPointCloudDumpCheckBox->setLayoutDirection(Qt::RightToLeft);
+    mPointCloudDumpCheckBox->setChecked(true);
+
+    mUltrasoundDumpCheckBox = new QCheckBox("Ultrasound images");
+    mUltrasoundDumpCheckBox->setLayoutDirection(Qt::RightToLeft);
+    mUltrasoundDumpCheckBox->setChecked(true);
+
+    mainLayout->addWidget(mImageDumpCheckBox, 0, 0, 1, 1);
+    mainLayout->addWidget(mPointCloudDumpCheckBox, 1, 0, 1, 1);
+    mainLayout->addWidget(mUltrasoundDumpCheckBox, 2, 0, 1, 1);
 
     return group;
 }

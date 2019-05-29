@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QComboBox>
+#include <QCheckBox>
 
 #include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Streamers/MeshFileStreamer.hpp"
@@ -24,7 +25,8 @@ class RecordWidget : public QTabWidget
     Q_OBJECT
 
     public:
-        RecordWidget(SharedPointer<CameraInterface> cameraInterface, int widgetWidth=540);
+        RecordWidget(SharedPointer<CameraInterface> cameraInterface, SharedPointer<UltrasoundInterface> usInterface,
+                    int widgetWidth=540);
 
     signals:
         void recordingStarted();
@@ -39,12 +41,15 @@ class RecordWidget : public QTabWidget
 
         SharedPointer<RobotInterface> mRobotInterface;
         SharedPointer<CameraInterface> mCameraInterface;
+        SharedPointer<UltrasoundInterface> mUltrasoundInterface;
 
         QPushButton *mRecordButton, *mPlayButton;
         QLineEdit* mStorageDir, *mRecordingNameLineEdit;
         QLabel* mRecordingInformation;
         QElapsedTimer* mRecordTimer;
         QListWidget* mRecordingsList;
+        QCheckBox *mImageDumpCheckBox, *mPointCloudDumpCheckBox, *mUltrasoundDumpCheckBox;
+
         std::string mRecordingName;
         std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
