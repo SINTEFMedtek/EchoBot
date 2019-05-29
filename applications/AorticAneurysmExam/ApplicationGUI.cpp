@@ -55,6 +55,8 @@ ApplicationGUI::ApplicationGUI() :
 {
     mRobotInterface = RobotInterfacePtr(new RobotInterface);
     mCameraInterface = CameraInterface::New();
+    mUltrasoundInterface = UltrasoundInterface::New();
+
 
     mRobotVisualizator = new RobotVisualizator();
     mRobotVisualizator->setInterface(mRobotInterface);
@@ -84,18 +86,6 @@ void ApplicationGUI::setupConnections()
 
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraConnected, std::bind(&ApplicationGUI::connectToCamera, this));
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraDisconnected, std::bind(&ApplicationGUI::disconnectFromCamera, this));
-
-    connect(mRecordWidget, &RecordWidget::playbackStarted, this, &ApplicationGUI::playbackButtonSlot);
-    connect(mRecordWidget, &RecordWidget::playbackStopped, this, &ApplicationGUI::stopPlaybackButtonSlot);
-
-    //QObject::connect(mRecordWidget, &RecordWidget::playbackStarted, std::bind(&ApplicationGUI::playbackButtonSlot, this));
-//    QObject::connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//    QObject::connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//    QObject::connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//    QObject::connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//    QObject::connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//    QObject::connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, std::bind(&ApplicationGUI::updateCameraROI, this));
-//
     QObject::connect(mConnectionWidget, &ConnectionWidget::usConnected, std::bind(&ApplicationGUI::connectToUltrasound, this));
 
     QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
@@ -103,6 +93,9 @@ void ApplicationGUI::setupConnections()
     QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
     QObject::connect(moveToolManualButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToManualTarget, this));
     QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
+
+    connect(mRecordWidget, &RecordWidget::playbackStarted, this, &ApplicationGUI::playbackButtonSlot);
+    connect(mRecordWidget, &RecordWidget::playbackStopped, this, &ApplicationGUI::stopPlaybackButtonSlot);
 }
 
 
@@ -153,14 +146,16 @@ void ApplicationGUI::clearRenderVectors()
 
 void ApplicationGUI::connectToCamera() {
     //cameraConnectButton->setChecked(0);
-    mCameraStreamer = RealSenseStreamer::New();
-    mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
     //mCameraStreamer->setPointCloudFiltering(true);
 
-    // Tracking
-    //mCameraInterface = CameraInterface::New();
+    mCameraStreamer = RealSenseStreamer::New();
+    mCameraInterface->setCameraStreamer(mCameraStreamer);
+    //mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
+    //std::cout << mCameraStreamer << std::endl;
 
+    // Tracking
     stopComputationThread();
+
     clearRenderVectors();
     setupCameraVisualization();
 
@@ -174,8 +169,8 @@ void ApplicationGUI::connectToCamera() {
     getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
 
     mCameraStreaming = true;
-
     startComputationThread();
+    std::cout << mCameraStreamer << std::endl;
 }
 
 void ApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
@@ -218,7 +213,6 @@ void ApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
         mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
         mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
     }
-    std::cout << "Leaves" << std::endl;
 
     // Renderer RGB image
     ImageRenderer::pointer imageRenderer = ImageRenderer::New();
@@ -293,14 +287,14 @@ void ApplicationGUI::disconnectFromCamera() {
     startComputationThread();
 }
 
-void ApplicationGUI::updateCameraROI(){
-    //mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
-    //mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
-    //mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
-    //mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
-    //mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
-    //mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
-}
+//void ApplicationGUI::updateCameraROI(){
+//    mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
+//    mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
+//    mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
+//    mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
+//    mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
+//    mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
+//}
 
 void ApplicationGUI::restartCamera() {
 
@@ -336,7 +330,7 @@ void ApplicationGUI::connectToUltrasound() {
     //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
     //mUltrasoundStreamer->setConnectionPort(18944);
 
-    mUltrasoundInterface = UltrasoundInterface::New();
+    //mUltrasoundInterface = UltrasoundInterface::New();
     mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
 
     stopComputationThread();
@@ -368,7 +362,6 @@ void ApplicationGUI::setupUltrasoundVisualization()
         //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
         //mUltrasoundStreamer->setConnectionPort(18944);
 
-        mUltrasoundInterface = UltrasoundInterface::New();
         mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
 
         if(mRobotInterface->robot->isConnected())
@@ -424,7 +417,6 @@ void ApplicationGUI::calibrateSystem()
 
     mRobotInterface->robot->set_eeMt(eeMt);
 }
-
 
 // Registration
 void ApplicationGUI::registerTarget()
@@ -603,7 +595,6 @@ void ApplicationGUI::extractPointCloud() {
     startComputationThread();
 }
 
-
 // UI Setup
 
 void ApplicationGUI::setupUI()
@@ -637,15 +628,6 @@ void ApplicationGUI::setupUI()
     title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Aortic Aneurysm Exam</div>");
     menuLayout->addWidget(title);
 
-//    QTabWidget *connectionsTabWidget = new QTabWidget;
-//    QWidget *robotConnectionWidget = getRobotConnectionWidget();
-//    QWidget *cameraConnectionWidget = getCameraConnectionWidget();
-//    QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
-//
-//    connectionsTabWidget->addTab(robotConnectionWidget, "Robot");
-//    connectionsTabWidget->addTab(cameraConnectionWidget, "Camera");
-//    connectionsTabWidget->addTab(usConnectionWidget, "Ultrasound");
-//    connectionsTabWidget->setFixedWidth(menuWidth);
     mConnectionWidget = new ConnectionWidget(mRobotInterface);
     menuLayout->addWidget(mConnectionWidget);
 
@@ -657,11 +639,8 @@ void ApplicationGUI::setupUI()
     tabWidget->addTab(mMoveLayout->tabWindow, "Robot manual motion");
     menuLayout->addWidget(tabWidget);
 
-    mRecordWidget = new RecordWidget(mCameraInterface);
+    mRecordWidget = new RecordWidget(mCameraInterface, mUltrasoundInterface);
     menuLayout->addWidget(mRecordWidget);
-
-    //QWidget *recordingWidget = getRecordingWidget();
-    //menuLayout->addWidget(recordingWidget);
 
     // Quit button
     QPushButton* quitButton = new QPushButton;
