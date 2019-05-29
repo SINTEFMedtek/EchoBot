@@ -3,6 +3,7 @@
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 #include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
+#include <FAST/Exporters/MetaImageExporter.hpp>
 
 using namespace fast;
 
@@ -56,6 +57,16 @@ void UltrasoundInterface::execute() {
     auto segmentation = input;
     mCurrentImage = input;
 
+    if(mRecording)
+    {
+        MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
+        imageExporter->setInputData(input);
+        imageExporter->setFilename(mStoragePath + "/Ultrasound/" + "US-2D_" + std::to_string(mFrameCounter) + ".mhd");
+        imageExporter->update(0);
+
+        ++mFrameCounter;
+    }
+
     addOutputData(0, mCurrentImage);
     addOutputData(1, segmentation);
 }
@@ -96,6 +107,14 @@ void UltrasoundInterface::segmentationThread() {
                 break;
         }
     }
+}
+
+void UltrasoundInterface::startRecording(std::string path) {
+    mStoragePath = path;
+    mFrameCounter = 0;
+    mRecording = true;
+
+    createDirectories((mStoragePath + "/Ultrasound"));
 }
 
 void UltrasoundInterface::setupNeuralNetworks() {

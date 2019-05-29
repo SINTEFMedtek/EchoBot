@@ -18,8 +18,11 @@ class UltrasoundInterface : public ProcessObject {
         void setRobotInterface(RobotInterfacePtr robotInterface);
         ~UltrasoundInterface();
 
+        void startRecording(std::string path);
+
     private:
         UltrasoundInterface();
+
 
         void execute();
 
@@ -37,6 +40,9 @@ class UltrasoundInterface : public ProcessObject {
         void setupNeuralNetworks();
 
         bool mStop = false;
+        bool mRecording = false;
+        std::string mStoragePath;
+        uint mFrameCounter;
 };
 
 #endif
