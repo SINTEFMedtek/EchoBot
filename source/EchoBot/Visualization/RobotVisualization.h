@@ -18,43 +18,40 @@ using namespace fast;
 
 class RobotPart
 {
-public:
-    RobotPart();
-    RobotPart(std::string name, std::string meshfile);
+    ECHOBOT_OBJECT(RobotPart)
 
-    ~RobotPart(){};
+    public:
+        RobotPart();
 
-    void transform(Eigen::Affine3d transform);
-    void rotate(double x, double y, double z);
+        void transform(Eigen::Affine3d transform);
+        void rotate(double x, double y, double z);
 
-    void setMeshFile(std::string filename);
-    void setTransformation(Eigen::Affine3d transform);
+        void setPart(std::string partName, std::string cadFile);
+        void setTransformation(Eigen::Affine3d transform);
 
-    Mesh::pointer getMesh();
-    std::string getName() const;
+        Mesh::pointer getMesh();
+        std::string getName() const;
 
 
-private:
-    Mesh::pointer mMesh;
-    Mesh::pointer getMeshFromFile(std::string filename);
+    private:
+        Mesh::pointer mMesh;
+        std::string mPartName;
+        Mesh::pointer getMeshFromFile(std::string filename);
 
-    std::string mPartName;
-
+        std::weak_ptr<RobotPart> mPtr;
 };
 
 class RobotTool : public RobotPart
 {
-public:
-    RobotTool();
-    RobotTool(std::string filename);
+    ECHOBOT_OBJECT(RobotTool)
 
-    ~RobotTool(){};
+    public:
+        RobotTool();
+        TriangleRenderer::pointer getRenderer();
 
-    void setMeshFile(std::string filename);
-
-    TriangleRenderer::pointer getRenderer();
-private:
-    TriangleRenderer::pointer mRenderer;
+    private:
+        TriangleRenderer::pointer mRenderer;
+        std::weak_ptr<RobotTool> mPtr;
 };
 
 class RobotVisualizator
@@ -63,20 +60,20 @@ class RobotVisualizator
 
     public:
         RobotVisualizator();
-        ~RobotVisualizator(){};
-
         void setInterface(RobotInterface::pointer robotInterface);
 
         TriangleRenderer::pointer getRenderer();
-        RobotTool getTool(){ return mTool;};
+        RobotTool::pointer getTool(){ return this->mTool;};
 
     private:
         RobotInterface::pointer mRobotInterface;
         TriangleRenderer::pointer mRenderer;
-        std::map<std::string, RobotPart> mParts;
-        RobotTool mTool;
+        std::map<std::string, RobotPart::pointer> mParts;
+        RobotTool::pointer mTool;
 
-        void addPart(RobotPart part);
+        void addPart(std::string partName, std::string cadFilepath);
+        void addTool(std::string toolName, std::string cadFilepath);
+
         void updatePositions();
 
         std::weak_ptr<RobotVisualizator> mPtr;
