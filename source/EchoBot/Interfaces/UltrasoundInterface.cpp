@@ -72,7 +72,7 @@ void UltrasoundInterface::execute() {
     addOutputData(1, segmentation);
 }
 
-void UltrasoundInterface::setRobotInterface(RobotInterfacePtr robotInterface) {
+void UltrasoundInterface::setRobotInterface(RobotInterface::pointer robotInterface) {
     mRobotInterface = robotInterface;
 }
 

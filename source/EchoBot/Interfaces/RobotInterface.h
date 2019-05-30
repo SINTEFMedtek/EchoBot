@@ -9,20 +9,28 @@
 #include <memory>
 #include <QObject>
 
+#include <EchoBot/Core/SmartPointers.h>
 #include <corah/Robot.h>
+#include "FAST/ProcessObject.hpp"
 
 namespace echobot
 {
-    typedef std::shared_ptr<class RobotInterface> RobotInterfacePtr;
+using namespace fast;
 
-    class RobotInterface
-    {
-        public:
-            RobotInterface();
-            ~RobotInterface();
+//typedef std::shared_ptr<class RobotInterface> RobotInterfacePtr;
 
-            std::shared_ptr<corah::Robot> robot;
-    };
+class RobotInterface
+{
+    ECHOBOT_OBJECT(RobotInterface)
+
+    public:
+        RobotInterface();
+        ~RobotInterface();
+        std::shared_ptr<corah::Robot> robot;
+
+    private:
+        std::weak_ptr<RobotInterface> mPtr;
+};
 
 }
 

@@ -36,7 +36,7 @@
 
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
 
-namespace fast {
+namespace echobot {
 
 class MouseListener : public QObject {
 
@@ -53,12 +53,11 @@ private:
 ApplicationGUI::ApplicationGUI() :
     mGraphicsFolderName("AorticAneurysmExam/widgets/icons/")
 {
-    mRobotInterface = RobotInterfacePtr(new RobotInterface);
+    mRobotInterface = RobotInterface::New();
     mCameraInterface = CameraInterface::New();
     mUltrasoundInterface = UltrasoundInterface::New();
 
-
-    mRobotVisualizator = new RobotVisualizator();
+    mRobotVisualizator = RobotVisualizator::New();
     mRobotVisualizator->setInterface(mRobotInterface);
 
     setupUI();

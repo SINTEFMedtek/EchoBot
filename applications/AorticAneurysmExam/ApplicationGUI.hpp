@@ -1,6 +1,15 @@
 #ifndef ECHOBOT_APPLICATIONGUI_H
 #define ECHOBOT_APPLICATIONGUI_H
 
+#include "EchoBot/Interfaces/RobotInterface.h"
+#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Visualization/RobotVisualization.h"
+
+#include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
+#include "EchoBot/GUI/Widgets/ConnectionWidget.h"
+#include "EchoBot/GUI/Widgets/RecordWidget.h"
+
 #include "FAST/Visualization/Window.hpp"
 #include "FAST/Streamers/Streamer.hpp"
 #include "FAST/Streamers/FileStreamer.hpp"
@@ -11,24 +20,14 @@
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 #include "FAST/Visualization/LineRenderer/LineRenderer.hpp"
 
-#include "EchoBot/Interfaces/RobotInterface.h"
-#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
-#include "EchoBot/Interfaces/CameraInterface.hpp"
-#include "EchoBot/Visualization/RobotVisualization.h"
-
-#include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
-#include "EchoBot/GUI/Widgets/ConnectionWidget.h"
-#include "EchoBot/GUI/Widgets/RecordWidget.h"
-
 class QPushButton;
 class QLabel;
 class QTabWidget;
 class QElapsedTimer;
 class QListWidget;
 
-namespace fast {
+namespace echobot {
 
-class RealSenseStreamer;
 class MouseListener;
 
 class ApplicationGUI : public Window {
@@ -47,13 +46,12 @@ private:
     SharedPointer<RobotInterface> mRobotInterface;
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
-
     SharedPointer<RealSenseStreamer> mCameraStreamer;
+    SharedPointer<ClariusStreamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+    SharedPointer<RobotVisualizator> mRobotVisualizator;
+
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
-    SharedPointer<ClariusStreamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
-
-    RobotVisualizator *mRobotVisualizator;
     RobotManualMoveLayout* mMoveLayout;
     ConnectionWidget* mConnectionWidget;
     RecordWidget* mRecordWidget;
@@ -87,7 +85,7 @@ private:
 
     void setupConnections();
 
-    void updateCameraROI();
+    //void updateCameraROI();
 
     void calibrateSystem();
     void registerTarget();

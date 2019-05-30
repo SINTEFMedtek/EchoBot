@@ -10,41 +10,43 @@
 
 namespace echobot
 {
-    using namespace fast;
 
-    class PixelClassifier;
-
-    class UltrasoundInterface : public ProcessObject {
-        ECHOBOT_OBJECT(UltrasoundInterface)
-
-        public:
-            void setRobotInterface(RobotInterfacePtr robotInterface);
-            ~UltrasoundInterface();
-            void startRecording(std::string path);
-
-        private:
-            UltrasoundInterface();
+using namespace fast;
 
 
-            void execute();
+class PixelClassifier;
 
-            SharedPointer<fast::Image> mCurrentImage;
 
-            RobotInterfacePtr mRobotInterface;
-            void transformImageToProbeCenter();
+class UltrasoundInterface : public ProcessObject {
+    ECHOBOT_OBJECT(UltrasoundInterface)
 
-            void segmentationThread();
-            std::thread* mSegmentationThread;
-            std::mutex mFrameBufferMutex;
-            bool mSegmentationEnabled = true;
+    public:
+        ~UltrasoundInterface();
 
-            SharedPointer<PixelClassifier> mPixelClassifier;
-            void setupNeuralNetworks();
+        void setRobotInterface(SharedPointer<RobotInterface> robotInterface);
+        void startRecording(std::string path);
 
-            bool mStop = false;
-            bool mRecording = false;
-            std::string mStoragePath;
-            uint mFrameCounter;
+    private:
+        UltrasoundInterface();
+
+        void execute();
+
+        SharedPointer<fast::Image> mCurrentImage;
+        SharedPointer<RobotInterface> mRobotInterface;
+        void transformImageToProbeCenter();
+
+        void segmentationThread();
+        std::thread* mSegmentationThread;
+        std::mutex mFrameBufferMutex;
+        bool mSegmentationEnabled = true;
+
+        SharedPointer<PixelClassifier> mPixelClassifier;
+        void setupNeuralNetworks();
+
+        bool mStop = false;
+        bool mRecording = false;
+        std::string mStoragePath;
+        uint mFrameCounter;
 };
 
 } // end namespace echobot

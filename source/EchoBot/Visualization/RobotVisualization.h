@@ -59,27 +59,27 @@ private:
 
 class RobotVisualizator
 {
+    ECHOBOT_OBJECT(RobotVisualizator)
 
-public:
-    RobotVisualizator();
-    ~RobotVisualizator(){};
+    public:
+        RobotVisualizator();
+        ~RobotVisualizator(){};
 
-    void setInterface(RobotInterfacePtr robotInterface);
+        void setInterface(RobotInterface::pointer robotInterface);
 
-    TriangleRenderer::pointer getRenderer();
-    RobotTool getTool(){ return mTool;};
+        TriangleRenderer::pointer getRenderer();
+        RobotTool getTool(){ return mTool;};
 
-private:
-    TriangleRenderer::pointer mRenderer;
+    private:
+        RobotInterface::pointer mRobotInterface;
+        TriangleRenderer::pointer mRenderer;
+        std::map<std::string, RobotPart> mParts;
+        RobotTool mTool;
 
-    void addPart(RobotPart part);
-    std::map<std::string, RobotPart> mParts;
+        void addPart(RobotPart part);
+        void updatePositions();
 
-    RobotTool mTool;
-
-    void updatePositions();
-
-    RobotInterfacePtr mRobotInterface;
+        std::weak_ptr<RobotVisualizator> mPtr;
 };
 
 }

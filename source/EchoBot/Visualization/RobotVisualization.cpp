@@ -22,7 +22,7 @@ RobotVisualizator::RobotVisualizator()
     mTool = RobotTool(CADModelPath + "5S-Probe.vtk");
 }
 
-void RobotVisualizator::setInterface(RobotInterfacePtr robotInterface)
+void RobotVisualizator::setInterface(RobotInterface::pointer robotInterface)
 {
     mRobotInterface = robotInterface;
     QObject::connect(mRobotInterface->robot.get(), &corah::Robot::stateUpdated, std::bind(&RobotVisualizator::updatePositions, this));
