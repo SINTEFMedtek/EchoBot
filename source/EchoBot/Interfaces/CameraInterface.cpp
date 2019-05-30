@@ -9,7 +9,7 @@
 #include <QDir>
 #include <random>
 
-namespace fast {
+namespace echobot {
 
 CameraInterface::CameraInterface() {
     createInputPort<Image>(0);

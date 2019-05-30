@@ -5,7 +5,8 @@
 #include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
 #include <FAST/Exporters/MetaImageExporter.hpp>
 
-using namespace fast;
+namespace echobot
+{
 
 UltrasoundInterface::UltrasoundInterface() {
     createInputPort<Image>(0);
@@ -124,4 +125,6 @@ void UltrasoundInterface::setupNeuralNetworks() {
 //    mPixelClassifier->load("/home/androst/Data/NNModels/phantom.pb");
 //    mPixelClassifier->setScaleFactor(1.0f / 255.0f);
 //    mPixelClassifier->addOutputNode(0, "conv2d_23/truediv");
+}
+
 }

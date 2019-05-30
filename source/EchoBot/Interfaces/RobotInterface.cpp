@@ -4,10 +4,15 @@
 
 #include "RobotInterface.h"
 
+namespace echobot
+{
+
 RobotInterface::RobotInterface() {
     robot = std::shared_ptr<corah::Robot>(new corah::Robot);
 }
 
 RobotInterface::~RobotInterface() {
+
+}
 
 }

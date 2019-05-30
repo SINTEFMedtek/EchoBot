@@ -1,48 +1,51 @@
 #ifndef ECHOBOT_ULTRASOUNDINTERFACE_H
 #define ECHOBOT_ULTRASOUNDINTERFACE_H
 
+#include <thread>
+#include "EchoBot/Core/SmartPointers.h"
+#include "RobotInterface.h"
+
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
 
-#include "RobotInterface.h"
-#include <thread>
+namespace echobot
+{
+    using namespace fast;
 
-using namespace fast;
+    class PixelClassifier;
 
-class PixelClassifier;
+    class UltrasoundInterface : public ProcessObject {
+        ECHOBOT_OBJECT(UltrasoundInterface)
 
-class UltrasoundInterface : public ProcessObject {
-    FAST_OBJECT(UltrasoundInterface)
+        public:
+            void setRobotInterface(RobotInterfacePtr robotInterface);
+            ~UltrasoundInterface();
+            void startRecording(std::string path);
 
-    public:
-        void setRobotInterface(RobotInterfacePtr robotInterface);
-        ~UltrasoundInterface();
-
-        void startRecording(std::string path);
-
-    private:
-        UltrasoundInterface();
+        private:
+            UltrasoundInterface();
 
 
-        void execute();
+            void execute();
 
-        SharedPointer<Image> mCurrentImage;
+            SharedPointer<fast::Image> mCurrentImage;
 
-        RobotInterfacePtr mRobotInterface;
-        void transformImageToProbeCenter();
+            RobotInterfacePtr mRobotInterface;
+            void transformImageToProbeCenter();
 
-        void segmentationThread();
-        std::thread* mSegmentationThread;
-        std::mutex mFrameBufferMutex;
-        bool mSegmentationEnabled = true;
+            void segmentationThread();
+            std::thread* mSegmentationThread;
+            std::mutex mFrameBufferMutex;
+            bool mSegmentationEnabled = true;
 
-        SharedPointer<PixelClassifier> mPixelClassifier;
-        void setupNeuralNetworks();
+            SharedPointer<PixelClassifier> mPixelClassifier;
+            void setupNeuralNetworks();
 
-        bool mStop = false;
-        bool mRecording = false;
-        std::string mStoragePath;
-        uint mFrameCounter;
+            bool mStop = false;
+            bool mRecording = false;
+            std::string mStoragePath;
+            uint mFrameCounter;
 };
 
+} // end namespace echobot
 #endif

@@ -1,10 +1,10 @@
 #ifndef ROBOTVISUALIZATION_H
 #define ROBOTVISUALIZATION_H
 
+#include "EchoBot/Interfaces/RobotInterface.h"
+
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
-
-#include "EchoBot/Interfaces/RobotInterface.h"
 
 /**
  * Implementation of visualization of Robot Visualizator and tool.
@@ -12,6 +12,8 @@
  * \author Andreas Østvik
  */
 
+namespace echobot
+{
 using namespace fast;
 
 class RobotPart
@@ -80,7 +82,6 @@ private:
     RobotInterfacePtr mRobotInterface;
 };
 
-
-
+}
 
 #endif // ROBOTVISUALIZATION_H

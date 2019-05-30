@@ -3,6 +3,9 @@
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/SceneGraph.hpp"
 
+namespace echobot
+{
+
 RobotVisualizator::RobotVisualizator()
 {
     std::string CADModelPath = "/home/androst/dev/ROMO/EchoBot/source/EchoBot/Visualization/CADModels/";
@@ -161,4 +164,6 @@ TriangleRenderer::pointer RobotTool::getRenderer()
     mRenderer = fast::TriangleRenderer::New();
     mRenderer->addInputData(this->getMesh());
     return mRenderer;
+}
+
 }

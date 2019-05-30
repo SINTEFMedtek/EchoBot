@@ -1,18 +1,19 @@
-#ifndef FASTROMO_CAMERAINTERFACE_H
-#define FASTROMO_CAMERAINTERFACE_H
+#ifndef ECHOBOT_CAMERAINTERFACE_H
+#define ECHOBOT_CAMERAINTERFACE_H
 
-#include <FAST/Data/Mesh.hpp>
-#include <FAST/Streamers/Streamer.hpp>
-#include <FAST/Streamers/RealSenseStreamer.hpp>
+#include "EchoBot/Core/SmartPointers.h"
+
+#include "FAST/Data/Mesh.hpp"
+#include "FAST/Streamers/Streamer.hpp"
+#include "FAST/Streamers/RealSenseStreamer.hpp"
 #include "FAST/ProcessObject.hpp"
 
-namespace fast {
-
-class Image;
-class Mesh;
+namespace echobot
+{
+using namespace fast;
 
 class CameraInterface : public ProcessObject {
-    FAST_OBJECT(CameraInterface)
+    ECHOBOT_OBJECT(CameraInterface)
     public:
         void restart();
         void startRecording(std::string path, bool recordPointClouds = true, bool recordImages = true);
