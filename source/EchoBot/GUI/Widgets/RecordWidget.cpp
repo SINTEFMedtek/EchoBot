@@ -24,6 +24,9 @@
 
 #include "RecordWidget.h"
 
+namespace echobot
+{
+
 RecordWidget::RecordWidget(SharedPointer<CameraInterface> cameraInterface, SharedPointer<UltrasoundInterface> usInterface,
                             int widgetWidth) :
     mCameraInterface(cameraInterface),
@@ -218,4 +221,6 @@ QWidget* RecordWidget::getSettingsRecordWidget()
     mainLayout->addWidget(mUltrasoundDumpCheckBox, 2, 0, 1, 1);
 
     return group;
+}
+
 }

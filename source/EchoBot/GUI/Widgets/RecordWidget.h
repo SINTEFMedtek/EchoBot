@@ -20,6 +20,9 @@ class QTabWidget;
 class QElapsedTimer;
 class QListWidget;
 
+namespace echobot
+{
+
 class RecordWidget : public QTabWidget
 {
     Q_OBJECT
@@ -64,5 +67,7 @@ class RecordWidget : public QTabWidget
         bool mCameraPlayback = false;
         bool mCameraStreaming = false;
 };
+
+} // end namespace echobot
 
 #endif //ECHOBOT_RECORDWIDGET_H

@@ -16,6 +16,10 @@
  * \author Andreas Østvik
  */
 
+
+namespace echobot
+{
+
 class RobotManualMoveLayout
 {
 
@@ -100,5 +104,7 @@ private slots:
         void setAutoRepeat(bool isRepeated, QButtonGroup *buttons);
         void setMaximumWidth(int width, QButtonGroup *buttons);
 };
+
+} // end namespace echobot
 
 #endif // ROBOTMANUALMOVETAB_H

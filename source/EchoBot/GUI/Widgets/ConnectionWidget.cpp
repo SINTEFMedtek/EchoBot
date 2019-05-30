@@ -8,6 +8,9 @@
 
 #include "ConnectionWidget.h"
 
+namespace echobot
+{
+
 ConnectionWidget::ConnectionWidget(RobotInterfacePtr robotInterface, int widgetWidth) :
     mRobotInterface(robotInterface),
     mGraphicsFolderName("../icons/"),
@@ -248,3 +251,5 @@ QWidget* ConnectionWidget::getCameraConnectionWidget()
 
     return group;
 }
+
+} // end namespace echobot

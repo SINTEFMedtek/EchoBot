@@ -10,6 +10,9 @@
 #include "EchoBot/Interfaces/UltrasoundInterface.hpp"
 #include "EchoBot/Interfaces/CameraInterface.hpp"
 
+namespace echobot
+{
+
 class ConnectionWidget : public QTabWidget
 {
     Q_OBJECT
@@ -60,5 +63,7 @@ class ConnectionWidget : public QTabWidget
         QWidget* getCameraConnectionWidget();
         QWidget* getUltrasoundConnectionWidget();
 };
+
+}
 
 #endif //ECHOBOT_CONNECTIONWIDGET_H

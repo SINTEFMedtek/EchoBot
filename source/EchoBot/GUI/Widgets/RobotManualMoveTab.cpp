@@ -7,6 +7,9 @@
 #include <QGroupBox>
 #include <QList>
 
+namespace echobot
+{
+
 RobotManualMoveLayout::RobotManualMoveLayout(RobotInterfacePtr robotInterface) :
     mRobotInterface(robotInterface)
 {
@@ -608,4 +611,6 @@ void RobotManualMoveLayout::moveButtonReleased()
 void RobotManualMoveLayout::jointButtonReleased()
 {
     mRobotInterface->robot->stopMove(corah::MotionType::stopj, accelerationLineEdit->text().toDouble());
+}
+
 }
