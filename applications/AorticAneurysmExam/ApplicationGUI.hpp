@@ -47,7 +47,7 @@ private:
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
     SharedPointer<RealSenseStreamer> mCameraStreamer;
-    SharedPointer<ClariusStreamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+    SharedPointer<Streamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
     SharedPointer<RobotVisualizator> mRobotVisualizator;
 
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
@@ -85,8 +85,6 @@ private:
 
     void setupConnections();
 
-    //void updateCameraROI();
-
     void calibrateSystem();
     void registerTarget();
     void moveToolToManualTarget();
@@ -105,6 +103,8 @@ private:
 
     void loadPreoperativeData();
     Mesh::pointer mPreoperativeData;
+
+    void initializeRenderers();
 };
 
 }

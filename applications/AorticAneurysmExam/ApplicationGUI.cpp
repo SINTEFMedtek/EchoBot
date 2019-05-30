@@ -62,19 +62,7 @@ ApplicationGUI::ApplicationGUI() :
 
     setupUI();
     setupConnections();
-
-    getView(1)->addRenderer(mRobotVisualizator->getRenderer());
-    getView(1)->addRenderer(mRobotVisualizator->getRenderer());
-
-    QTimer* timer = new QTimer(this);
-    timer->start(1);
-    timer->setSingleShot(true);
-    QObject::connect(timer, &QTimer::timeout, getView(1), [=]{
-        stopComputationThread();
-        getView(1)->setLookAt(Vector3f(0, 0, -1000), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 4000);
-        getView(1)->removeAllRenderers();
-        startComputationThread();
-    });
+    initializeRenderers();
 }
 
 void ApplicationGUI::setupConnections()
@@ -131,7 +119,7 @@ void ApplicationGUI::robotShutdownButtonSlot()
 void ApplicationGUI::setupRobotManipulatorVisualization()
 {
     mView3DRenderers.push_back(mRobotVisualizator->getRenderer());
-    mView3DRenderers.push_back(mRobotVisualizator->getTool().getRenderer());
+    mView3DRenderers.push_back(mRobotVisualizator->getTool()->getRenderer());
 }
 
 void ApplicationGUI::clearRenderVectors()
@@ -325,7 +313,9 @@ void ApplicationGUI::stopStreaming()
 void ApplicationGUI::connectToUltrasound() {
     //usConnectButton->setChecked(0);
 
-    mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
+    mUltrasoundStreamer = ClariusStreamer::New();
+
+    //mUltrasoundStreamer = IGTLinkStreamer::New();
     //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
     //mUltrasoundStreamer->setConnectionPort(18944);
 
@@ -353,7 +343,6 @@ void ApplicationGUI::connectToUltrasound() {
 void ApplicationGUI::setupUltrasoundVisualization()
 {
     if(mUltrasoundStreaming) {
-        mUltrasoundStreamer->stop();
         mUltrasoundStreamer->stopPipeline();
         mUltrasoundInterface->stopPipeline();
 
@@ -801,6 +790,23 @@ void ApplicationGUI::loadPreoperativeData() {
             startComputationThread();
         }
     }
+}
+
+void ApplicationGUI::initializeRenderers()
+{
+    // Small hack to avoid transparent cad models in viewer
+
+    getView(1)->addRenderer(mRobotVisualizator->getRenderer());
+
+    QTimer* timer = new QTimer(this);
+    timer->start(1);
+    timer->setSingleShot(true);
+    QObject::connect(timer, &QTimer::timeout, getView(1), [=]{
+        stopComputationThread();
+        getView(1)->setLookAt(Vector3f(0, 0, -1000), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 4000);
+        getView(1)->removeAllRenderers();
+        startComputationThread();
+    });
 }
 
 
