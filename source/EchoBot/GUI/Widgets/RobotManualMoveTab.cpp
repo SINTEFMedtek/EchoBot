@@ -10,7 +10,7 @@
 namespace echobot
 {
 
-RobotManualMoveLayout::RobotManualMoveLayout(RobotInterfacePtr robotInterface) :
+RobotManualMoveLayout::RobotManualMoveLayout(RobotInterface::pointer robotInterface) :
     mRobotInterface(robotInterface)
 {
     setupLayout();

@@ -24,7 +24,7 @@ class RobotManualMoveLayout
 {
 
     public:
-        RobotManualMoveLayout(RobotInterfacePtr robotInterface);
+        RobotManualMoveLayout(RobotInterface::pointer robotInterface);
         virtual ~RobotManualMoveLayout();
 
         QLayout* getLayout();
@@ -65,8 +65,7 @@ private slots:
     private:
         QBoxLayout *mainLayout;
 
-        void setupLayout();
-        RobotInterfacePtr mRobotInterface;
+        RobotInterface::pointer mRobotInterface;
 
         void connectMovementButtons();
         void connectJointButtons();
@@ -75,7 +74,6 @@ private slots:
         void setMoveSettingsWidget(QVBoxLayout *vLayout);
         void setCoordInfoWidget(QVBoxLayout *vLayout);
         void setJointMoveWidget(QVBoxLayout *vLayout);
-
 
         QPushButton *negZButton, *posZButton, *posXButton, *negYButton, *posYButton, *negXButton;
         QPushButton *rotNegZButton, *rotPosZButton, *rotPosXButton, *rotNegYButton, *rotPosYButton, *rotNegXButton;
@@ -103,6 +101,7 @@ private slots:
 
         void setAutoRepeat(bool isRepeated, QButtonGroup *buttons);
         void setMaximumWidth(int width, QButtonGroup *buttons);
+        void setupLayout();
 };
 
 } // end namespace echobot

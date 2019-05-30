@@ -11,7 +11,7 @@
 namespace echobot
 {
 
-ConnectionWidget::ConnectionWidget(RobotInterfacePtr robotInterface, int widgetWidth) :
+ConnectionWidget::ConnectionWidget(RobotInterface::pointer robotInterface, int widgetWidth) :
     mRobotInterface(robotInterface),
     mGraphicsFolderName("../icons/"),
     mWidgetWidth(widgetWidth)

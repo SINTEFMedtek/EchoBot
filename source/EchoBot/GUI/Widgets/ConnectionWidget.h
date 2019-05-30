@@ -18,7 +18,7 @@ class ConnectionWidget : public QTabWidget
     Q_OBJECT
 
     public:
-        ConnectionWidget(RobotInterfacePtr robotInterface, int widgetWidth=540);
+        ConnectionWidget(RobotInterface::pointer robotInterface, int widgetWidth=540);
 
     signals:
         void robotConnected();
