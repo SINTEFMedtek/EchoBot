@@ -313,14 +313,16 @@ void ApplicationGUI::stopStreaming()
 void ApplicationGUI::connectToUltrasound() {
     //usConnectButton->setChecked(0);
 
-    mUltrasoundStreamer = ClariusStreamer::New();
+    //mUltrasoundStreamer = ClariusStreamer::New();
 
     //mUltrasoundStreamer = IGTLinkStreamer::New();
     //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
     //mUltrasoundStreamer->setConnectionPort(18944);
 
     //mUltrasoundInterface = UltrasoundInterface::New();
-    mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
+    //mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
+
+    mUltrasoundInterface->connect();
 
     stopComputationThread();
     clearRenderVectors();
@@ -329,7 +331,7 @@ void ApplicationGUI::connectToUltrasound() {
 
     if(mRobotInterface->robot->isConnected())
         setupRobotManipulatorVisualization();
-        mUltrasoundInterface->setRobotInterface(mRobotInterface);
+        //mUltrasoundInterface->setRobotInterface(mRobotInterface);
 
     if(mCameraStreaming || mCameraPlayback)
         setupCameraVisualization();
@@ -343,17 +345,17 @@ void ApplicationGUI::connectToUltrasound() {
 void ApplicationGUI::setupUltrasoundVisualization()
 {
     if(mUltrasoundStreaming) {
-        mUltrasoundStreamer->stopPipeline();
-        mUltrasoundInterface->stopPipeline();
+        //mUltrasoundStreamer->stopPipeline();
+        //mUltrasoundInterface->stopPipeline();
 
-        mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
+        //mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
         //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
         //mUltrasoundStreamer->setConnectionPort(18944);
 
-        mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
+        //mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
 
-        if(mRobotInterface->robot->isConnected())
-            mUltrasoundInterface->setRobotInterface(mRobotInterface);
+        //if(mRobotInterface->robot->isConnected())
+        //    mUltrasoundInterface->setRobotInterface(mRobotInterface);
     }
 
     auto usRenderer = ImageRenderer::New();

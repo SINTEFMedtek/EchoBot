@@ -3,22 +3,47 @@
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 #include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
-#include <FAST/Exporters/MetaImageExporter.hpp>
+#include "FAST/Exporters/MetaImageExporter.hpp"
+#include "FAST/Streamers/ClariusStreamer.hpp"
 
 namespace echobot
 {
 
 UltrasoundInterface::UltrasoundInterface() {
+}
+
+UltrasoundInterface::~UltrasoundInterface() {
+}
+
+void UltrasoundInterface::connect()
+{
+    mUltrasoundStreamer = ClariusStreamer::New();
+
+    //mUltrasoundStreamer = IGTLinkStreamer::New();
+    //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
+    //mUltrasoundStreamer->setConnectionPort(18944);
+
+    //mUltrasoundInterface = UltrasoundInterface::New();
+    mProcessObject = UltrasoundImageProcessing::New();
+    mProcessObject->setInputConnection(mUltrasoundStreamer->getOutputPort());
+}
+
+DataPort::pointer UltrasoundInterface::getOutputPort(uint portID)
+{
+    return mProcessObject->getOutputPort(portID);
+}
+
+UltrasoundImageProcessing::UltrasoundImageProcessing() {
     createInputPort<Image>(0);
 
     createOutputPort<Image>(0);
     createOutputPort<Image>(1); // Segmentation
 
-    mSegmentationThread = new std::thread(std::bind(&UltrasoundInterface::segmentationThread, this));
+    mSegmentationThread = new std::thread(std::bind(&UltrasoundImageProcessing::segmentationThread, this));
     setupNeuralNetworks();
 }
 
-UltrasoundInterface::~UltrasoundInterface() {
+UltrasoundImageProcessing::~UltrasoundImageProcessing() {
     std::cout << "Stopping segmentation thread.." << std::endl;
     {
         std::lock_guard<std::mutex> lock(mFrameBufferMutex);
@@ -28,7 +53,7 @@ UltrasoundInterface::~UltrasoundInterface() {
     std::cout << "Segmentation thread stopped!" << std::endl;
 }
 
-void UltrasoundInterface::execute() {
+void UltrasoundImageProcessing::execute() {
     fast::Image::pointer input = getInputData<fast::Image>();
 
 //    ImageCropper::pointer cropper = ImageCropper::New();
@@ -72,35 +97,7 @@ void UltrasoundInterface::execute() {
     addOutputData(1, segmentation);
 }
 
-void UltrasoundInterface::setRobotInterface(RobotInterface::pointer robotInterface) {
-    mRobotInterface = robotInterface;
-}
-
-void UltrasoundInterface::transformImageToProbeCenter() {
-    Eigen::Affine3d offset = Eigen::Affine3d::Identity();
-
-    Eigen::Vector3d translation((double) (mCurrentImage->getWidth() * mCurrentImage->getSpacing()(0) / 2), 0,
-                                0); // z=-40
-
-    Eigen::Matrix3d m;
-    m = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ()) *
-        Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
-        Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-
-    offset.translate(translation);
-    offset.linear() = offset.linear() * m;
-
-    Eigen::Affine3d rMb = mRobotInterface->robot->get_rMb();
-    Eigen::Affine3d eeMt = mRobotInterface->robot->get_eeMt();
-    Eigen::Affine3d bMee = mRobotInterface->robot->getCurrentState().getTransformToJoint(6);
-    Eigen::Affine3d transform = rMb * bMee * eeMt * offset;
-
-    AffineTransformation::pointer T = AffineTransformation::New();
-    T->setTransform(transform.cast<float>());
-    mCurrentImage->getSceneGraphNode()->setTransformation(T);
-}
-
-void UltrasoundInterface::segmentationThread() {
+void UltrasoundImageProcessing::segmentationThread() {
     while (true) {
         {
             std::lock_guard<std::mutex> lock(mFrameBufferMutex);
@@ -110,15 +107,14 @@ void UltrasoundInterface::segmentationThread() {
     }
 }
 
-void UltrasoundInterface::startRecording(std::string path) {
+void UltrasoundImageProcessing::startRecording(std::string path) {
     mStoragePath = path;
     mFrameCounter = 0;
     mRecording = true;
-
     createDirectories((mStoragePath + "/Ultrasound"));
 }
 
-void UltrasoundInterface::setupNeuralNetworks() {
+void UltrasoundImageProcessing::setupNeuralNetworks() {
 //    mPixelClassifier = PixelClassifier::New();
 //    mPixelClassifier->setNrOfClasses(2);
 //    mPixelClassifier->setResizeBackToOriginalSize(false);

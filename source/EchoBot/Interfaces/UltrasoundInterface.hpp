@@ -7,33 +7,30 @@
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
+#include "FAST/Streamers/Streamer.hpp"
 
 namespace echobot
 {
-
 using namespace fast;
 
 
 class PixelClassifier;
 
-
-class UltrasoundInterface : public ProcessObject {
-    ECHOBOT_OBJECT(UltrasoundInterface)
+class UltrasoundImageProcessing : public ProcessObject
+{
+    ECHOBOT_OBJECT(UltrasoundImageProcessing)
 
     public:
-        ~UltrasoundInterface();
+        ~UltrasoundImageProcessing();
 
-        void setRobotInterface(SharedPointer<RobotInterface> robotInterface);
         void startRecording(std::string path);
 
     private:
-        UltrasoundInterface();
+        UltrasoundImageProcessing();
 
         void execute();
 
         SharedPointer<fast::Image> mCurrentImage;
-        SharedPointer<RobotInterface> mRobotInterface;
-        void transformImageToProbeCenter();
 
         void segmentationThread();
         std::thread* mSegmentationThread;
@@ -48,6 +45,28 @@ class UltrasoundInterface : public ProcessObject {
         std::string mStoragePath;
         uint mFrameCounter;
 };
+
+
+class UltrasoundInterface : public SensorInterface {
+    ECHOBOT_OBJECT(UltrasoundInterface)
+
+    public:
+        ~UltrasoundInterface();
+        void connect();
+        UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
+
+        DataPort::pointer getOutputPort(uint portID = 0);
+
+    private:
+        UltrasoundInterface();
+
+        SharedPointer<Streamer> mUltrasoundStreamer;
+        SharedPointer<UltrasoundImageProcessing> mProcessObject;
+
+        SharedPointer<RobotInterface> mRobotInterface;
+};
+
+
 
 } // end namespace echobot
 #endif
