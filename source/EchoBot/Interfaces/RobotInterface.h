@@ -5,31 +5,21 @@
 #ifndef ECHOBOT_ROBOTINTERFACE_H
 #define ECHOBOT_ROBOTINTERFACE_H
 
-#include <iostream>
-#include <memory>
-#include <QObject>
-
-#include <EchoBot/Core/SmartPointers.h>
+#include "SensorInterface.h"
 #include <corah/Robot.h>
-#include "FAST/ProcessObject.hpp"
 
 namespace echobot
 {
-using namespace fast;
 
-//typedef std::shared_ptr<class RobotInterface> RobotInterfacePtr;
-
-class RobotInterface
+class RobotInterface : public SensorInterface
 {
     ECHOBOT_OBJECT(RobotInterface)
 
     public:
         RobotInterface();
-        ~RobotInterface();
-        std::shared_ptr<corah::Robot> robot;
+        ~RobotInterface(){};
 
-    private:
-        std::weak_ptr<RobotInterface> mPtr;
+        SharedPointer<corah::Robot> robot;
 };
 
 }

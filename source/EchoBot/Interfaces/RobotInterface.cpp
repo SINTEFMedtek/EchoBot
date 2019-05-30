@@ -8,11 +8,7 @@ namespace echobot
 {
 
 RobotInterface::RobotInterface() {
-    robot = std::shared_ptr<corah::Robot>(new corah::Robot);
-}
-
-RobotInterface::~RobotInterface() {
-
+    robot = SharedPointer<corah::Robot>(new corah::Robot);
 }
 
 }
