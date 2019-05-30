@@ -9,14 +9,14 @@ Several of the essential components are implemented in the frameworks FAST and l
 * **Sensor interface** - Ultrasound scanners, robots and depth cameras
 * **Machine Learning** - Real-time inference through several supported engines, such as TensorFlow.
 * **Visualization** - Supports 3D and 2D rendering
-* **GUI Widgets** - Premade widgets that can be used in
+* **GUI Widgets** - Premade widgets that can be used in multiple applications
 
 ### Structure
 
 EchoBot is written in C++ using CMake, Qt, Eigen, libromocc and FAST.
 
 
-**Build instructions**
+### Build instructions
 
 ```bash
 git clone https://github.com/androst/EchoBot.git
