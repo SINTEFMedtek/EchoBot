@@ -11,7 +11,7 @@
 
 namespace echobot {
 
-CameraInterface::CameraInterface() {
+CameraDataProcessing::CameraDataProcessing() {
     createInputPort<Image>(0);
     createInputPort<Mesh>(1);
 
@@ -30,11 +30,11 @@ CameraInterface::CameraInterface() {
     mTargetCloudExtracted = false;
 }
 
-void CameraInterface::restart() {
+void CameraDataProcessing::restart() {
     stopRecording();
 }
 
-void CameraInterface::startRecording(std::string path, bool recordPointClouds, bool recordImages) {
+void CameraDataProcessing::startRecording(std::string path, bool recordPointClouds, bool recordImages) {
     mStoragePath = path;
     mFrameCounter = 0;
     mRecording = true;
@@ -52,11 +52,11 @@ void CameraInterface::startRecording(std::string path, bool recordPointClouds, b
     }
 }
 
-void CameraInterface::stopRecording() {
+void CameraDataProcessing::stopRecording() {
     mRecording = false;
 }
 
-void CameraInterface::execute() {
+void CameraDataProcessing::execute() {
     Image::pointer input = getInputData<Image>(0);
     Mesh::pointer meshInput = getInputData<Mesh>(1);
 
@@ -117,15 +117,15 @@ void CameraInterface::execute() {
     addOutputData(3, mTargetCloud);
 }
 
-uint CameraInterface::getFramesStored() const {
+uint CameraDataProcessing::getFramesStored() const {
     return mFrameCounter;
 }
 
-bool CameraInterface::isRecording() const {
+bool CameraDataProcessing::isRecording() const {
     return mRecording;
 }
 
-void CameraInterface::addLine(Vector2i start, Vector2i end) {
+void CameraDataProcessing::addLine(Vector2i start, Vector2i end) {
     std::cout << "Drawing from: " << start.transpose() << " to " << end.transpose() << std::endl;
     // Draw line in some auxillary image
     mAnnotationImage = mAnnotationImage->copy(Host::getInstance());
@@ -151,7 +151,7 @@ void CameraInterface::addLine(Vector2i start, Vector2i end) {
     }
 }
 
-void CameraInterface::calculateTargetCloud(RealSenseStreamer::pointer streamer) {
+void CameraDataProcessing::calculateTargetCloud(RealSenseStreamer::pointer streamer) {
     std::cout << "Creating target cloud..." << std::endl;
     ImageAccess::pointer access = mAnnotationImage->getImageAccess(ACCESS_READ);
     MeshAccess::pointer meshAccess = mCurrentCloud->getMeshAccess(ACCESS_READ);
@@ -178,32 +178,17 @@ void CameraInterface::calculateTargetCloud(RealSenseStreamer::pointer streamer) 
     mTargetCloudExtracted = true;
 }
 
-SharedPointer<Mesh> CameraInterface::getTargetCloud(){
+SharedPointer<Mesh> CameraDataProcessing::getTargetCloud(){
     return mTargetCloud;
 }
 
-void CameraInterface::removeTargetCloud()
+void CameraDataProcessing::removeTargetCloud()
 {
     mTargetCloudExtracted = false;
     mAnnotationImage->fill(0);
 }
 
-void CameraInterface::setCameraStreamer(RealSenseStreamer::pointer streamer)
-{
-    mCameraStreamer = streamer;
-}
-
-void CameraInterface::setCameraROI(float minRange, float maxRange, float minWidth, float maxWidth, float minHeight, float maxHeight)
-{
-    mCameraStreamer->setMinRange(minRange);
-    mCameraStreamer->setMaxRange(maxRange);
-    mCameraStreamer->setMinWidth(minWidth);
-    mCameraStreamer->setMaxWidth(maxWidth);
-    mCameraStreamer->setMinHeight(minHeight);
-    mCameraStreamer->setMaxHeight(maxHeight);
-}
-
-Mesh::pointer CameraInterface::createReducedSample(Mesh::pointer pointCloud, double fractionOfPointsToKeep) {
+Mesh::pointer CameraDataProcessing::createReducedSample(Mesh::pointer pointCloud, double fractionOfPointsToKeep) {
     MeshAccess::pointer accessFixedSet = pointCloud->getMeshAccess(ACCESS_READ);
     std::vector<MeshVertex> vertices = accessFixedSet->getVertices();
 
@@ -248,6 +233,31 @@ Mesh::pointer CameraInterface::createReducedSample(Mesh::pointer pointCloud, dou
 }
 
 
+DataPort::pointer CameraInterface::getOutputPort(uint portID)
+{
+    return mProcessObject->getOutputPort(portID);
+}
 
+void CameraInterface::setCameraROI(float minRange, float maxRange, float minWidth, float maxWidth, float minHeight, float maxHeight)
+{
+    mCameraStreamer->setMinRange(minRange);
+    mCameraStreamer->setMaxRange(maxRange);
+    mCameraStreamer->setMinWidth(minWidth);
+    mCameraStreamer->setMaxWidth(maxWidth);
+    mCameraStreamer->setMinHeight(minHeight);
+    mCameraStreamer->setMaxHeight(maxHeight);
+}
 
+void CameraInterface::connect()
+{
+    mCameraStreamer = RealSenseStreamer::New();
+    mProcessObject = CameraDataProcessing::New();
+    mProcessObject->setInputConnection(mCameraStreamer->getOutputPort());
+}
+
+CameraInterface::CameraInterface() {
+}
+
+CameraInterface::~CameraInterface() {
+}
 }

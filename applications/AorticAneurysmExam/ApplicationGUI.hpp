@@ -46,8 +46,7 @@ private:
     SharedPointer<RobotInterface> mRobotInterface;
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
-    SharedPointer<RealSenseStreamer> mCameraStreamer;
-    SharedPointer<Streamer> mUltrasoundStreamer; // SharedPointer<IGTLinkStreamer> mUltrasoundStreamer;
+
     SharedPointer<RobotVisualizator> mRobotVisualizator;
 
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;

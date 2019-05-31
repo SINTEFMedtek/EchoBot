@@ -72,7 +72,7 @@ void RecordWidget::toggleRecord() {
 
         std::cout << "Getting ready to start recording..." << std::endl;
         // Start saving point clouds
-        mCameraInterface->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
+        mCameraInterface->getProcessObject()->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
 
         if(mUltrasoundDumpCheckBox->isChecked())
             mUltrasoundInterface->getProcessObject()->startRecording(recordingPath);
@@ -81,7 +81,7 @@ void RecordWidget::toggleRecord() {
         mRecordButton->setText("Record");
         mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
         mStorageDir->setDisabled(false);
-        mCameraInterface->stopRecording();
+        mCameraInterface->getProcessObject()->stopRecording();
         refreshRecordingsList();
     }
 }

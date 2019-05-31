@@ -122,12 +122,13 @@ void ApplicationGUI::connectToCamera() {
     //cameraConnectButton->setChecked(0);
     //mCameraStreamer->setPointCloudFiltering(true);
 
-    mCameraStreamer = RealSenseStreamer::New();
-    mCameraInterface->setCameraStreamer(mCameraStreamer);
+    //mCameraStreamer = RealSenseStreamer::New();
+    //mCameraInterface->setCameraStreamer(mCameraStreamer);
     //mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
     //std::cout << mCameraStreamer << std::endl;
 
     // Tracking
+
     stopComputationThread();
 
     clearRenderVectors();
@@ -144,14 +145,13 @@ void ApplicationGUI::connectToCamera() {
 
     mCameraStreaming = true;
     startComputationThread();
-    std::cout << mCameraStreamer << std::endl;
 }
 
 void ApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
 {
     //mCameraInterface = CameraInterface::New();
-    mCameraInterface->setInputConnection(0, streamers[0]->getOutputPort());
-    mCameraInterface->setInputConnection(1, streamers[1]->getOutputPort());
+    mCameraInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
+    mCameraInterface->getProcessObject()->setInputConnection(1, streamers[1]->getOutputPort());
 
     mCameraPlaybackStreamers = streamers;
 
@@ -180,12 +180,12 @@ void ApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
     if(cameraPlayback){
         for(auto it: mCameraPlaybackStreamers){
             std::cout << it.first << std::endl;
-            mCameraInterface->setInputConnection(it.first, it.second->getOutputPort(0));
+            mCameraInterface->getProcessObject()->setInputConnection(it.first, it.second->getOutputPort(0));
         }
     }
     else{
-        mCameraInterface->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-        mCameraInterface->setInputConnection(1, mCameraStreamer->getOutputPort(2));
+        mCameraInterface->getProcessObject()->setInputConnection(0, mCameraInterface->getStreamObject()->getOutputPort(0));
+        mCameraInterface->getProcessObject()->setInputConnection(1, mCameraInterface->getStreamObject()->getOutputPort(2));
     }
 
     // Renderer RGB image
@@ -206,7 +206,7 @@ void ApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
     mView2DRenderers.push_back(imageRenderer);
 
     // Render target cloud if exists
-    if(mCameraInterface->isTargetCloudExtracted()){
+    if(mCameraInterface->getProcessObject()->isTargetCloudExtracted()){
         VertexRenderer::pointer targetCloudRenderer = VertexRenderer::New();
         targetCloudRenderer->addInputConnection(mCameraInterface->getOutputPort(3));
         targetCloudRenderer->setDefaultSize(1.5);
@@ -256,19 +256,10 @@ void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRende
 
 void ApplicationGUI::disconnectFromCamera() {
     stopComputationThread();
-    mCameraStreamer->stop();
+    mCameraInterface->getStreamObject()->stop();
     mCameraStreaming = false;
     startComputationThread();
 }
-
-//void ApplicationGUI::updateCameraROI(){
-//    mCameraStreamer->setMinRange(mCameraMinDepthLineEdit->text().toFloat());
-//    mCameraStreamer->setMaxRange(mCameraMaxDepthLineEdit->text().toFloat());
-//    mCameraStreamer->setMinWidth(mCameraMinWidthLineEdit->text().toFloat());
-//    mCameraStreamer->setMaxWidth(mCameraMaxWidthLineEdit->text().toFloat());
-//    mCameraStreamer->setMinHeight(mCameraMinHeightLineEdit->text().toFloat());
-//    mCameraStreamer->setMaxHeight(mCameraMaxHeightLineEdit->text().toFloat());
-//}
 
 void ApplicationGUI::restartCamera() {
 
@@ -388,7 +379,7 @@ void ApplicationGUI::registerTarget()
 {
     if(mTargetRegistered)
     {
-        mCameraInterface->removeTargetCloud();
+        mCameraInterface->getProcessObject()->removeTargetCloud();
         registerTargetButton->setText("Register target");
         restartCamera();
     }
@@ -413,16 +404,16 @@ void ApplicationGUI::registerCloudToData()
 
     DataPort::pointer streamPort;
     if(mCameraStreaming){
-        streamPort = mCameraStreamer->getOutputPort(2);
+        streamPort = mCameraInterface->getStreamObject()->getOutputPort(2);
     } else{
         streamPort = mCameraPlaybackStreamers[1]->getOutputPort();
     }
     auto currentCloud = streamPort->getNextFrame<Mesh>();
 
     // Modify point clouds
-    auto regCloudReduced = mCameraInterface->createReducedSample(registrationCloud, (double)2500.0/registrationCloud->getNrOfVertices());
+    auto regCloudReduced = mCameraInterface->getProcessObject()->createReducedSample(registrationCloud, (double)2500.0/registrationCloud->getNrOfVertices());
     //auto regCloudReduced = mCameraInterface->createReducedSample(mPreoperativeData, (double)2500.0/mPreoperativeData->getNrOfVertices());
-    auto currentCloudReduced = mCameraInterface->createReducedSample(currentCloud, (double)2500.0/currentCloud->getNrOfVertices());
+    auto currentCloudReduced = mCameraInterface->getProcessObject()->createReducedSample(currentCloud, (double)2500.0/currentCloud->getNrOfVertices());
 
     // Set registration settings
     float uniformWeight = 0.5;
@@ -487,7 +478,7 @@ void ApplicationGUI::moveToolToManualTarget()
         moveToolManualButton->setText("Move to target");
         mRobotInterface->robot->stopMove(corah::MotionType::stopj, 50);
     }else{
-        Mesh::pointer targetCloud = mCameraInterface->getTargetCloud();
+        Mesh::pointer targetCloud = mCameraInterface->getProcessObject()->getTargetCloud();
         MeshAccess::pointer targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
         std::vector<MeshVertex> targetCloudVertices = targetCloudAccess->getVertices();
         Eigen::MatrixXf targetCloudVerticesMat = vertexVectorToMatrix(targetCloudVertices);
@@ -544,7 +535,7 @@ void ApplicationGUI::extractPointCloud() {
     {
         std::cout << "Point cloud from playback not implemented." << std::endl;
     } else {
-        mCameraInterface->calculateTargetCloud(mCameraStreamer);
+        mCameraInterface->getProcessObject()->calculateTargetCloud(mCameraInterface->getStreamObject());
     }
 
     setupCameraVisualization();
@@ -595,6 +586,7 @@ void ApplicationGUI::setupUI()
 
     mConnectionWidget = new ConnectionWidget();
     mConnectionWidget->addInterface(mRobotInterface);
+    mConnectionWidget->addInterface(mCameraInterface);
     mConnectionWidget->addInterface(mUltrasoundInterface);
     menuLayout->addWidget(mConnectionWidget);
 
@@ -695,7 +687,7 @@ bool MouseListener::eventFilter(QObject *obj, QEvent *event) {
         if(mPreviousMousePosition.x() == -1 && mPreviousMousePosition.y() == -1) {
             mPreviousMousePosition = current.cast<int>().head(2);
         } else {
-            mCameraInterface->addLine(mPreviousMousePosition, current.cast<int>().head(2));
+            mCameraInterface->getProcessObject()->addLine(mPreviousMousePosition, current.cast<int>().head(2));
             mPreviousMousePosition = current.cast<int>().head(2);
         }
     }

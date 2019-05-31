@@ -90,6 +90,7 @@ void ConnectionWidget::robotShutdownSlot()
 
 void ConnectionWidget::cameraConnectSlot()
 {
+    mCameraInterface->connect();
     emit(this->cameraConnected());
 }
 

@@ -1,7 +1,7 @@
 #ifndef ECHOBOT_CAMERAINTERFACE_H
 #define ECHOBOT_CAMERAINTERFACE_H
 
-#include "EchoBot/Core/SmartPointers.h"
+#include "EchoBot/Interfaces/SensorInterface.h"
 
 #include "FAST/Data/Mesh.hpp"
 #include "FAST/Streamers/Streamer.hpp"
@@ -12,8 +12,9 @@ namespace echobot
 {
 using namespace fast;
 
-class CameraInterface : public ProcessObject {
-    ECHOBOT_OBJECT(CameraInterface)
+class CameraDataProcessing : public ProcessObject {
+    ECHOBOT_OBJECT(CameraDataProcessing)
+
     public:
         void restart();
         void startRecording(std::string path, bool recordPointClouds = true, bool recordImages = true);
@@ -31,14 +32,8 @@ class CameraInterface : public ProcessObject {
 
         Mesh::pointer createReducedSample(SharedPointer<Mesh> pointCloud, double fractionOfPointsToKeep);
 
-        void setCameraStreamer(SharedPointer<RealSenseStreamer> streamer);
-
-        void setCameraROI(  float minRange = 0, float maxRange = 2000,
-                            float minWidth = -1000, float maxWidth = 1000,
-                            float minHeight = -1000, float maxHeight = 1000);
-
-private:
-        CameraInterface();
+    private:
+        CameraDataProcessing();
         void execute();
 
         SharedPointer<Image> mCurrentImage;
@@ -46,8 +41,6 @@ private:
 
         SharedPointer<Image> mAnnotationImage;
         SharedPointer<Mesh> mTargetCloud;
-
-        SharedPointer<RealSenseStreamer> mCameraStreamer;
 
         bool mTargetCloudExtracted = false;
         bool mTargetRegistered = false;
@@ -59,6 +52,30 @@ private:
         std::string mStoragePath;
         std::string mRecordingName;
         uint mFrameCounter;
+};
+
+class CameraInterface : public SensorInterface {
+    ECHOBOT_OBJECT(CameraInterface)
+
+    public:
+        ~CameraInterface();
+
+        void connect();
+
+        CameraDataProcessing::pointer getProcessObject(){ return mProcessObject;};
+        DataPort::pointer getOutputPort(uint portID = 0);
+        RealSenseStreamer::pointer getStreamObject(){ return mCameraStreamer;};
+
+        void setCameraROI(  float minRange = 0, float maxRange = 2000,
+                        float minWidth = -1000, float maxWidth = 1000,
+                        float minHeight = -1000, float maxHeight = 1000);
+
+    private:
+        CameraInterface();
+
+        SharedPointer<CameraDataProcessing> mProcessObject;
+        SharedPointer<RealSenseStreamer> mCameraStreamer;
+
 };
 
 }
