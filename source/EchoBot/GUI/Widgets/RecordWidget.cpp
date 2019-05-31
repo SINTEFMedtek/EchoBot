@@ -75,7 +75,7 @@ void RecordWidget::toggleRecord() {
         mCameraInterface->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
 
         if(mUltrasoundDumpCheckBox->isChecked())
-            mUltrasoundInterface->startRecording(recordingPath);
+            mUltrasoundInterface->getProcessObject()->startRecording(recordingPath);
 
     } else {
         mRecordButton->setText("Record");

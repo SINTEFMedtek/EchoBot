@@ -11,49 +11,50 @@
 namespace echobot
 {
 
-ConnectionWidget::ConnectionWidget(RobotInterface::pointer robotInterface, int widgetWidth) :
-    mRobotInterface(robotInterface),
+ConnectionWidget::ConnectionWidget(int widgetWidth) :
     mGraphicsFolderName("../icons/"),
     mWidgetWidth(widgetWidth)
 {
-    setupWidget();
-    setupConnections();
-}
-
-void ConnectionWidget::setupWidget()
-{
-    QWidget *robotConnectionWidget = getRobotConnectionWidget();
-    this->addTab(robotConnectionWidget, "Robot");
-
-    QWidget *cameraConnectionWidget = getCameraConnectionWidget();
-    this->addTab(cameraConnectionWidget, "Camera");
-
-    QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
-    this->addTab(usConnectionWidget, "Ultrasound");
-
     this->setFixedWidth(mWidgetWidth);
 }
 
-void ConnectionWidget::setupConnections()
+void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
 {
-    connect(mRobotConnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotConnectSlot);
-    connect(mRobotDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotDisconnectSlot);
-    connect(mRobotShutdownButton, &QPushButton::clicked, this, &ConnectionWidget::robotShutdownSlot);
+    if(sensorInterface->getNameOfClass() == "RobotInterface"){
+        mRobotInterface = std::dynamic_pointer_cast<RobotInterface>(sensorInterface);
+        QWidget *robotConnectionWidget = getRobotConnectionWidget();
+        this->addTab(robotConnectionWidget, "Robot");
 
-    connect(mCameraConnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraConnectSlot);
-    connect(mCameraDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraDisconnectSlot);
+        connect(mRobotConnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotConnectSlot);
+        connect(mRobotDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotDisconnectSlot);
+        connect(mRobotShutdownButton, &QPushButton::clicked, this, &ConnectionWidget::robotShutdownSlot);
 
-    connect(mUSConnectButton, &QPushButton::clicked, this, &ConnectionWidget::usConnectSlot);
-    connect(mUSDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::usDisconnectSlot);
-    connect(mUSStreamerOptionCBox, &QComboBox::currentTextChanged, this, &ConnectionWidget::usStreamerChangedSlot);
+    } else if (sensorInterface->getNameOfClass() == "CameraInterface"){
+        mCameraInterface = std::dynamic_pointer_cast<CameraInterface>(sensorInterface);
+        QWidget *cameraConnectionWidget = getCameraConnectionWidget();
+        this->addTab(cameraConnectionWidget, "Camera");
 
-    connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-    connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-    connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-    connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-    connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-    connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraConnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraConnectSlot);
+        connect(mCameraDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraDisconnectSlot);
+        connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+        connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
+
+    } else if (sensorInterface->getNameOfClass() == "UltrasoundInterface")
+    {
+        mUltrasoundInterface = std::dynamic_pointer_cast<UltrasoundInterface>(sensorInterface);
+        QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
+        this->addTab(usConnectionWidget, "Ultrasound");
+
+        connect(mUSConnectButton, &QPushButton::clicked, this, &ConnectionWidget::usConnectSlot);
+        connect(mUSDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::usDisconnectSlot);
+        connect(mUSStreamerOptionCBox, &QComboBox::currentTextChanged, this, &ConnectionWidget::usStreamerChangedSlot);
+    }
 }
+
 
 void ConnectionWidget::robotConnectSlot()
 {
@@ -100,7 +101,14 @@ void ConnectionWidget::cameraDisconnectSlot()
 
 void ConnectionWidget::usConnectSlot()
 {
-    std::cout << mUSStreamerOptionCBox->currentText().toStdString() << std::endl;
+    if(mUSStreamerOptionCBox->currentText().toStdString() == "Clarius")
+        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamer::Clarius);
+    else if(mUSStreamerOptionCBox->currentText().toStdString() == "IGTLink")
+    {
+        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamer::IGTLink,
+                mUsIPLineEdit->text().toStdString(), 18944);
+    }
+    mUltrasoundInterface->connect();
     emit(this->usConnected());
 }
 

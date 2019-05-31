@@ -18,7 +18,8 @@ class ConnectionWidget : public QTabWidget
     Q_OBJECT
 
     public:
-        ConnectionWidget(RobotInterface::pointer robotInterface, int widgetWidth=540);
+        ConnectionWidget(int widgetWidth=540);
+        void addInterface(SensorInterface::pointer sensorInterface);
 
     signals:
         void robotConnected();
@@ -41,9 +42,6 @@ class ConnectionWidget : public QTabWidget
         void updateCameraROI();
 
     private:
-        void setupWidget();
-        void setupConnections();
-
         int mWidgetWidth;
 
         SharedPointer<RobotInterface> mRobotInterface;
