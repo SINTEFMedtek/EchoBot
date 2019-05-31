@@ -8,7 +8,7 @@ option(ECHOBOT_BUILD_QT5 "Download and build Qt. Turn OFF if you want to use pre
 option(ECHOBOT_BUILD_FAST "Download and build FAST." OFF)
 option(ECHOBOT_BUILD_CORAH "Download and build Corah." ON)
 
-# Enable C++ 11
+# Enable C++ 14
 set(CMAKE_CXX_STANDARD 14)
 
 # Get rid of Qt error with position independent code
