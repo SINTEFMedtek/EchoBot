@@ -3,26 +3,14 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QLabel>
-#include <QLineEdit>
-#include <QDir>
-#include <QElapsedTimer>
-#include <QListWidget>
-#include <QDirIterator>
-#include <QMessageBox>
-#include <QGroupBox>
-#include <QProgressDialog>
-#include <QDir>
 #include <QTabWidget>
 #include <QFileDialog>
+
 #include <Eigen/Dense>
 
-#include "FAST/Visualization/MultiViewWindow.hpp"
 #include <FAST/Visualization/SegmentationRenderer/SegmentationRenderer.hpp>
 #include <FAST/Visualization/VertexRenderer/VertexRenderer.hpp>
 #include <FAST/Visualization/LineRenderer/LineRenderer.hpp>
-#include <FAST/Streamers/MeshFileStreamer.hpp>
-#include <FAST/Streamers/ImageFileStreamer.hpp>
-#include <FAST/Exporters/VTKMeshFileExporter.hpp>
 #include <FAST/Importers/VTKMeshFileImporter.hpp>
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
 #include "FAST/Streamers/RealSenseStreamer.hpp"
@@ -30,7 +18,6 @@
 #include "FAST/Importers/ImageFileImporter.hpp"
 #include "FAST/Algorithms/SurfaceExtraction/SurfaceExtraction.hpp"
 #include "FAST/Algorithms/ImageResizer/ImageResizer.hpp"
-#include "FAST/Algorithms/CoherentPointDrift/CoherentPointDrift.hpp"
 #include "FAST/Algorithms/CoherentPointDrift/Rigid.hpp"
 #include "FAST/Algorithms/SegmentationVolumeReconstructor/SegmentationVolumeReconstructor.hpp"
 
@@ -311,18 +298,6 @@ void ApplicationGUI::stopStreaming()
 
 // Ultrasound
 void ApplicationGUI::connectToUltrasound() {
-    //usConnectButton->setChecked(0);
-
-    //mUltrasoundStreamer = ClariusStreamer::New();
-
-    //mUltrasoundStreamer = IGTLinkStreamer::New();
-    //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
-    //mUltrasoundStreamer->setConnectionPort(18944);
-
-    //mUltrasoundInterface = UltrasoundInterface::New();
-    //mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
-
-    mUltrasoundInterface->connect();
 
     stopComputationThread();
     clearRenderVectors();
@@ -618,7 +593,9 @@ void ApplicationGUI::setupUI()
     title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Aortic Aneurysm Exam</div>");
     menuLayout->addWidget(title);
 
-    mConnectionWidget = new ConnectionWidget(mRobotInterface);
+    mConnectionWidget = new ConnectionWidget();
+    mConnectionWidget->addInterface(mRobotInterface);
+    mConnectionWidget->addInterface(mUltrasoundInterface);
     menuLayout->addWidget(mConnectionWidget);
 
     mMoveLayout = new RobotManualMoveLayout(mRobotInterface);
