@@ -4,6 +4,7 @@
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 #include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
 #include "FAST/Exporters/MetaImageExporter.hpp"
+#include "FAST/Streamers/IGTLinkStreamer.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
 
 namespace echobot
@@ -17,15 +18,20 @@ UltrasoundInterface::~UltrasoundInterface() {
 
 void UltrasoundInterface::connect()
 {
-    mUltrasoundStreamer = ClariusStreamer::New();
-
-    //mUltrasoundStreamer = IGTLinkStreamer::New();
-    //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
-    //mUltrasoundStreamer->setConnectionPort(18944);
-
-    //mUltrasoundInterface = UltrasoundInterface::New();
     mProcessObject = UltrasoundImageProcessing::New();
     mProcessObject->setInputConnection(mUltrasoundStreamer->getOutputPort());
+}
+
+void UltrasoundInterface::setStreamer(UltrasoundStreamer streamer, std::string ip, uint32_t port)
+{
+    if(streamer == Clarius)
+        mUltrasoundStreamer = ClariusStreamer::New();
+    else if(streamer == IGTLink){
+        auto usStreamer = IGTLinkStreamer::New();
+        usStreamer->setConnectionAddress(ip);
+        usStreamer->setConnectionPort(port);
+        mUltrasoundStreamer = usStreamer;
+    }
 }
 
 DataPort::pointer UltrasoundInterface::getOutputPort(uint portID)

@@ -7,7 +7,8 @@
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
-#include "FAST/Streamers/Streamer.hpp"
+#include "FAST/Streamers/ClariusStreamer.hpp"
+#include "FAST/Streamers/IGTLinkStreamer.hpp"
 
 namespace echobot
 {
@@ -50,19 +51,23 @@ class UltrasoundImageProcessing : public ProcessObject
 class UltrasoundInterface : public SensorInterface {
     ECHOBOT_OBJECT(UltrasoundInterface)
 
+
     public:
+        typedef enum {Clarius, IGTLink} UltrasoundStreamer; // Supported ultrasound streamers
+
         ~UltrasoundInterface();
         void connect();
-        UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
+        void setStreamer(UltrasoundStreamer streamer, std::string ip = "", uint32_t port = 18944);
 
+        UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
         DataPort::pointer getOutputPort(uint portID = 0);
+
 
     private:
         UltrasoundInterface();
 
         SharedPointer<Streamer> mUltrasoundStreamer;
         SharedPointer<UltrasoundImageProcessing> mProcessObject;
-
         SharedPointer<RobotInterface> mRobotInterface;
 };
 
