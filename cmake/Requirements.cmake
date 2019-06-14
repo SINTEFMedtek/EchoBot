@@ -75,14 +75,14 @@ endif()
 
 
 # Corah
-if(ECHOBOT_BUILD_CORAH)
-    include(cmake/ExternalCorah.cmake)
-else(ECHOBOT_BUILD_CORAH)
-    find_package(corah REQUIRED)
-    list(APPEND LIBRARIES ${CORAH_LIBRARIES})
-    list(APPEND ECHOBOT_INCLUDE_DIRS ${CORAH_INCLUDE_DIRS})
-    list(APPEND ECHOBOT_SYSTEM_LIBRARIES ${CORAH_LIBRARY_DIRS})
-endif(ECHOBOT_BUILD_CORAH)
+if(ECHOBOT_BUILD_ROMOCC)
+    include(cmake/ExternalRomocc.cmake)
+else(ECHOBOT_BUILD_ROMOCC)
+    find_package(romocc REQUIRED)
+    list(APPEND LIBRARIES ${ROMOCC_LIBRARIES})
+    list(APPEND ECHOBOT_INCLUDE_DIRS ${ROMOCC_INCLUDE_DIRS})
+    list(APPEND ECHOBOT_SYSTEM_LIBRARIES ${ROMOCC_LIBRARY_DIRS})
+endif(ECHOBOT_BUILD_ROMOCC)
 
 # Make sure project can find external includes and libaries
 link_directories(${ECHOBOT_EXTERNAL_INSTALL_DIR}/lib/ ${ECHOBOT_SYSTEM_LIBRARIES})
