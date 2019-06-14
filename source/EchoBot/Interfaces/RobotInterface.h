@@ -5,21 +5,26 @@
 #ifndef ECHOBOT_ROBOTINTERFACE_H
 #define ECHOBOT_ROBOTINTERFACE_H
 
+#include <QObject>
+
 #include "SensorInterface.h"
-#include <corah/Robot.h>
+#include <romocc/Robot.h>
 
 namespace echobot
 {
 
-class RobotInterface : public SensorInterface
+class RobotInterface : public QObject, public SensorInterface
 {
+    Q_OBJECT
     ECHOBOT_OBJECT(RobotInterface)
 
     public:
         RobotInterface();
         ~RobotInterface(){};
+        SharedPointer<romocc::Robot> robot;
 
-        SharedPointer<corah::Robot> robot;
+    signals:
+        void stateUpdated();
 };
 
 }

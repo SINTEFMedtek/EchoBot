@@ -8,7 +8,8 @@ namespace echobot
 {
 
 RobotInterface::RobotInterface() {
-    robot = SharedPointer<corah::Robot>(new corah::Robot);
+    robot = SharedPointer<romocc::Robot>(new romocc::Robot);
+    robot->addUpdateSubscription(std::bind(&RobotInterface::stateUpdated, this));
 }
 
 }
