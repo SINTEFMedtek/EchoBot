@@ -58,7 +58,7 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
 
 void ConnectionWidget::robotConnectSlot()
 {
-    mRobotInterface->robot->configure(corah::Manipulator::UR5, mRobotIPLineEdit->text(),30003);
+    mRobotInterface->robot->configure(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString() ,30003);
     mRobotInterface->robot->start();
 
     if(mRobotInterface->robot->isConnected() && !mRobotConnectButton->isChecked())
