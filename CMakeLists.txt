@@ -6,7 +6,7 @@ include(cmake/Macros.cmake)
 #### Options
 option(ECHOBOT_BUILD_QT5 "Download and build Qt. Turn OFF if you want to use pre-built binaries existing on your machine." ON)
 option(ECHOBOT_BUILD_FAST "Download and build FAST." OFF)
-option(ECHOBOT_BUILD_CORAH "Download and build Corah." ON)
+option(ECHOBOT_BUILD_ROMOCC "Download and build libromocc." ON)
 
 # Enable C++ 14
 set(CMAKE_CXX_STANDARD 14)
