@@ -359,7 +359,7 @@ void ApplicationGUI::calibrateSystem()
     rMb.translate(Eigen::Vector3d(-800,150,950)); // -500, 370, 1000 (y,x,z)
     rMb.linear() = rMb.linear()*m;
 
-    mRobotInterface->robot->set_rMb(rMb);
+    mRobotInterface->robot->getCoordinateSystem()->set_rMb(rMb);
 
     Eigen::Affine3d eeMt = Eigen::Affine3d::Identity();
 
@@ -371,7 +371,7 @@ void ApplicationGUI::calibrateSystem()
     eeMt.translate(Eigen::Vector3d(-100,0,100));
     eeMt.linear() = eeMt.linear()*rotProbe;
 
-    mRobotInterface->robot->set_eeMt(eeMt);
+    mRobotInterface->robot->getCoordinateSystem()->set_eeMt(eeMt);
 }
 
 // Registration
@@ -476,7 +476,7 @@ void ApplicationGUI::moveToolToManualTarget()
     if(mMovingToTarget)
     {
         moveToolManualButton->setText("Move to target");
-        mRobotInterface->robot->stopMove(corah::MotionType::stopj, 50);
+        mRobotInterface->robot->stopMove(romocc::MotionType::stopj, 50);
     }else{
         Mesh::pointer targetCloud = mCameraInterface->getProcessObject()->getTargetCloud();
         MeshAccess::pointer targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
@@ -487,9 +487,10 @@ void ApplicationGUI::moveToolToManualTarget()
         Eigen::Affine3d rMtarget = Eigen::Affine3d::Identity();
         rMtarget.translation() = pointCloudCentroid.cast<double>();
 
-        Eigen::Affine3d new_bMee = mRobotInterface->robot->get_rMb().inverse()*rMtarget*mRobotInterface->robot->get_eeMt().inverse();
+        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->robot->getCoordinateSystem();
+        Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
 
-        mRobotInterface->robot->move(corah::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->robot->move(romocc::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
     }
     mMovingToTarget = !mMovingToTarget;
@@ -500,7 +501,7 @@ void ApplicationGUI::moveToolToRegisteredTarget()
     if(mMovingToTarget)
     {
         moveToolRegisteredButton->setText("Move to registered target");
-        mRobotInterface->robot->stopMove(corah::MotionType::stopj, 50);
+        mRobotInterface->robot->stopMove(romocc::MotionType::stopj, 50);
     }else{
         Eigen::Affine3f rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
         Eigen::Affine3d dataMtarget;
@@ -516,11 +517,13 @@ void ApplicationGUI::moveToolToRegisteredTarget()
 
 
         Eigen::Affine3d rMtarget = rMdata.cast<double>()*dataMtarget;
-        Eigen::Affine3d new_bMee = mRobotInterface->robot->get_rMb().inverse()*rMtarget*mRobotInterface->robot->get_eeMt().inverse();
+
+        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->robot->getCoordinateSystem();
+        Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
 
         std::cout << new_bMee.matrix() << std::endl;
 
-        mRobotInterface->robot->move(corah::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->robot->move(romocc::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
 
     }
