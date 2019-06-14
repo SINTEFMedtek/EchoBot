@@ -77,6 +77,7 @@ class RobotVisualizator
         void updatePositions();
 
         std::weak_ptr<RobotVisualizator> mPtr;
+        std::mutex mUpdateMutex;
 };
 
 }
