@@ -28,7 +28,7 @@ ExternalProject_Add(FAST
 ExternalProject_Get_Property(FAST install_dir)
 
 if(WIN32)
-    set(FAST_LIBRARY corah.lib)
+    set(FAST_LIBRARY FAST.lib)
 else()
     set(FAST_LIBRARY ${CMAKE_SHARED_LIBRARY_PREFIX}FAST${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
