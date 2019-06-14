@@ -9,7 +9,7 @@ macro (project_add_sources)
     endif()
   endforeach()
   if (_relPath)
-    # propagate CORAH_SOURCE_FILES to parent directory
+    # propagate ECHOBOT_SOURCE_FILES to parent directory
     set (ECHOBOT_SOURCE_FILES ${ECHOBOT_SOURCE_FILES} PARENT_SCOPE)
   endif()
 endmacro()
