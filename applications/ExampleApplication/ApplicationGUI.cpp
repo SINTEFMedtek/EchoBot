@@ -562,7 +562,7 @@ void ApplicationGUI::setupUI()
     View* view3D = createView();
     View* viewUS = createView();
 
-    setTitle("Aortic Aneurysm Exam");
+    setTitle("Example application");
     setWidth(1920);
     setHeight(1080);
     enableMaximized();
@@ -584,7 +584,7 @@ void ApplicationGUI::setupUI()
 
     // Title label
     QLabel* title = new QLabel;
-    title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Aortic Aneurysm Exam</div>");
+    title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Example application</div>");
     menuLayout->addWidget(title);
 
     mConnectionWidget = new ConnectionWidget();

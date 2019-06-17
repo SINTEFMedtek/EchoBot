@@ -1,1 +1,1 @@
-project_add_subdirectories(AorticAneurysmExam)
+project_add_subdirectories(ExampleApplication)
