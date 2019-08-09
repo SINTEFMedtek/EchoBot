@@ -8,7 +8,7 @@ namespace echobot
 
 RobotVisualizator::RobotVisualizator()
 {
-    std::string CADModelPath = "/home/androst/dev/ROMO/EchoBot/source/EchoBot/Visualization/CADModels/";
+    std::string CADModelPath = "../../source/EchoBot/Visualization/CADModels/";
 
     this->addPart("base", CADModelPath + "base.vtk");
     this->addPart("shoulder", CADModelPath + "shoulder.vtk");
@@ -159,8 +159,8 @@ Mesh::pointer RobotPart::getMeshFromFile(std::string filename)
     fast::VTKMeshFileImporter::pointer importer = fast::VTKMeshFileImporter::New();
     importer->setFilename(filename);
 
-    fast::DataPort::pointer importPort = importer->getOutputPort();
-    importer->update(0);
+    DataChannel::pointer importPort = importer->getOutputPort();
+    importer->update();
 
     return importPort->getNextFrame<fast::Mesh>();
 }
