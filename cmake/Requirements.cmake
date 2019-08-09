@@ -42,6 +42,8 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     add_definitions("-fPIC") # Get rid of Qt error with position independent code
 endif()
 
+qt5_wrap_cpp(HEADERS_MOC ${QT_HEADERS})
+
 ## External depedencies
 
 # FAST
@@ -51,11 +53,10 @@ else(ECHOBOT_BUILD_FAST)
     find_package(FAST REQUIRED)
     list(APPEND LIBRARIES ${FAST_LIBRARIES})
     list(APPEND ECHOBOT_INCLUDE_DIRS ${FAST_INCLUDE_DIRS})
-    list(APPEND ECHOBOT_SYSTEM_LIBRARIES ${FAST_LIBRARY_DIRS})
+    list(APPEND ECHOBOT_EXTERNAL_LIBRARIES ${FAST_LIBRARY_DIRS})
 endif(ECHOBOT_BUILD_FAST)
 
 # Clarius streaming
-option(ECHOBOT_ENABLE_CLARIUS_STREAMING "Enable streaming from Clarius probe." ON)
 if(ECHOBOT_ENABLE_CLARIUS_STREAMING)
     # User has to supply the path to the claris sdk
     set(CLARIUS_SDK_DIR "NOT_SET" CACHE PATH "Path to the clarius listen API.")
@@ -78,12 +79,12 @@ endif()
 if(ECHOBOT_BUILD_ROMOCC)
     include(cmake/ExternalRomocc.cmake)
 else(ECHOBOT_BUILD_ROMOCC)
-    find_package(romocc REQUIRED)
+    find_package(Romocc REQUIRED)
     list(APPEND LIBRARIES ${ROMOCC_LIBRARIES})
     list(APPEND ECHOBOT_INCLUDE_DIRS ${ROMOCC_INCLUDE_DIRS})
-    list(APPEND ECHOBOT_SYSTEM_LIBRARIES ${ROMOCC_LIBRARY_DIRS})
+    list(APPEND ECHOBOT_EXTERNAL_LIBRARIES ${ROMOCC_LIBRARY_DIRS})
 endif(ECHOBOT_BUILD_ROMOCC)
 
 # Make sure project can find external includes and libaries
-link_directories(${ECHOBOT_EXTERNAL_INSTALL_DIR}/lib/ ${ECHOBOT_SYSTEM_LIBRARIES})
+link_directories(${ECHOBOT_EXTERNAL_INSTALL_DIR}/lib/ ${ECHOBOT_EXTERNAL_LIBRARIES})
 list(APPEND ECHOBOT_INCLUDE_DIRS ${ECHOBOT_EXTERNAL_INSTALL_DIR}/include)
