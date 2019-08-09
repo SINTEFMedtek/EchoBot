@@ -129,13 +129,13 @@ void RecordWidget::playRecording() {
         MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
         meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
         meshStreamer->enableLooping();
-        meshStreamer->update(0);
+        meshStreamer->update();
 
         ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
         imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
         imageStreamer->enableLooping();
         imageStreamer->setSleepTime(100);
-        imageStreamer->update(0);
+        imageStreamer->update();
 
         mCameraPlaybackStreamers[0] = imageStreamer;
         mCameraPlaybackStreamers[1] = meshStreamer;
