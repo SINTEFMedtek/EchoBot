@@ -63,7 +63,7 @@ class CameraInterface : public SensorInterface {
         void connect();
 
         CameraDataProcessing::pointer getProcessObject(){ return mProcessObject;};
-        DataPort::pointer getOutputPort(uint portID = 0);
+        DataChannel::pointer getOutputPort(uint portID = 0);
         RealSenseStreamer::pointer getStreamObject(){ return mCameraStreamer;};
 
         void setCameraROI(  float minRange = 0, float maxRange = 2000,

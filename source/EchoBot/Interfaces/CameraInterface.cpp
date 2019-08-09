@@ -75,7 +75,7 @@ void CameraDataProcessing::execute() {
         icp->setRandomPointSampling(300);
         //icp->getReporter().setReportMethod(Reporter::COUT);
         icp->setMaximumNrOfIterations(20);
-        icp->update(0);
+        icp->update();
         //reportInfo() << "Finished ICP in: " << reportEnd();
         //icp->getAllRuntimes()->printAll();
         if(!mTargetCloudPlaced){
@@ -96,7 +96,7 @@ void CameraDataProcessing::execute() {
             meshExporter->setWriteNormals(false);
             meshExporter->setWriteColors(true);
             meshExporter->setFilename(mStoragePath + "/PointClouds/" + std::to_string(mFrameCounter) + ".vtk");
-            meshExporter->update(0);
+            meshExporter->update();
         }
 
         if(mStoreImages)
@@ -104,7 +104,7 @@ void CameraDataProcessing::execute() {
             MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
             imageExporter->setInputData(input);
             imageExporter->setFilename(mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
-            imageExporter->update(0);
+            imageExporter->update();
         }
 
         if(mStoreImages || mStorePointClouds)
@@ -233,7 +233,7 @@ Mesh::pointer CameraDataProcessing::createReducedSample(Mesh::pointer pointCloud
 }
 
 
-DataPort::pointer CameraInterface::getOutputPort(uint portID)
+DataChannel::pointer CameraInterface::getOutputPort(uint portID)
 {
     return mProcessObject->getOutputPort(portID);
 }
