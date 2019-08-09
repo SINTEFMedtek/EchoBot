@@ -6,3 +6,7 @@ project_add_sources(
         UltrasoundInterface.cpp
         UltrasoundInterface.hpp
 )
+
+project_add_test_sources(
+        Tests/RobotInterfaceTests.cpp
+)
