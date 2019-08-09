@@ -8,7 +8,7 @@
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
-#include "FAST/Streamers/IGTLinkStreamer.hpp"
+#include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
 
 namespace echobot
 {
@@ -60,7 +60,7 @@ class UltrasoundInterface : public SensorInterface {
         void setStreamer(UltrasoundStreamer streamer, std::string ip = "", uint32_t port = 18944);
 
         UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
-        DataPort::pointer getOutputPort(uint portID = 0);
+        DataChannel::pointer getOutputPort(uint portID = 0);
 
 
     private:

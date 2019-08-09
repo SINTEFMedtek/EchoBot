@@ -4,7 +4,7 @@
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 #include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
 #include "FAST/Exporters/MetaImageExporter.hpp"
-#include "FAST/Streamers/IGTLinkStreamer.hpp"
+#include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
 
 namespace echobot
@@ -27,14 +27,14 @@ void UltrasoundInterface::setStreamer(UltrasoundStreamer streamer, std::string i
     if(streamer == Clarius)
         mUltrasoundStreamer = ClariusStreamer::New();
     else if(streamer == IGTLink){
-        auto usStreamer = IGTLinkStreamer::New();
+        auto usStreamer = OpenIGTLinkStreamer::New();
         usStreamer->setConnectionAddress(ip);
         usStreamer->setConnectionPort(port);
         mUltrasoundStreamer = usStreamer;
     }
 }
 
-DataPort::pointer UltrasoundInterface::getOutputPort(uint portID)
+DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
 {
     return mProcessObject->getOutputPort(portID);
 }
@@ -94,7 +94,7 @@ void UltrasoundImageProcessing::execute() {
         MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
         imageExporter->setInputData(input);
         imageExporter->setFilename(mStoragePath + "/Ultrasound/" + "US-2D_" + std::to_string(mFrameCounter) + ".mhd");
-        imageExporter->update(0);
+        imageExporter->update();
 
         ++mFrameCounter;
     }
