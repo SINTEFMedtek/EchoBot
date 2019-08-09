@@ -1,9 +1,9 @@
 #ifndef ECHOBOT_APPLICATIONGUI_H
 #define ECHOBOT_APPLICATIONGUI_H
 
-#include "EchoBot/Interfaces/RobotInterface.h"
 #include "EchoBot/Interfaces/UltrasoundInterface.hpp"
 #include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Interfaces/RobotInterface.h"
 #include "EchoBot/Visualization/RobotVisualization.h"
 
 #include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
@@ -15,7 +15,7 @@
 #include "FAST/Streamers/FileStreamer.hpp"
 #include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Streamers/MeshFileStreamer.hpp"
-#include "FAST/Streamers/IGTLinkStreamer.hpp"
+#include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
 #include "FAST/Tools/OpenIGTLinkClient/OpenIGTLinkClient.hpp"
 #include "FAST/Visualization/LineRenderer/LineRenderer.hpp"

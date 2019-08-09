@@ -399,10 +399,10 @@ void ApplicationGUI::registerCloudToData()
     importer->setFilename(registration_model_file);
 
     auto port = importer->getOutputPort();
-    importer->update(0);
+    importer->update();
     auto registrationCloud = port->getNextFrame<Mesh>();
 
-    DataPort::pointer streamPort;
+    DataChannel::pointer streamPort;
     if(mCameraStreaming){
         streamPort = mCameraInterface->getStreamObject()->getOutputPort(2);
     } else{
@@ -431,7 +431,7 @@ void ApplicationGUI::registerCloudToData()
     cpd->setUniformWeight(uniformWeight);
 
     auto cpdPort = cpd->getOutputPort();
-    cpd->update(0);
+    cpd->update();
     Mesh::pointer mesh = cpdPort->getNextFrame<Mesh>();
     //mPreoperativeData = mesh;
 
@@ -714,7 +714,7 @@ void ApplicationGUI::loadPreoperativeData() {
             stopComputationThread();
             clearRenderVectors();
 
-            DataPort::pointer port;
+            DataChannel::pointer port;
 
             if (extension.toStdString() == "mhd") {
                 ImageFileImporter::pointer importer = ImageFileImporter::New();
@@ -731,7 +731,7 @@ void ApplicationGUI::loadPreoperativeData() {
                 extraction->setInputConnection(resizer->getOutputPort());
                 extraction->setThreshold(300);
                 port = extraction->getOutputPort();
-                extraction->update(0);
+                extraction->update();
 
                 mPreoperativeData = port->getNextFrame<Mesh>();
 
@@ -743,7 +743,7 @@ void ApplicationGUI::loadPreoperativeData() {
                 auto importer = VTKMeshFileImporter::New();
                 importer->setFilename(filename);
                 port = importer->getOutputPort();
-                importer->update(0);
+                importer->update();
 
                 mPreoperativeData = port->getNextFrame<Mesh>();
                 auto vertexRenderer = VertexRenderer::New();
