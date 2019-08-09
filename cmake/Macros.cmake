@@ -22,7 +22,23 @@ macro (project_add_subdirectories)
     endforeach()
     if (_relPath)
         # propagate to parent directory
+        set (ECHOBOT_TEST_SOURCE_FILES ${ECHOBOT_TEST_SOURCE_FILES} PARENT_SCOPE)
         set (ECHOBOT_SOURCE_FILES ${ECHOBOT_SOURCE_FILES} PARENT_SCOPE)
+    endif()
+endmacro()
+
+macro (project_add_test_sources)
+    file (RELATIVE_PATH _relPath "${PROJECT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+    foreach (_src ${ARGN})
+        if (_relPath)
+            list (APPEND ECHOBOT_TEST_SOURCE_FILES "${_relPath}/${_src}")
+        else()
+            list (APPEND ECHOBOT_TEST_SOURCE_FILES "${_src}")
+        endif()
+    endforeach()
+    if (_relPath)
+        # propagate ECHOBOT_TEST_SOURCE_FILES to parent directory
+        set (ECHOBOT_TEST_SOURCE_FILES ${ECHOBOT_TEST_SOURCE_FILES} PARENT_SCOPE)
     endif()
 endmacro()
 
