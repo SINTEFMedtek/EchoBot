@@ -1,3 +1,1 @@
-project_add_subdirectories(Interfaces)
-project_add_subdirectories(GUI)
-project_add_subdirectories(Visualization)
+project_add_subdirectories(GUI Interfaces Tests Visualization)
