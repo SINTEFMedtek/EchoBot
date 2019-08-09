@@ -8,7 +8,6 @@ ExternalProject_Add(FAST
         GIT_REPOSITORY "https://github.com/smistad/FAST.git"
         GIT_TAG "ca95829b949d72d5a5cc34bd4e58deefc10097b6"
         CMAKE_CACHE_ARGS
-            -DCMAKE_PREFIX_PATH:PATH=${ECHOBOT_EXTERNAL_INSTALL_DIR}/lib/cmake/Qt5
             -DOpenCL_INCLUDE_DIR:PATH=${OpenCL_INCLUDE_DIR}
             -DOpenCL_LIBRARY:PATH=${OpenCL_LIBRARY}
             -DCMAKE_BUILD_TYPE:STRING=Release
@@ -33,6 +32,5 @@ else()
     set(FAST_LIBRARY ${CMAKE_SHARED_LIBRARY_PREFIX}FAST${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
 
-list(APPEND ECHOBOT_INCLUDE_DIRS ${install_dir}/fast/include)
-list(APPEND LIBRARIES ${install_dir}/lib/${FAST_LIBRARY})
+list(APPEND LIBRARIES ${FAST_LIBRARY})
 list(APPEND ECHOBOT_EXTERNAL_DEPENDENCIES FAST)
