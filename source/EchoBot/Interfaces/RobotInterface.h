@@ -20,7 +20,6 @@ class RobotInterface : public QObject, public SensorInterface
 
     public:
         RobotInterface();
-        ~RobotInterface(){};
         SharedPointer<romocc::Robot> robot;
 
     signals:
