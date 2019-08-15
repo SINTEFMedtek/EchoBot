@@ -327,20 +327,20 @@ void ApplicationGUI::setupUltrasoundVisualization()
     auto usRenderer = ImageRenderer::New();
     usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(0));
 
-    auto segmentationRenderer = SegmentationRenderer::New();
-    segmentationRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(1));
-
-    SegmentationVolumeReconstructor::pointer reconstructor = SegmentationVolumeReconstructor::New();
-    reconstructor->setInputConnection(mUltrasoundInterface->getOutputPort(1));
-
-    SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
-    extraction->setInputConnection(reconstructor->getOutputPort());
-
-    TriangleRenderer::pointer surfaceRenderer = TriangleRenderer::New();
-    surfaceRenderer->addInputConnection(extraction->getOutputPort());
+//    auto segmentationRenderer = SegmentationRenderer::New();
+//    segmentationRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(1));
+//
+//    SegmentationVolumeReconstructor::pointer reconstructor = SegmentationVolumeReconstructor::New();
+//    reconstructor->setInputConnection(mUltrasoundInterface->getOutputPort(1));
+//
+//    SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
+//    extraction->setInputConnection(reconstructor->getOutputPort());
+//
+//    TriangleRenderer::pointer surfaceRenderer = TriangleRenderer::New();
+//    surfaceRenderer->addInputConnection(extraction->getOutputPort());
 
     mViewUSRenderers.push_back(usRenderer);
-    mView3DRenderers.push_back(usRenderer);
+    //mView3DRenderers.push_back(usRenderer);
 
     //mViewUSRenderers.push_back(segmentationRenderer);
     //mView3DRenderers.push_back(surfaceRenderer);
