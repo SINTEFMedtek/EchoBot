@@ -24,6 +24,7 @@ macro (project_add_subdirectories)
         # propagate to parent directory
         set (ECHOBOT_TEST_SOURCE_FILES ${ECHOBOT_TEST_SOURCE_FILES} PARENT_SCOPE)
         set (ECHOBOT_SOURCE_FILES ${ECHOBOT_SOURCE_FILES} PARENT_SCOPE)
+        set (ECHOBOT_APPS ${ECHOBOT_APPS} PARENT_SCOPE)
     endif()
 endmacro()
 
