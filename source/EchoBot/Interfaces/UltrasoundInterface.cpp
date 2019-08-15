@@ -2,7 +2,7 @@
 
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
-#include "FAST/Algorithms/NeuralNetwork/PixelClassifier.hpp"
+#include "FAST/Algorithms/NeuralNetwork/SegmentationNetwork.hpp"
 #include "FAST/Exporters/MetaImageExporter.hpp"
 #include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
@@ -60,7 +60,7 @@ UltrasoundImageProcessing::~UltrasoundImageProcessing() {
 }
 
 void UltrasoundImageProcessing::execute() {
-    fast::Image::pointer input = getInputData<fast::Image>();
+    fast::Image::pointer input = getInputData<fast::Image>(0);
 
 //    ImageCropper::pointer cropper = ImageCropper::New();
 //    cropper->setInputData(input);
