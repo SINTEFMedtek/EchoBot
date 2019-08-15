@@ -52,6 +52,14 @@ if(hasParent)
     set(ECHOBOT_INCLUDE_DIRS ${ECHOBOT_INCLUDE_DIRS} PARENT_SCOPE)
 endif()
 
+# Set up RPATH with relative path so that binaries will find libraries in the lib folder
+if(APPLE)
+    set(CMAKE_MACOSX_RPATH ON)
+    set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+else()
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
 #### Add all subdirs
 project_add_subdirectories(source/EchoBot)
 
