@@ -1,4 +1,4 @@
-#include "RobotManualMoveTab.h"
+#include "RobotManualMoveWidget.h"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -10,36 +10,25 @@
 namespace echobot
 {
 
-RobotManualMoveLayout::RobotManualMoveLayout(RobotInterface::pointer robotInterface) :
-    mRobotInterface(robotInterface)
+RobotManualMoveWidget::RobotManualMoveWidget(RobotInterface::pointer robotInterface, int widgetWidth, int widgetHeight):
+    mRobotInterface(robotInterface),
+    mWidgetWidth(widgetWidth),
+    mWidgetHeight(widgetHeight)
 {
-    setupLayout();
+    setupWidget();
+    setupConnections();
 
-    this->connectMovementButtons();
-    this->connectJointButtons();
-
-    this->updatePositions();
-    QObject::connect(mRobotInterface.get(), &RobotInterface::stateUpdated,
-            std::bind(&RobotManualMoveLayout::updatePositions, this));
+    this->setFixedWidth(mWidgetWidth);
+    this->setFixedHeight(mWidgetHeight);
 }
 
-RobotManualMoveLayout::~RobotManualMoveLayout()
+RobotManualMoveWidget::~RobotManualMoveWidget()
 {
 }
 
-
-QLayout* RobotManualMoveLayout::getLayout()
+void RobotManualMoveWidget::setupWidget()
 {
-    return this->mainLayout;
-}
-
-
-void RobotManualMoveLayout::setupLayout()
-{
-    tabWindow = new QWidget;
-
     mainLayout = new QHBoxLayout();
-
     QWidget *leftColumnWidgets = new QWidget();
     QVBoxLayout *leftColumnLayout = new QVBoxLayout(leftColumnWidgets);
 
@@ -54,11 +43,20 @@ void RobotManualMoveLayout::setupLayout()
     mainLayout->addWidget(leftColumnWidgets,0,Qt::AlignTop|Qt::AlignLeft);
     mainLayout->addWidget(rightColumnWidgets,0,Qt::AlignTop|Qt::AlignLeft);
 
-    tabWindow->setLayout(mainLayout);
+    this->setLayout(mainLayout);
+}
+
+void RobotManualMoveWidget::setupConnections()
+{
+    this->connectMovementButtons();
+    this->connectJointButtons();
+    this->updatePositions();
+    QObject::connect(mRobotInterface.get(), &RobotInterface::stateUpdated,
+                     std::bind(&RobotManualMoveWidget::updatePositions, this));
 }
 
 
-void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
+void RobotManualMoveWidget::setMoveToolLayout(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Move Tool");
     group->setFont(QFont("Arial",8));
@@ -152,7 +150,7 @@ void RobotManualMoveLayout::setMoveToolLayout(QVBoxLayout *parent)
     keyLayout->addWidget(rotNegYButton,krow,1,1,1,Qt::AlignTop);
 }
 
-void RobotManualMoveLayout::setMoveSettingsWidget(QVBoxLayout *parent)
+void RobotManualMoveWidget::setMoveSettingsWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Movement Settings");
     group->setFont(QFont("Arial",8));
@@ -191,7 +189,7 @@ void RobotManualMoveLayout::setMoveSettingsWidget(QVBoxLayout *parent)
     accelerationLineEdit->setMinimumWidth(40);
 }
 
-void RobotManualMoveLayout::setCoordInfoWidget(QVBoxLayout *parent)
+void RobotManualMoveWidget::setCoordInfoWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Tool Position");
     group->setFont(QFont("Arial",8));
@@ -250,7 +248,7 @@ void RobotManualMoveLayout::setCoordInfoWidget(QVBoxLayout *parent)
 
 }
 
-void RobotManualMoveLayout::setJointMoveWidget(QVBoxLayout *parent)
+void RobotManualMoveWidget::setJointMoveWidget(QVBoxLayout *parent)
 {
     QGroupBox* group = new QGroupBox("Move Joints");
     group->setFont(QFont("Arial",8));
@@ -357,7 +355,7 @@ void RobotManualMoveLayout::setJointMoveWidget(QVBoxLayout *parent)
     coordInfoLayout->addWidget(new QLabel("Rad"), row, 4, 1, 1);
 }
 
-void RobotManualMoveLayout::setAutoRepeat(bool isRepeated, QButtonGroup *buttons)
+void RobotManualMoveWidget::setAutoRepeat(bool isRepeated, QButtonGroup *buttons)
 {
     for(int i=0; i<buttons->buttons().size(); i++)
     {
@@ -365,7 +363,7 @@ void RobotManualMoveLayout::setAutoRepeat(bool isRepeated, QButtonGroup *buttons
     }
 }
 
-void RobotManualMoveLayout::setMaximumWidth(int width, QButtonGroup *buttons)
+void RobotManualMoveWidget::setMaximumWidth(int width, QButtonGroup *buttons)
 {
     for(int i=0; i<buttons->buttons().size(); i++)
     {
@@ -373,7 +371,7 @@ void RobotManualMoveLayout::setMaximumWidth(int width, QButtonGroup *buttons)
     }
 }
 
-void RobotManualMoveLayout::updatePositions()
+void RobotManualMoveWidget::updatePositions()
 {
     std::lock_guard<std::mutex> lock(mUpdateMutex);
     romocc::RobotState::pointer currentState = mRobotInterface->robot->getCurrentState();
@@ -396,137 +394,137 @@ void RobotManualMoveLayout::updatePositions()
 }
 
 
-void RobotManualMoveLayout::connectMovementButtons()
+void RobotManualMoveWidget::connectMovementButtons()
 {
-    QObject::connect(posXButton,&QPushButton::pressed,  std::bind(&RobotManualMoveLayout::posXButtonPressed, this));
-    QObject::connect(posXButton,&QPushButton::released, std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(posXButton,&QPushButton::pressed,  std::bind(&RobotManualMoveWidget::posXButtonPressed, this));
+    QObject::connect(posXButton,&QPushButton::released, std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(negXButton,&QPushButton::pressed, std::bind(&RobotManualMoveLayout::negXButtonPressed, this));
-    QObject::connect(negXButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(negXButton,&QPushButton::pressed, std::bind(&RobotManualMoveWidget::negXButtonPressed, this));
+    QObject::connect(negXButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(posYButton,&QPushButton::pressed, std::bind(&RobotManualMoveLayout::posYButtonPressed, this));
-    QObject::connect(posYButton,&QPushButton::released, std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(posYButton,&QPushButton::pressed, std::bind(&RobotManualMoveWidget::posYButtonPressed, this));
+    QObject::connect(posYButton,&QPushButton::released, std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(negYButton,&QPushButton::pressed, std::bind(&RobotManualMoveLayout::negYButtonPressed, this));
-    QObject::connect(negYButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(negYButton,&QPushButton::pressed, std::bind(&RobotManualMoveWidget::negYButtonPressed, this));
+    QObject::connect(negYButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(posZButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::posZButtonPressed, this));
-    QObject::connect(posZButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(posZButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::posZButtonPressed, this));
+    QObject::connect(posZButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(negZButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::negZButtonPressed, this));
-    QObject::connect(negZButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(negZButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::negZButtonPressed, this));
+    QObject::connect(negZButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotPosXButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::posRXButtonPressed, this));
-    QObject::connect(rotPosXButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotPosXButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::posRXButtonPressed, this));
+    QObject::connect(rotPosXButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotNegXButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::negRXButtonPressed, this));
-    QObject::connect(rotNegXButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotNegXButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::negRXButtonPressed, this));
+    QObject::connect(rotNegXButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotPosYButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::posRYButtonPressed, this));
-    QObject::connect(rotPosYButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotPosYButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::posRYButtonPressed, this));
+    QObject::connect(rotPosYButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotNegYButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::negRYButtonPressed, this));
-    QObject::connect(rotNegYButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotNegYButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::negRYButtonPressed, this));
+    QObject::connect(rotNegYButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotPosZButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::posRZButtonPressed, this));
-    QObject::connect(rotPosZButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotPosZButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::posRZButtonPressed, this));
+    QObject::connect(rotPosZButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 
-    QObject::connect(rotNegZButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::negRZButtonPressed, this));
-    QObject::connect(rotNegZButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::moveButtonReleased, this));
+    QObject::connect(rotNegZButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::negRZButtonPressed, this));
+    QObject::connect(rotNegZButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::moveButtonReleased, this));
 }
 
-void RobotManualMoveLayout::connectJointButtons()
+void RobotManualMoveWidget::connectJointButtons()
 {
-    QObject::connect(q1PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q1PosButtonPressed, this));
-    QObject::connect(q2PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q2PosButtonPressed, this));
-    QObject::connect(q3PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q3PosButtonPressed, this));
-    QObject::connect(q4PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q4PosButtonPressed, this));
-    QObject::connect(q5PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q5PosButtonPressed, this));
-    QObject::connect(q6PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q6PosButtonPressed, this));
-    QObject::connect(q1NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q1NegButtonPressed, this));
-    QObject::connect(q2NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q2NegButtonPressed, this));
-    QObject::connect(q3NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q3NegButtonPressed, this));
-    QObject::connect(q4NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q4NegButtonPressed, this));
-    QObject::connect(q5NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q5NegButtonPressed, this));
-    QObject::connect(q6NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveLayout::q6NegButtonPressed, this));
+    QObject::connect(q1PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q1PosButtonPressed, this));
+    QObject::connect(q2PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q2PosButtonPressed, this));
+    QObject::connect(q3PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q3PosButtonPressed, this));
+    QObject::connect(q4PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q4PosButtonPressed, this));
+    QObject::connect(q5PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q5PosButtonPressed, this));
+    QObject::connect(q6PosButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q6PosButtonPressed, this));
+    QObject::connect(q1NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q1NegButtonPressed, this));
+    QObject::connect(q2NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q2NegButtonPressed, this));
+    QObject::connect(q3NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q3NegButtonPressed, this));
+    QObject::connect(q4NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q4NegButtonPressed, this));
+    QObject::connect(q5NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q5NegButtonPressed, this));
+    QObject::connect(q6NegButton,&QPushButton::pressed,std::bind(&RobotManualMoveWidget::q6NegButtonPressed, this));
 
-    QObject::connect(q1PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q2PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q3PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q4PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q5PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q6PosButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q1NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q2NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q3NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q4NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q5NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
-    QObject::connect(q6NegButton,&QPushButton::released,std::bind(&RobotManualMoveLayout::jointButtonReleased, this));
+    QObject::connect(q1PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q2PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q3PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q4PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q5PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q6PosButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q1NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q2NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q3NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q4NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q5NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
+    QObject::connect(q6NegButton,&QPushButton::released,std::bind(&RobotManualMoveWidget::jointButtonReleased, this));
 }
 
 
-void RobotManualMoveLayout::q1PosButtonPressed()
+void RobotManualMoveWidget::q1PosButtonPressed()
 {
     jointButtonPressed(0,1);
 }
 
-void RobotManualMoveLayout::q2PosButtonPressed()
+void RobotManualMoveWidget::q2PosButtonPressed()
 {
     jointButtonPressed(1,1);
 }
 
-void RobotManualMoveLayout::q3PosButtonPressed()
+void RobotManualMoveWidget::q3PosButtonPressed()
 {
     jointButtonPressed(2,1);
 }
 
-void RobotManualMoveLayout::q4PosButtonPressed()
+void RobotManualMoveWidget::q4PosButtonPressed()
 {
     jointButtonPressed(3,1);
 }
 
-void RobotManualMoveLayout::q5PosButtonPressed()
+void RobotManualMoveWidget::q5PosButtonPressed()
 {
     jointButtonPressed(4,1);
 }
 
-void RobotManualMoveLayout::q6PosButtonPressed()
+void RobotManualMoveWidget::q6PosButtonPressed()
 {
     jointButtonPressed(5,1);
 }
 
-void RobotManualMoveLayout::q1NegButtonPressed()
+void RobotManualMoveWidget::q1NegButtonPressed()
 {
     jointButtonPressed(0,-1);
 }
 
-void RobotManualMoveLayout::q2NegButtonPressed()
+void RobotManualMoveWidget::q2NegButtonPressed()
 {
     jointButtonPressed(1,-1);
 }
 
-void RobotManualMoveLayout::q3NegButtonPressed()
+void RobotManualMoveWidget::q3NegButtonPressed()
 {
     jointButtonPressed(2,-1);
 }
 
-void RobotManualMoveLayout::q4NegButtonPressed()
+void RobotManualMoveWidget::q4NegButtonPressed()
 {
     jointButtonPressed(3,-1);
 }
 
-void RobotManualMoveLayout::q5NegButtonPressed()
+void RobotManualMoveWidget::q5NegButtonPressed()
 {
     jointButtonPressed(4,-1);
 }
 
-void RobotManualMoveLayout::q6NegButtonPressed()
+void RobotManualMoveWidget::q6NegButtonPressed()
 {
     jointButtonPressed(5,-1);
 }
 
 
-void RobotManualMoveLayout::coordButtonPressed(int axis, int sign)
+void RobotManualMoveWidget::coordButtonPressed(int axis, int sign)
 {
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
@@ -534,7 +532,7 @@ void RobotManualMoveLayout::coordButtonPressed(int axis, int sign)
     mRobotInterface->robot->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
-void RobotManualMoveLayout::jointButtonPressed(int joint,int sign)
+void RobotManualMoveWidget::jointButtonPressed(int joint,int sign)
 {
     Eigen::RowVectorXd jointVelocity(6);
     jointVelocity << 0,0,0,0,0,0;
@@ -542,7 +540,7 @@ void RobotManualMoveLayout::jointButtonPressed(int joint,int sign)
     mRobotInterface->robot->move(romocc::MotionType::speedj,jointVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
-void RobotManualMoveLayout::rotButtonPressed(int angle, int sign)
+void RobotManualMoveWidget::rotButtonPressed(int angle, int sign)
 {
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
@@ -550,72 +548,72 @@ void RobotManualMoveLayout::rotButtonPressed(int angle, int sign)
     mRobotInterface->robot->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
-void RobotManualMoveLayout::posZButtonPressed()
+void RobotManualMoveWidget::posZButtonPressed()
 {
     coordButtonPressed(2,1);
 }
 
-void RobotManualMoveLayout::negZButtonPressed()
+void RobotManualMoveWidget::negZButtonPressed()
 {
     coordButtonPressed(2,-1);
 }
 
-void RobotManualMoveLayout::posYButtonPressed()
+void RobotManualMoveWidget::posYButtonPressed()
 {
     coordButtonPressed(1,1);
 }
 
-void RobotManualMoveLayout::negYButtonPressed()
+void RobotManualMoveWidget::negYButtonPressed()
 {
     coordButtonPressed(1,-1);
 }
 
-void RobotManualMoveLayout::posXButtonPressed()
+void RobotManualMoveWidget::posXButtonPressed()
 {
     coordButtonPressed(0,1);
 }
 
-void RobotManualMoveLayout::negXButtonPressed()
+void RobotManualMoveWidget::negXButtonPressed()
 {
     coordButtonPressed(0,-1);
 }
 
-void RobotManualMoveLayout::posRXButtonPressed()
+void RobotManualMoveWidget::posRXButtonPressed()
 {
     rotButtonPressed(0,1);
 }
 
-void RobotManualMoveLayout::negRXButtonPressed()
+void RobotManualMoveWidget::negRXButtonPressed()
 {
     rotButtonPressed(0,-1);
 }
 
-void RobotManualMoveLayout::posRYButtonPressed()
+void RobotManualMoveWidget::posRYButtonPressed()
 {
     rotButtonPressed(1,1);
 }
 
-void RobotManualMoveLayout::negRYButtonPressed()
+void RobotManualMoveWidget::negRYButtonPressed()
 {
     rotButtonPressed(1,-1);
 }
 
-void RobotManualMoveLayout::posRZButtonPressed()
+void RobotManualMoveWidget::posRZButtonPressed()
 {
     rotButtonPressed(2,1);
 }
 
-void RobotManualMoveLayout::negRZButtonPressed()
+void RobotManualMoveWidget::negRZButtonPressed()
 {
     rotButtonPressed(2,-1);
 }
 
-void RobotManualMoveLayout::moveButtonReleased()
+void RobotManualMoveWidget::moveButtonReleased()
 {
     mRobotInterface->robot->stopMove(romocc::MotionType::stopl, accelerationLineEdit->text().toDouble());
 }
 
-void RobotManualMoveLayout::jointButtonReleased()
+void RobotManualMoveWidget::jointButtonReleased()
 {
     mRobotInterface->robot->stopMove(romocc::MotionType::stopj, accelerationLineEdit->text().toDouble());
 }
