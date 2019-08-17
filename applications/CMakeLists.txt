@@ -1,1 +1,2 @@
 project_add_subdirectories(ExampleApplication)
+project_add_subdirectories(RecordApplication)
