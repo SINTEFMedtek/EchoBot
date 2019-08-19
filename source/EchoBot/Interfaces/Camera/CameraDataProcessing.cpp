@@ -18,7 +18,6 @@ CameraDataProcessing::CameraDataProcessing() {
     createOutputPort<Image>(0); // RGB image clean
     createOutputPort<Image>(1); // RGB image annotated
     createOutputPort<Image>(2); // Depth image clean
-    createOutputPort<Image>(3); // Depth image annotated
     createOutputPort<Mesh>(3); // Point cloud clean
     createOutputPort<Mesh>(4); // Point cloud annotated
 
@@ -30,26 +29,6 @@ CameraDataProcessing::CameraDataProcessing() {
     mTargetCloud = Mesh::New();
     mTargetCloud->create(0, 0, 0, false, false, false);
     mTargetCloudExtracted = false;
-}
-
-void CameraDataProcessing::startRecording(std::string path, bool recordPointClouds, bool recordImages) {
-    mStoragePath = path;
-    mFrameCounter = 0;
-    mRecording = true;
-
-    if (recordPointClouds) {
-        createDirectories((mStoragePath + "/PointClouds"));
-        mStorePointClouds = true;
-    }
-
-    if (recordImages) {
-        createDirectories((mStoragePath + "/CameraImages"));
-        mStoreImages = true;
-    }
-}
-
-void CameraDataProcessing::stopRecording() {
-    mRecording = false;
 }
 
 void CameraDataProcessing::execute() {
@@ -85,42 +64,11 @@ void CameraDataProcessing::execute() {
         mTargetCloud = meshInput;
     }
 
-    if (mRecording) {
-        if (mStorePointClouds) {
-            VTKMeshFileExporter::pointer meshExporter = VTKMeshFileExporter::New();
-            meshExporter->setInputData(meshInput);
-            meshExporter->setWriteNormals(false);
-            meshExporter->setWriteColors(true);
-            meshExporter->setFilename(mStoragePath + "/PointClouds/" + std::to_string(mFrameCounter) + ".vtk");
-            meshExporter->update();
-        }
-
-        if (mStoreImages) {
-            MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
-            imageExporter->setInputData(rgbInput);
-            imageExporter->setFilename(
-                    mStoragePath + "/CameraImages/" + "Cam-2D_" + std::to_string(mFrameCounter) + ".mhd");
-            imageExporter->update();
-        }
-
-        if (mStoreImages || mStorePointClouds)
-            ++mFrameCounter;
-    }
-
     addOutputData(0, mCurrentImage);
     addOutputData(1, mAnnotationImage);
     addOutputData(2, mCurrentDepthImage);
-    addOutputData(3, mCurrentDepthImage);
     addOutputData(3, mCurrentCloud);
     addOutputData(4, mTargetCloud);
-}
-
-uint CameraDataProcessing::getFramesStored() const {
-    return mFrameCounter;
-}
-
-bool CameraDataProcessing::isRecording() const {
-    return mRecording;
 }
 
 void CameraDataProcessing::addLine(Vector2i start, Vector2i end) {

@@ -15,12 +15,6 @@ class CameraDataProcessing : public ProcessObject {
     ECHOBOT_OBJECT(CameraDataProcessing)
 
     public:
-        void startRecording(std::string path, bool recordPointClouds = true, bool recordImages = true);
-        void stopRecording();
-
-        uint getFramesStored() const;
-        bool isRecording() const;
-
         void calculateTargetCloud(SharedPointer<RealSenseStreamer> streamer);
 
         void removeTargetCloud();
