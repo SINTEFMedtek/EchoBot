@@ -1,10 +1,9 @@
+project_add_subdirectories(Camera)
+project_add_subdirectories(Robot)
+project_add_subdirectories(Ultrasound)
+
 project_add_sources(
-        CameraInterface.cpp
-        CameraInterface.hpp
-        RobotInterface.cpp
-        RobotInterface.h
-        UltrasoundInterface.cpp
-        UltrasoundInterface.hpp
+        SensorInterface.h
 )
 
 project_add_test_sources(
