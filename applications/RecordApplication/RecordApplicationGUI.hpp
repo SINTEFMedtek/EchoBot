@@ -1,8 +1,8 @@
 #ifndef ECHOBOT_RECORDAPPLICATIONGUI_H
 #define ECHOBOT_RECORDAPPLICATIONGUI_H
 
-#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
-#include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Interfaces/Ultrasound/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/Camera/CameraInterface.hpp"
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
 #include "EchoBot/GUI/Widgets/RecordWidget.h"
 
