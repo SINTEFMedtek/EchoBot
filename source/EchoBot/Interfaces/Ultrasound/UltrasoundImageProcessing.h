@@ -25,10 +25,6 @@ class UltrasoundImageProcessing : public ProcessObject {
     public:
         ~UltrasoundImageProcessing();
 
-        void startRecording(std::string path);
-
-        void stopRecording();
-
     private:
         UltrasoundImageProcessing();
 
@@ -47,9 +43,6 @@ class UltrasoundImageProcessing : public ProcessObject {
         void setupNeuralNetworks();
 
         bool mStop = false;
-        bool mRecording = false;
-        std::string mStoragePath;
-        uint mFrameCounter;
     };
 }
 

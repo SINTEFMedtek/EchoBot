@@ -42,13 +42,6 @@ class CameraDataProcessing : public ProcessObject {
         bool mTargetCloudExtracted = false;
         bool mTargetRegistered = false;
         bool mTargetCloudPlaced = false;
-        bool mStoreImages = false;
-        bool mStorePointClouds = false;
-
-        bool mRecording = false;
-        std::string mStoragePath;
-        std::string mRecordingName;
-        uint mFrameCounter;
 };
 
 }

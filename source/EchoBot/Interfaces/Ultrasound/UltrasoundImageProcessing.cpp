@@ -62,16 +62,6 @@ void UltrasoundImageProcessing::execute() {
     auto segmentation = input;
     mCurrentImage = input;
 
-    if (mRecording) {
-        MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
-        imageExporter->setInputData(input);
-        imageExporter->setFilename(
-                mStoragePath + "/Ultrasound/" + "US-2D_" + std::to_string(mFrameCounter) + ".mhd");
-        imageExporter->update();
-
-        ++mFrameCounter;
-    }
-
     try {
         addOutputData(0, mCurrentImage);
         addOutputData(1, segmentation);
@@ -90,17 +80,6 @@ void UltrasoundImageProcessing::segmentationThread() {
                 break;
         }
     }
-}
-
-void UltrasoundImageProcessing::startRecording(std::string path) {
-    mStoragePath = path;
-    mFrameCounter = 0;
-    mRecording = true;
-    createDirectories((mStoragePath + "/Ultrasound"));
-}
-
-void UltrasoundImageProcessing::stopRecording() {
-    mRecording = false;
 }
 
 void UltrasoundImageProcessing::setupNeuralNetworks() {
