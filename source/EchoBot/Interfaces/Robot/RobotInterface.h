@@ -7,7 +7,7 @@
 
 #include <QObject>
 
-#include "SensorInterface.h"
+#include "EchoBot/Interfaces/SensorInterface.h"
 #include <romocc/Robot.h>
 
 namespace echobot
