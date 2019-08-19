@@ -85,5 +85,14 @@ void RecordTool::dataDumpThread()
     }
 }
 
+uint RecordTool::getFramesStored() const {
+    return mFrameCounter;
+}
+
+bool RecordTool::isRecording() const {
+    return mRecording;
+}
+
+
 }
 
