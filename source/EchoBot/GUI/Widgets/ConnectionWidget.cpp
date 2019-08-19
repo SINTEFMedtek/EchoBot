@@ -11,11 +11,13 @@
 namespace echobot
 {
 
-ConnectionWidget::ConnectionWidget(int widgetWidth) :
-    mGraphicsFolderName("../icons/"),
-    mWidgetWidth(widgetWidth)
+ConnectionWidget::ConnectionWidget(int widgetWidth, int widgetHeight) :
+    mGraphicsFolderName("../../source/EchoBot/GUI/Widgets/Icons/"),
+    mWidgetWidth(widgetWidth),
+    mWidgetHeight(widgetHeight)
 {
     this->setFixedWidth(mWidgetWidth);
+    this->setFixedHeight(mWidgetHeight);
 }
 
 void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
@@ -97,16 +99,17 @@ void ConnectionWidget::cameraConnectSlot()
 void ConnectionWidget::cameraDisconnectSlot()
 {
     mCameraConnectButton->toggle();
+    mCameraInterface->disconnect();
     emit(this->cameraDisconnected());
 }
 
 void ConnectionWidget::usConnectSlot()
 {
     if(mUSStreamerOptionCBox->currentText().toStdString() == "Clarius")
-        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamer::Clarius);
+        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::Clarius);
     else if(mUSStreamerOptionCBox->currentText().toStdString() == "IGTLink")
     {
-        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamer::IGTLink,
+        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::IGTLink,
                 mUsIPLineEdit->text().toStdString(), 18944);
     }
     mUltrasoundInterface->connect();
@@ -116,6 +119,8 @@ void ConnectionWidget::usConnectSlot()
 void ConnectionWidget::usDisconnectSlot()
 {
     emit(this->usDisconnected());
+    mUltrasoundInterface->disconnect();
+    mUSConnectButton->setChecked(false);
 }
 
 void ConnectionWidget::usStreamerChangedSlot(const QString streamerName)
@@ -198,8 +203,8 @@ QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
     mUSConnectButton->setIcon(icon);
     mUSConnectButton->setToolTip("Connect to US Scanner");
     mUSConnectButton->setText("Connect");
+    mUSConnectButton->setStyleSheet("QPushButton:checked { background-color: none; border: none; }");
     mUSConnectButton->setCheckable(true);
-    mUSConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     row++;
     mUSDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
@@ -250,8 +255,8 @@ QWidget* ConnectionWidget::getCameraConnectionWidget()
     mCameraConnectButton->setIcon(icon);
     mCameraConnectButton->setToolTip("Connect to robot");
     mCameraConnectButton->setText("Connect");
+    mCameraConnectButton->setStyleSheet("QPushButton:checked { background-color: none; border: none; }");
     mCameraConnectButton->setCheckable(true);
-    mCameraConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     mainLayout->addWidget(mCameraConnectButton,0,3,1,1);
 

@@ -28,13 +28,17 @@ namespace echobot
 {
 
 RecordWidget::RecordWidget(SharedPointer<CameraInterface> cameraInterface, SharedPointer<UltrasoundInterface> usInterface,
-                            int widgetWidth) :
+                            int widgetWidth, int widgetHeight) :
     mCameraInterface(cameraInterface),
     mUltrasoundInterface(usInterface),
-    mWidgetWidth(widgetWidth)
+    mWidgetWidth(widgetWidth),
+    mWidgetHeight(widgetHeight)
 {
     setupWidget();
     setupConnections();
+
+    this->setFixedWidth(mWidgetWidth);
+    this->setFixedHeight(mWidgetHeight);
 }
 
 void RecordWidget::setupWidget()
@@ -71,8 +75,8 @@ void RecordWidget::toggleRecord() {
         createDirectories(recordingPath);
 
         std::cout << "Getting ready to start recording..." << std::endl;
-        // Start saving point clouds
-        mCameraInterface->getProcessObject()->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
+        if(mPointCloudDumpCheckBox->isChecked() || mImageDumpCheckBox->isChecked())
+            mCameraInterface->getProcessObject()->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
 
         if(mUltrasoundDumpCheckBox->isChecked())
             mUltrasoundInterface->getProcessObject()->startRecording(recordingPath);
@@ -81,7 +85,11 @@ void RecordWidget::toggleRecord() {
         mRecordButton->setText("Record");
         mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
         mStorageDir->setDisabled(false);
-        mCameraInterface->getProcessObject()->stopRecording();
+        if(mPointCloudDumpCheckBox->isChecked() || mImageDumpCheckBox->isChecked())
+            mCameraInterface->getProcessObject()->stopRecording();
+
+        if(mUltrasoundDumpCheckBox->isChecked())
+            mUltrasoundInterface->getProcessObject()->stopRecording();
         refreshRecordingsList();
     }
 }
@@ -124,21 +132,37 @@ void RecordWidget::playRecording() {
 
         std::string selectedRecordingPointClouds = selectedRecording + "/PointClouds/";
         std::string selectedRecordingImages = selectedRecording + "/CameraImages/";
+        std::string selectedRecordingUS = selectedRecording + "/Ultrasound/";
 
         // Set up streaming from disk
-        MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
-        meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
-        meshStreamer->enableLooping();
-        meshStreamer->update();
 
-        ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
-        imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
-        imageStreamer->enableLooping();
-        imageStreamer->setSleepTime(100);
-        imageStreamer->update();
+        if(QDir(QString::fromStdString(selectedRecordingPointClouds)).exists())
+        {
+            MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
+            meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
+            meshStreamer->enableLooping();
+            meshStreamer->update();
+            mCameraPlaybackStreamers[1] = meshStreamer;
+        }
 
-        mCameraPlaybackStreamers[0] = imageStreamer;
-        mCameraPlaybackStreamers[1] = meshStreamer;
+        if(QDir(QString::fromStdString(selectedRecordingImages)).exists())
+        {
+            ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
+            imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
+            imageStreamer->enableLooping();
+            imageStreamer->setSleepTime(100);
+            imageStreamer->update();
+            mCameraPlaybackStreamers[0] = imageStreamer;
+        }
+
+        if(QDir(QString::fromStdString(selectedRecordingUS)).exists())
+        {
+            ImageFileStreamer::pointer usImageStreamer = ImageFileStreamer::New();
+            usImageStreamer->setFilenameFormat(selectedRecordingUS + "US-2D_#.mhd");
+            usImageStreamer->enableLooping();
+            usImageStreamer->setSleepTime(100);
+            usImageStreamer->update();
+        }
 
         emit(this->playbackStarted(mCameraPlaybackStreamers));
 
@@ -162,7 +186,7 @@ QWidget* RecordWidget::getRecordWidget()
     mainLayout->addWidget(storageDirLabel, 0, 0, 1, 1);
 
     mStorageDir = new QLineEdit;
-    mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("FAST_Kinect_Recordings"));
+    mStorageDir->setText(QDir::homePath() + QDir::separator() + QString("EchoBot_Recordings"));
     mainLayout->addWidget(mStorageDir, 0, 1, 1, 1);
 
     QLabel* recordingNameLabel = new QLabel;
@@ -189,7 +213,6 @@ QWidget* RecordWidget::getRecordWidget()
     mRecordingsList = new QListWidget;
     mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
     mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    mRecordingsList->setFixedHeight(40);
     mRecordingsList->setSortingEnabled(true);
     refreshRecordingsList();
 

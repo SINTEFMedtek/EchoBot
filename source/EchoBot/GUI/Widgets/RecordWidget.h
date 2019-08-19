@@ -10,9 +10,9 @@
 #include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Streamers/MeshFileStreamer.hpp"
 
-#include "EchoBot/Interfaces/RobotInterface.h"
-#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
-#include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Interfaces/Robot/RobotInterface.h"
+#include "EchoBot/Interfaces/Ultrasound/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/Camera/CameraInterface.hpp"
 
 class QPushButton;
 class QLabel;
@@ -29,7 +29,7 @@ class RecordWidget : public QTabWidget
 
     public:
         RecordWidget(SharedPointer<CameraInterface> cameraInterface, SharedPointer<UltrasoundInterface> usInterface,
-                    int widgetWidth=540);
+                    int widgetWidth=540, int widgetHeight=220);
 
     signals:
         void recordingStarted();
@@ -41,6 +41,7 @@ class RecordWidget : public QTabWidget
         void setupConnections();
 
         int mWidgetWidth;
+        int mWidgetHeight;
 
         SharedPointer<RobotInterface> mRobotInterface;
         SharedPointer<CameraInterface> mCameraInterface;

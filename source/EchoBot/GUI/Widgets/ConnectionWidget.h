@@ -6,9 +6,9 @@
 #include <QPushButton>
 #include <QComboBox>
 
-#include "EchoBot/Interfaces/RobotInterface.h"
-#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
-#include "EchoBot/Interfaces/CameraInterface.hpp"
+#include "EchoBot/Interfaces/Robot/RobotInterface.h"
+#include "EchoBot/Interfaces/Ultrasound/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/Camera/CameraInterface.hpp"
 
 namespace echobot
 {
@@ -18,7 +18,7 @@ class ConnectionWidget : public QTabWidget
     Q_OBJECT
 
     public:
-        ConnectionWidget(int widgetWidth=540);
+        ConnectionWidget(int widgetWidth=540, int widgetHeight=160);
         void addInterface(SensorInterface::pointer sensorInterface);
 
     signals:
@@ -43,6 +43,7 @@ class ConnectionWidget : public QTabWidget
 
     private:
         int mWidgetWidth;
+        int mWidgetHeight;
 
         SharedPointer<RobotInterface> mRobotInterface;
         SharedPointer<CameraInterface> mCameraInterface;
