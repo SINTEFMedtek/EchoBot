@@ -4,6 +4,7 @@
 #include <thread>
 #include "EchoBot/Core/SmartPointers.h"
 #include "EchoBot/Interfaces/Robot/RobotInterface.h"
+#include "EchoBot/Interfaces/Ultrasound/UltrasoundImageProcessing.h"
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
@@ -15,41 +16,6 @@ namespace echobot
 {
 using namespace fast;
 
-
-class PixelClassifier;
-
-class UltrasoundImageProcessing : public ProcessObject
-{
-    ECHOBOT_OBJECT(UltrasoundImageProcessing)
-
-    public:
-        ~UltrasoundImageProcessing();
-
-        void startRecording(std::string path);
-        void stopRecording();
-
-    private:
-        UltrasoundImageProcessing();
-
-        void execute();
-
-        SharedPointer<fast::Image> mCurrentImage;
-
-        void segmentationThread();
-        std::thread* mSegmentationThread;
-        std::mutex mFrameBufferMutex;
-        bool mSegmentationEnabled = true;
-
-        SharedPointer<PixelClassifier> mPixelClassifier;
-        void setupNeuralNetworks();
-
-        bool mStop = false;
-        bool mRecording = false;
-        std::string mStoragePath;
-        uint mFrameCounter;
-};
-
-
 class UltrasoundInterface : public SensorInterface {
     ECHOBOT_OBJECT(UltrasoundInterface)
 
@@ -59,6 +25,8 @@ class UltrasoundInterface : public SensorInterface {
         ~UltrasoundInterface();
         void connect();
         void disconnect();
+        bool isConnected(){return mConnected;};
+
         void setStreamer(UltrasoundStreamerType streamer, std::string ip = "", uint32_t port = 18944);
 
         DataChannel::pointer getOutputPort(uint portID = 0);
@@ -78,6 +46,8 @@ private:
         SharedPointer<Renderer> mRendererObject;
 
         SharedPointer<RobotInterface> mRobotInterface;
+
+        bool mConnected = false;
 };
 
 

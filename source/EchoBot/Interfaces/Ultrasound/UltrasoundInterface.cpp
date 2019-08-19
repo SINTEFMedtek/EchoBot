@@ -26,6 +26,7 @@ void UltrasoundInterface::connect()
 
     mProcessObject = UltrasoundImageProcessing::New();
     mProcessObject->setInputConnection(mUltrasoundStreamer->getOutputPort());
+    mConnected = true;
 }
 
 void UltrasoundInterface::disconnect()
@@ -33,6 +34,7 @@ void UltrasoundInterface::disconnect()
     mRendererObject->stopPipeline();
     mProcessObject->stopPipeline();
     mUltrasoundStreamer->stopPipeline();
+    mConnected = false;
 }
 
 void UltrasoundInterface::setStreamer(UltrasoundStreamerType streamer, std::string ip, uint32_t port)
