@@ -3,7 +3,7 @@
 //
 
 #include "EchoBot/Tests/catch.hpp"
-#include "EchoBot/Interfaces/RobotInterface.h"
+#include "source/EchoBot/Interfaces/Robot/RobotInterface.h"
 
 namespace echobot
 {

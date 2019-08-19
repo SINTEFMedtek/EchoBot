@@ -21,8 +21,8 @@ class RecordTool : public ProcessObject {
         void startRecording(std::string path);
         void stopRecording();
 
-        uint getFramesStored();
-        bool isRecording();
+        uint getFramesStored() const;
+        bool isRecording() const;
 
     private:
         RecordTool();
