@@ -1,43 +1,16 @@
-#include "UltrasoundInterface.hpp"
+//
+// Created by androst on 19.08.19.
+//
+
+#include "UltrasoundImageProcessing.h"
 
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
 #include "FAST/Algorithms/NeuralNetwork/SegmentationNetwork.hpp"
 #include "FAST/Exporters/MetaImageExporter.hpp"
-#include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
-#include "FAST/Streamers/ClariusStreamer.hpp"
 
-namespace echobot
-{
 
-UltrasoundInterface::UltrasoundInterface() {
-}
-
-UltrasoundInterface::~UltrasoundInterface() {
-}
-
-void UltrasoundInterface::connect()
-{
-    mProcessObject = UltrasoundImageProcessing::New();
-    mProcessObject->setInputConnection(mUltrasoundStreamer->getOutputPort());
-}
-
-void UltrasoundInterface::setStreamer(UltrasoundStreamer streamer, std::string ip, uint32_t port)
-{
-    if(streamer == Clarius)
-        mUltrasoundStreamer = ClariusStreamer::New();
-    else if(streamer == IGTLink){
-        auto usStreamer = OpenIGTLinkStreamer::New();
-        usStreamer->setConnectionAddress(ip);
-        usStreamer->setConnectionPort(port);
-        mUltrasoundStreamer = usStreamer;
-    }
-}
-
-DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
-{
-    return mProcessObject->getOutputPort(portID);
-}
+namespace echobot {
 
 UltrasoundImageProcessing::UltrasoundImageProcessing() {
     createInputPort<Image>(0);
@@ -89,18 +62,24 @@ void UltrasoundImageProcessing::execute() {
     auto segmentation = input;
     mCurrentImage = input;
 
-    if(mRecording)
-    {
+    if (mRecording) {
         MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
         imageExporter->setInputData(input);
-        imageExporter->setFilename(mStoragePath + "/Ultrasound/" + "US-2D_" + std::to_string(mFrameCounter) + ".mhd");
+        imageExporter->setFilename(
+                mStoragePath + "/Ultrasound/" + "US-2D_" + std::to_string(mFrameCounter) + ".mhd");
         imageExporter->update();
 
         ++mFrameCounter;
     }
 
-    addOutputData(0, mCurrentImage);
-    addOutputData(1, segmentation);
+    try {
+        addOutputData(0, mCurrentImage);
+        addOutputData(1, segmentation);
+    } catch (ThreadStopped &e) {
+        std::cout << "Thread stopped in USImageProcessing" << std::endl;
+    }
+
+
 }
 
 void UltrasoundImageProcessing::segmentationThread() {
@@ -118,6 +97,10 @@ void UltrasoundImageProcessing::startRecording(std::string path) {
     mFrameCounter = 0;
     mRecording = true;
     createDirectories((mStoragePath + "/Ultrasound"));
+}
+
+void UltrasoundImageProcessing::stopRecording() {
+    mRecording = false;
 }
 
 void UltrasoundImageProcessing::setupNeuralNetworks() {

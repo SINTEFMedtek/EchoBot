@@ -3,12 +3,13 @@
 
 #include <thread>
 #include "EchoBot/Core/SmartPointers.h"
-#include "RobotInterface.h"
+#include "EchoBot/Interfaces/Robot/RobotInterface.h"
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
 #include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
+#include "FAST/Visualization/Renderer.hpp"
 
 namespace echobot
 {
@@ -25,6 +26,7 @@ class UltrasoundImageProcessing : public ProcessObject
         ~UltrasoundImageProcessing();
 
         void startRecording(std::string path);
+        void stopRecording();
 
     private:
         UltrasoundImageProcessing();
@@ -51,23 +53,30 @@ class UltrasoundImageProcessing : public ProcessObject
 class UltrasoundInterface : public SensorInterface {
     ECHOBOT_OBJECT(UltrasoundInterface)
 
-
     public:
-        typedef enum {Clarius, IGTLink} UltrasoundStreamer; // Supported ultrasound streamers
+        typedef enum {Clarius, IGTLink} UltrasoundStreamerType; // Supported ultrasound streamers
 
         ~UltrasoundInterface();
         void connect();
-        void setStreamer(UltrasoundStreamer streamer, std::string ip = "", uint32_t port = 18944);
+        void disconnect();
+        void setStreamer(UltrasoundStreamerType streamer, std::string ip = "", uint32_t port = 18944);
 
-        UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
         DataChannel::pointer getOutputPort(uint portID = 0);
 
+        Streamer::pointer getStreamObject(){ return mUltrasoundStreamer;};
+        UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
+        Renderer::pointer getRendererObject();
 
-    private:
+private:
         UltrasoundInterface();
+        UltrasoundStreamerType mStreamerType;
+        std::string mIP;
+        uint32_t mPort;
 
         SharedPointer<Streamer> mUltrasoundStreamer;
         SharedPointer<UltrasoundImageProcessing> mProcessObject;
+        SharedPointer<Renderer> mRendererObject;
+
         SharedPointer<RobotInterface> mRobotInterface;
 };
 
