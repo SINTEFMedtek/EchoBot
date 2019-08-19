@@ -41,7 +41,8 @@ void CameraInterface::disconnect()
     mProcessObject->stopPipeline();
     mCameraStreamer->stopPipeline();
     mImageRenderer->stopPipeline();
-    mPointCloudRenderer->stopPipeline();
+    mDepthImageRenderer->stopPipeline();
+    //mPointCloudRenderer->stopPipeline();
 }
 
 Renderer::pointer CameraInterface::getImageRenderer()
@@ -54,12 +55,12 @@ Renderer::pointer CameraInterface::getImageRenderer()
 
 Renderer::pointer CameraInterface::getDepthImageRenderer()
 {
-    // Renderer RGB image
-    mImageRenderer = ImageRenderer::New();
-    mImageRenderer->addInputConnection(mProcessObject->getOutputPort(2));
-    mImageRenderer->setIntensityLevel(1000);
-    mImageRenderer->setIntensityWindow(500);
-    return mImageRenderer;
+    // Renderer depth image
+    mDepthImageRenderer = ImageRenderer::New();
+    mDepthImageRenderer->addInputConnection(mProcessObject->getOutputPort(2));
+    mDepthImageRenderer->setIntensityLevel(1000);
+    mDepthImageRenderer->setIntensityWindow(500);
+    return mDepthImageRenderer;
 }
 
 Renderer::pointer CameraInterface::getPointCloudRenderer()

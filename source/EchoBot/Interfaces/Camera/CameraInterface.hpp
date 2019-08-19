@@ -41,6 +41,7 @@ class CameraInterface : public SensorInterface {
         SharedPointer<RealSenseStreamer> mCameraStreamer;
         SharedPointer<VertexRenderer> mPointCloudRenderer;
         SharedPointer<ImageRenderer> mImageRenderer;
+        SharedPointer<ImageRenderer> mDepthImageRenderer;
 
 };
 
