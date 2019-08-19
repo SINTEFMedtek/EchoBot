@@ -29,9 +29,10 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH}) # For f
 # Headers for Qt objects
 # TODO make a macro for adding these
 set(QT_HEADERS
-        source/EchoBot/Interfaces/RobotInterface.h
+        source/EchoBot/Interfaces/Robot/RobotInterface.h
         source/EchoBot/GUI/Widgets/ConnectionWidget.h
         source/EchoBot/GUI/Widgets/RecordWidget.h
+        source/EchoBot/GUI/Widgets/RobotManualMoveWidget.h
         )
 
 # Set debug define if debug mode is set
