@@ -39,6 +39,8 @@ RecordWidget::RecordWidget(SharedPointer<CameraInterface> cameraInterface, Share
 
     this->setFixedWidth(mWidgetWidth);
     this->setFixedHeight(mWidgetHeight);
+
+    mRecordTool = RecordTool::New();
 }
 
 void RecordWidget::setupWidget()
@@ -72,24 +74,24 @@ void RecordWidget::toggleRecord() {
             mRecordingName = currentDateTime();
         }
         std::string recordingPath = (QString(path.c_str()) + QDir::separator() + QString(mRecordingName.c_str()) + QDir::separator()).toUtf8().constData();
-        createDirectories(recordingPath);
 
         std::cout << "Getting ready to start recording..." << std::endl;
-        if(mPointCloudDumpCheckBox->isChecked() || mImageDumpCheckBox->isChecked())
-            mCameraInterface->getProcessObject()->startRecording(recordingPath, mPointCloudDumpCheckBox->isChecked(), mImageDumpCheckBox->isChecked());
+        if(mPointCloudDumpCheckBox->isChecked()  && mCameraInterface->isConnected())
+            mRecordTool->addRecordChannel("PointCloud", mCameraInterface->getOutputPort(3));
 
-        if(mUltrasoundDumpCheckBox->isChecked())
-            mUltrasoundInterface->getProcessObject()->startRecording(recordingPath);
+        if(mImageDumpCheckBox->isChecked() && mCameraInterface->isConnected())
+            mRecordTool->addRecordChannel("CameraImages", mCameraInterface->getOutputPort(0));
+
+        if(mUltrasoundDumpCheckBox->isChecked() && mUltrasoundInterface->isConnected())
+            mRecordTool->addRecordChannel("Ultrasound", mUltrasoundInterface->getOutputPort(0));
+
+        mRecordTool->startRecording(recordingPath);
 
     } else {
         mRecordButton->setText("Record");
         mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
         mStorageDir->setDisabled(false);
-        if(mPointCloudDumpCheckBox->isChecked() || mImageDumpCheckBox->isChecked())
-            mCameraInterface->getProcessObject()->stopRecording();
-
-        if(mUltrasoundDumpCheckBox->isChecked())
-            mUltrasoundInterface->getProcessObject()->stopRecording();
+        mRecordTool->stopRecording();
         refreshRecordingsList();
     }
 }

@@ -13,6 +13,7 @@
 #include "EchoBot/Interfaces/Robot/RobotInterface.h"
 #include "EchoBot/Interfaces/Ultrasound/UltrasoundInterface.hpp"
 #include "EchoBot/Interfaces/Camera/CameraInterface.hpp"
+#include "EchoBot/Utilities/RecordTool.h"
 
 class QPushButton;
 class QLabel;
@@ -46,6 +47,7 @@ class RecordWidget : public QTabWidget
         SharedPointer<RobotInterface> mRobotInterface;
         SharedPointer<CameraInterface> mCameraInterface;
         SharedPointer<UltrasoundInterface> mUltrasoundInterface;
+        SharedPointer<RecordTool> mRecordTool;
 
         QPushButton *mRecordButton, *mPlayButton;
         QLineEdit* mStorageDir, *mRecordingNameLineEdit;
