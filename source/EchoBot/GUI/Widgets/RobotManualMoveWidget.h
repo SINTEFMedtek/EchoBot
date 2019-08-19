@@ -10,7 +10,7 @@
 #include <QButtonGroup>
 #include <QtWidgets/QTabWidget>
 
-#include "EchoBot/Interfaces/RobotInterface.h"
+#include "source/EchoBot/Interfaces/Robot/RobotInterface.h"
 
 /**
  * Implementation of Manual motion GUI tab.
