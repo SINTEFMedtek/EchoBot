@@ -21,6 +21,7 @@ class CameraInterface : public SensorInterface {
 
         void connect();
         void disconnect();
+        bool isConnected(){return mConnected;};
 
         Renderer::pointer getPointCloudRenderer();
         Renderer::pointer getDepthImageRenderer();
@@ -42,6 +43,8 @@ class CameraInterface : public SensorInterface {
         SharedPointer<VertexRenderer> mPointCloudRenderer;
         SharedPointer<ImageRenderer> mImageRenderer;
         SharedPointer<ImageRenderer> mDepthImageRenderer;
+
+        bool mConnected = false;
 
 };
 

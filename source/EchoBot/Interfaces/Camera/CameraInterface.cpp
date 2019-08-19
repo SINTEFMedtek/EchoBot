@@ -34,6 +34,7 @@ void CameraInterface::connect()
     mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
     mProcessObject->setInputConnection(1, mCameraStreamer->getOutputPort(1));
     mProcessObject->setInputConnection(2, mCameraStreamer->getOutputPort(2));
+    mConnected = true;
 }
 
 void CameraInterface::disconnect()
@@ -43,6 +44,7 @@ void CameraInterface::disconnect()
     mImageRenderer->stopPipeline();
     mDepthImageRenderer->stopPipeline();
     //mPointCloudRenderer->stopPipeline();
+    mConnected = false;
 }
 
 Renderer::pointer CameraInterface::getImageRenderer()
