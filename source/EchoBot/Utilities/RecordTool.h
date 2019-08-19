@@ -21,13 +21,13 @@ class RecordTool : public ProcessObject {
         void startRecording(std::string path);
         void stopRecording();
 
-private:
+    private:
         RecordTool();
         void execute();
         void dataDumpThread();
 
         std::map<std::string, DataChannel::pointer> mRecordChannels;
-        std::unordered_map<uint, SharedPointer<DataObject>> mLatestData;
+        std::map<std::string, SharedPointer<DataObject>> mLatestData;
 
         bool mRecording = false;
         std::string mStoragePath;
