@@ -1,7 +1,7 @@
 #ifndef ROBOTVISUALIZATION_H
 #define ROBOTVISUALIZATION_H
 
-#include "source/EchoBot/Interfaces/Robot/RobotInterface.h"
+#include "EchoBot/Interfaces/Robot/RobotInterface.h"
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp"
