@@ -65,6 +65,9 @@ void RecordApplicationGUI::disconnectFromCamera() {
 
 void RecordApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
 {
+    stopComputationThread();
+    removeAllRenderers();
+
     mCameraInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
     mCameraInterface->getProcessObject()->setInputConnection(1, streamers[1]->getOutputPort());
     mUltrasoundInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
@@ -119,7 +122,6 @@ void RecordApplicationGUI::stopStreaming()
 void RecordApplicationGUI::connectToUltrasound() {
     stopComputationThread();
     removeAllRenderers();
-
     setupUltrasoundVisualization();
 
     if(mCameraStreaming || mCameraPlayback){
