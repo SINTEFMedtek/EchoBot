@@ -150,7 +150,7 @@ void RecordWidget::playRecording() {
         if(QDir(QString::fromStdString(selectedRecordingImages)).exists())
         {
             ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
-            imageStreamer->setFilenameFormat(selectedRecordingImages + "Cam-2D_#.mhd");
+            imageStreamer->setFilenameFormat(selectedRecordingImages + "Image-2D_#.mhd");
             imageStreamer->enableLooping();
             imageStreamer->setSleepTime(100);
             imageStreamer->update();
@@ -160,11 +160,16 @@ void RecordWidget::playRecording() {
         if(QDir(QString::fromStdString(selectedRecordingUS)).exists())
         {
             ImageFileStreamer::pointer usImageStreamer = ImageFileStreamer::New();
-            usImageStreamer->setFilenameFormat(selectedRecordingUS + "US-2D_#.mhd");
+            usImageStreamer->setFilenameFormat(selectedRecordingUS + "Image-2D_#.mhd");
             usImageStreamer->enableLooping();
             usImageStreamer->setSleepTime(100);
             usImageStreamer->update();
         }
+
+        // mRecordTool->setupPlayback(playbackPath);
+        // auto streamers = mRecordTool->getPlaybackStreamers();
+        //
+        //
 
         emit(this->playbackStarted(mCameraPlaybackStreamers));
 
