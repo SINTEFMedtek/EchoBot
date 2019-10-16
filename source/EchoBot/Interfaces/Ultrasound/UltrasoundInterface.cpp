@@ -8,6 +8,7 @@ namespace echobot
 {
 
 UltrasoundInterface::UltrasoundInterface() {
+    Config::setStreamingMode(STREAMING_MODE_NEWEST_FRAME_ONLY);
 }
 
 UltrasoundInterface::~UltrasoundInterface() {
@@ -15,8 +16,9 @@ UltrasoundInterface::~UltrasoundInterface() {
 
 void UltrasoundInterface::connect()
 {
-    if(mStreamerType == Clarius)
+    if(mStreamerType == Clarius){
         mUltrasoundStreamer = ClariusStreamer::New();
+    }
     else if(mStreamerType == IGTLink){
         auto usStreamer = OpenIGTLinkStreamer::New();
         usStreamer->setConnectionAddress(mIP);
@@ -31,9 +33,9 @@ void UltrasoundInterface::connect()
 
 void UltrasoundInterface::disconnect()
 {
+    mUltrasoundStreamer->stopPipeline();
     mRendererObject->stopPipeline();
     mProcessObject->stopPipeline();
-    mUltrasoundStreamer->stopPipeline();
     mConnected = false;
 }
 
