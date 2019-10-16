@@ -23,13 +23,11 @@ UltrasoundImageProcessing::UltrasoundImageProcessing() {
 }
 
 UltrasoundImageProcessing::~UltrasoundImageProcessing() {
-    std::cout << "Stopping segmentation thread.." << std::endl;
     {
         std::lock_guard<std::mutex> lock(mFrameBufferMutex);
         mStop = true;
     }
     mSegmentationThread->join();
-    std::cout << "Segmentation thread stopped!" << std::endl;
 }
 
 void UltrasoundImageProcessing::execute() {
