@@ -20,7 +20,7 @@ class UltrasoundInterface : public SensorInterface {
     ECHOBOT_OBJECT(UltrasoundInterface)
 
     public:
-        typedef enum {Clarius, IGTLink} UltrasoundStreamerType; // Supported ultrasound streamers
+        typedef enum {Clarius, IGTLink, Playback} UltrasoundStreamerType; // Supported ultrasound streamers
 
         ~UltrasoundInterface();
         void connect();
@@ -28,6 +28,7 @@ class UltrasoundInterface : public SensorInterface {
         bool isConnected(){return mConnected;};
 
         void setStreamer(UltrasoundStreamerType streamer, std::string ip = "", uint32_t port = 18944);
+        void setPlayback(std::string filepath);
 
         DataChannel::pointer getOutputPort(uint portID = 0);
 
@@ -38,8 +39,9 @@ class UltrasoundInterface : public SensorInterface {
 private:
         UltrasoundInterface();
         UltrasoundStreamerType mStreamerType;
-        std::string mIP;
-        uint32_t mPort;
+        std::string mIP = "localhost";
+        uint32_t mPort = 18944;
+        std::string mPlaybackFilepath = "";
 
         SharedPointer<Streamer> mUltrasoundStreamer;
         SharedPointer<UltrasoundImageProcessing> mProcessObject;

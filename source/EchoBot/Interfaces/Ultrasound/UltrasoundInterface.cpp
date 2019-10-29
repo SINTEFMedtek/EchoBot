@@ -2,6 +2,7 @@
 
 #include "FAST/Streamers/OpenIGTLinkStreamer.hpp"
 #include "FAST/Streamers/ClariusStreamer.hpp"
+#include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Visualization/ImageRenderer/ImageRenderer.hpp"
 
 namespace echobot
@@ -25,6 +26,13 @@ void UltrasoundInterface::connect()
         usStreamer->setConnectionPort(mPort);
         mUltrasoundStreamer = usStreamer;
     }
+    else if(mStreamerType == Playback){
+        auto usStreamer = ImageFileStreamer::New();
+        usStreamer->setFilenameFormat(mPlaybackFilepath);
+        usStreamer->enableLooping();
+        usStreamer->setSleepTime(33.3);
+        mUltrasoundStreamer = usStreamer;
+    }
 
     mProcessObject = UltrasoundImageProcessing::New();
     mProcessObject->setInputConnection(mUltrasoundStreamer->getOutputPort());
@@ -44,6 +52,12 @@ void UltrasoundInterface::setStreamer(UltrasoundStreamerType streamer, std::stri
     mStreamerType = streamer;
     mIP = ip;
     mPort = port;
+}
+
+void UltrasoundInterface::setPlayback(std::string filepath)
+{
+    mStreamerType = UltrasoundStreamerType::Playback;
+    mPlaybackFilepath = filepath;
 }
 
 DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
