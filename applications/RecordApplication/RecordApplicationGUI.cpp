@@ -31,8 +31,8 @@ void RecordApplicationGUI::setupConnections()
     QObject::connect(mConnectionWidget, &ConnectionWidget::usConnected, std::bind(&RecordApplicationGUI::connectToUltrasound, this));
     QObject::connect(mConnectionWidget, &ConnectionWidget::usDisconnected, std::bind(&RecordApplicationGUI::disconnectFromUltrasound, this));
 
-    connect(mRecordWidget, &RecordWidget::playbackStarted, this, &RecordApplicationGUI::playbackButtonSlot);
-    connect(mRecordWidget, &RecordWidget::playbackStopped, this, &RecordApplicationGUI::stopPlaybackButtonSlot);
+    QObject::connect(mRecordWidget, &RecordWidget::playbackStarted, this, &RecordApplicationGUI::playbackButtonSlot);
+    QObject::connect(mRecordWidget, &RecordWidget::playbackStopped, this, &RecordApplicationGUI::stopPlaybackButtonSlot);
 }
 
 // Camera
@@ -40,6 +40,7 @@ void RecordApplicationGUI::setupConnections()
 void RecordApplicationGUI::connectToCamera() {
     stopComputationThread();
     removeAllRenderers();
+
     setupCameraVisualization();
     if(mUltrasoundStreaming){
         mUltrasoundInterface->connect();
@@ -54,52 +55,39 @@ void RecordApplicationGUI::connectToCamera() {
 void RecordApplicationGUI::disconnectFromCamera() {
     stopComputationThread();
     removeAllRenderers();
+
     if(mUltrasoundStreaming){
         mUltrasoundInterface->connect();
         setupUltrasoundVisualization();
     }
     mCameraStreaming = false;
+
     startComputationThread();
 }
 
 
-void RecordApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
+void RecordApplicationGUI::playbackButtonSlot()
 {
     stopComputationThread();
     removeAllRenderers();
 
-    mCameraInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
-    mCameraInterface->getProcessObject()->setInputConnection(1, streamers[1]->getOutputPort());
-    mUltrasoundInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
+    setupUltrasoundVisualization();
+    mUltrasoundStreaming = true;
 
-    mCameraPlaybackStreamers = streamers;
+    setupCameraVisualization();
+    mCameraStreaming = true;
 
-    stopComputationThread();
-    setupCameraVisualization(true);
-
+    reinitializeViews();
     startComputationThread();
 }
 
 void RecordApplicationGUI::stopPlaybackButtonSlot()
 {
-    mCameraPlaybackStreamers[0]->stopPipeline();
-    mCameraPlaybackStreamers[1]->stopPipeline();
+    mUltrasoundStreaming = false;
     this->stopStreaming();
 }
 
-void RecordApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
-
-//    if(cameraPlayback){
-//        for(auto it: mCameraPlaybackStreamers){
-//            std::cout << it.first << std::endl;
-//            mCameraInterface->getProcessObject()->setInputConnection(it.first, it.second->getOutputPort(0));
-//        }
-//    }
-//    else{
-//        mCameraInterface->getProcessObject()->setInputConnection(0, mCameraInterface->getStreamObject()->getOutputPort(0));
-//        mCameraInterface->getProcessObject()->setInputConnection(1, mCameraInterface->getStreamObject()->getOutputPort(2));
-//    }
-
+void RecordApplicationGUI::setupCameraVisualization() {
     getView(0)->addRenderer(mCameraInterface->getImageRenderer());
     getView(1)->addRenderer(mCameraInterface->getDepthImageRenderer());
 }
@@ -137,6 +125,7 @@ void RecordApplicationGUI::connectToUltrasound() {
 void RecordApplicationGUI::disconnectFromUltrasound() {
     stopComputationThread();
     removeAllRenderers();
+
     if(mCameraStreaming || mCameraPlayback){
         mCameraInterface->connect();
         setupCameraVisualization();
@@ -170,6 +159,7 @@ void RecordApplicationGUI::setupUI()
     view3D->set2DMode();
     view3D->setBackgroundColor(Color::White());
     view3D->setFixedWidth(540);
+    //view3D->setLookAt(Vector3f(0, -500, -500), Vector3f(0, 0, 1000), Vector3f(0, -1, 0), 500, 5000);
 
     view2D->set2DMode();
     view2D->setBackgroundColor(Color::White());

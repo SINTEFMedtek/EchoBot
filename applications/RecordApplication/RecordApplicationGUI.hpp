@@ -20,8 +20,6 @@ class RecordApplicationGUI : public Window {
         SharedPointer<CameraInterface> mCameraInterface;
         SharedPointer<UltrasoundInterface> mUltrasoundInterface;
 
-        std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
-
         ConnectionWidget* mConnectionWidget;
         RecordWidget* mRecordWidget;
 
@@ -36,14 +34,14 @@ class RecordApplicationGUI : public Window {
         bool mCameraStreaming = false;
         bool mUltrasoundStreaming = false;
 
-        void setupCameraVisualization(bool cameraPlayback = false);
+        void setupCameraVisualization();
         void setupUltrasoundVisualization();
         void setupConnections();
 
         void reinitializeViews();
 
     private slots:
-        void playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers);
+        void playbackButtonSlot();
         void stopPlaybackButtonSlot();
 };
 
