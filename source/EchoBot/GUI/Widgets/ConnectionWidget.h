@@ -34,12 +34,10 @@ class ConnectionWidget : public QTabWidget
         void robotConnectSlot();
         void robotDisconnectSlot();
         void robotShutdownSlot();
-        void cameraConnectSlot();
-        void cameraDisconnectSlot();
-        void usConnectSlot();
-        void usDisconnectSlot();
         void usStreamerChangedSlot(const QString streamerOption);
         void updateCameraROI();
+        void usToggleConnection();
+        void cameraToggleConnection();
 
     private:
         int mWidgetWidth;
@@ -51,12 +49,13 @@ class ConnectionWidget : public QTabWidget
 
         QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
         QPushButton *mRobotConnectButton, *mRobotDisconnectButton, *mRobotShutdownButton;
-        QPushButton *mCameraConnectButton, *mCameraDisconnectButton;
-        QPushButton *mUSConnectButton, *mUSDisconnectButton;
+        QPushButton *mCameraConnectionButton, *mUSConnectionButton;
         QComboBox *mUSStreamerOptionCBox;
         QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
 
         QString mGraphicsFolderName;
+        bool mUSConnected = false;
+        bool mCameraConnected = false;
 
         QWidget* getRobotConnectionWidget();
         QWidget* getCameraConnectionWidget();

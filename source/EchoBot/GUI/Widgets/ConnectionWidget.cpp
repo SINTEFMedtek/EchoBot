@@ -36,8 +36,7 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
         QWidget *cameraConnectionWidget = getCameraConnectionWidget();
         this->addTab(cameraConnectionWidget, "Camera");
 
-        connect(mCameraConnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraConnectSlot);
-        connect(mCameraDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::cameraDisconnectSlot);
+        connect(mCameraConnectionButton, &QPushButton::clicked, this, &ConnectionWidget::cameraToggleConnection);
         connect(mCameraMinDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
         connect(mCameraMaxDepthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
         connect(mCameraMinWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
@@ -51,8 +50,7 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
         QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
         this->addTab(usConnectionWidget, "Ultrasound");
 
-        connect(mUSConnectButton, &QPushButton::clicked, this, &ConnectionWidget::usConnectSlot);
-        connect(mUSDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::usDisconnectSlot);
+        connect(mUSConnectionButton, &QPushButton::clicked, this, &ConnectionWidget::usToggleConnection);
         connect(mUSStreamerOptionCBox, &QComboBox::currentTextChanged, this, &ConnectionWidget::usStreamerChangedSlot);
     }
 }
@@ -90,37 +88,40 @@ void ConnectionWidget::robotShutdownSlot()
     emit(this->robotShutdown());
 }
 
-void ConnectionWidget::cameraConnectSlot()
+void ConnectionWidget::cameraToggleConnection()
 {
-    mCameraInterface->connect();
-    emit(this->cameraConnected());
-}
-
-void ConnectionWidget::cameraDisconnectSlot()
-{
-    mCameraConnectButton->toggle();
-    mCameraInterface->disconnect();
-    emit(this->cameraDisconnected());
-}
-
-void ConnectionWidget::usConnectSlot()
-{
-    if(mUSStreamerOptionCBox->currentText().toStdString() == "Clarius")
-        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::Clarius);
-    else if(mUSStreamerOptionCBox->currentText().toStdString() == "IGTLink")
-    {
-        mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::IGTLink,
-                mUsIPLineEdit->text().toStdString(), 18944);
+    mCameraConnected = !mCameraConnected;
+    if(mCameraConnected){
+        mCameraConnectionButton->setText("Disconnect");
+        mCameraInterface->connect();
+        emit(this->cameraConnected());
+    }else{
+        emit(this->cameraDisconnected());
+        mCameraInterface->disconnect();
+        mCameraConnectionButton->setText("Connect");
     }
-    mUltrasoundInterface->connect();
-    emit(this->usConnected());
 }
 
-void ConnectionWidget::usDisconnectSlot()
+void ConnectionWidget::usToggleConnection()
 {
-    emit(this->usDisconnected());
-    mUltrasoundInterface->disconnect();
-    mUSConnectButton->setChecked(false);
+    mUSConnected = !mUSConnected;
+    if(mUSConnected){
+        mUSConnectionButton->setText("Disconnect");
+        if(mUSStreamerOptionCBox->currentText().toStdString() == "Clarius")
+            mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::Clarius);
+        else if(mUSStreamerOptionCBox->currentText().toStdString() == "IGTLink")
+        {
+            mUltrasoundInterface->setStreamer(UltrasoundInterface::UltrasoundStreamerType::IGTLink,
+                                              mUsIPLineEdit->text().toStdString(), 18944);
+        }
+        mUltrasoundInterface->connect();
+        emit(this->usConnected());
+
+    } else {
+        emit(this->usDisconnected());
+        mUltrasoundInterface->disconnect();
+        mUSConnectionButton->setText("Connect");
+    }
 }
 
 void ConnectionWidget::usStreamerChangedSlot(const QString streamerName)
@@ -177,12 +178,12 @@ QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
 
     int row = 0;
     mUsIPLineEdit = new QLineEdit();
-    mUSConnectButton = new QPushButton();
+    mUSConnectionButton = new QPushButton();
     mUSStreamerOptionCBox = new QComboBox();
 
     mainLayout->addWidget(new QLabel("Streamer: "), row, 0, 1, 1);
     mainLayout->addWidget(mUSStreamerOptionCBox,row,1,1,1);
-    mainLayout->addWidget(mUSConnectButton,row,2,1,1);
+    mainLayout->addWidget(mUSConnectionButton,row,2,1,1);
 
     row++;
     mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
@@ -200,15 +201,12 @@ QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
     icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-    mUSConnectButton->setIcon(icon);
-    mUSConnectButton->setToolTip("Connect to US Scanner");
-    mUSConnectButton->setText("Connect");
-    mUSConnectButton->setStyleSheet("QPushButton:checked { background-color: none; border: none; }");
-    mUSConnectButton->setCheckable(true);
-
-    row++;
-    mUSDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-    mainLayout->addWidget(mUSDisconnectButton,row,2,1,1);
+    mUSConnectionButton->setIcon(icon);
+    mUSConnectionButton->setToolTip("Connect to US Scanner");
+    mUSConnectionButton->setText("Connect");
+    mUSConnectionButton->setStyleSheet("QPushButton:checked { background-color: white; }");
+    mUSConnectionButton->setFixedWidth(120);
+    mUSConnectionButton->setCheckable(true);
 
     return group;
 }
@@ -247,21 +245,19 @@ QWidget* ConnectionWidget::getCameraConnectionWidget()
     mainLayout->addWidget(mCameraMinHeightLineEdit,2,1,1,1);
     mainLayout->addWidget(mCameraMaxHeightLineEdit,2,2,1,1);
 
-    mCameraConnectButton = new QPushButton();
+    mCameraConnectionButton = new QPushButton();
 
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
     icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-    mCameraConnectButton->setIcon(icon);
-    mCameraConnectButton->setToolTip("Connect to robot");
-    mCameraConnectButton->setText("Connect");
-    mCameraConnectButton->setStyleSheet("QPushButton:checked { background-color: none; border: none; }");
-    mCameraConnectButton->setCheckable(true);
+    mCameraConnectionButton->setIcon(icon);
+    mCameraConnectionButton->setToolTip("Connect to robot");
+    mCameraConnectionButton->setText("Connect");
+    mCameraConnectionButton->setStyleSheet("QPushButton:checked { background-color: white; }");
+    mCameraConnectionButton->setCheckable(true);
+    mCameraConnectionButton->setFixedWidth(120);
 
-    mainLayout->addWidget(mCameraConnectButton,0,3,1,1);
-
-    mCameraDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
-    mainLayout->addWidget(mCameraDisconnectButton,2,3,1,1);
+    mainLayout->addWidget(mCameraConnectionButton,0,3,1,1);
 
     return group;
 }
