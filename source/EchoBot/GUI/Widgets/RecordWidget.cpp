@@ -77,7 +77,7 @@ void RecordWidget::toggleRecord() {
 
         std::cout << "Getting ready to start recording..." << std::endl;
         if(mPointCloudDumpCheckBox->isChecked()  && mCameraInterface->isConnected())
-            mRecordTool->addRecordChannel("PointCloud", mCameraInterface->getOutputPort(3));
+            mRecordTool->addRecordChannel("PointClouds", mCameraInterface->getOutputPort(3));
 
         if(mImageDumpCheckBox->isChecked() && mCameraInterface->isConnected())
             mRecordTool->addRecordChannel("CameraImages", mCameraInterface->getOutputPort(0));
@@ -137,41 +137,20 @@ void RecordWidget::playRecording() {
         std::string selectedRecordingUS = selectedRecording + "/Ultrasound/";
 
         // Set up streaming from disk
-
-        if(QDir(QString::fromStdString(selectedRecordingPointClouds)).exists())
+        if(QDir(QString::fromStdString(selectedRecordingImages)).exists() &&
+        QDir(QString::fromStdString(selectedRecordingPointClouds)).exists())
         {
-            MeshFileStreamer::pointer meshStreamer = MeshFileStreamer::New();
-            meshStreamer->setFilenameFormat(selectedRecordingPointClouds + "#.vtk");
-            meshStreamer->enableLooping();
-            meshStreamer->update();
-            mCameraPlaybackStreamers[1] = meshStreamer;
-        }
-
-        if(QDir(QString::fromStdString(selectedRecordingImages)).exists())
-        {
-            ImageFileStreamer::pointer imageStreamer = ImageFileStreamer::New();
-            imageStreamer->setFilenameFormat(selectedRecordingImages + "Image-2D_#.mhd");
-            imageStreamer->enableLooping();
-            imageStreamer->setSleepTime(100);
-            imageStreamer->update();
-            mCameraPlaybackStreamers[0] = imageStreamer;
+            mCameraInterface->setPlayback(selectedRecording);
+            mCameraInterface->connect();
         }
 
         if(QDir(QString::fromStdString(selectedRecordingUS)).exists())
         {
-            ImageFileStreamer::pointer usImageStreamer = ImageFileStreamer::New();
-            usImageStreamer->setFilenameFormat(selectedRecordingUS + "Image-2D_#.mhd");
-            usImageStreamer->enableLooping();
-            usImageStreamer->setSleepTime(100);
-            usImageStreamer->update();
+            mUltrasoundInterface->setPlayback(selectedRecordingUS + "Image-2D_#.mhd");
+            mUltrasoundInterface->connect();
         }
 
-        // mRecordTool->setupPlayback(playbackPath);
-        // auto streamers = mRecordTool->getPlaybackStreamers();
-        //
-        //
-
-        emit(this->playbackStarted(mCameraPlaybackStreamers));
+        emit(this->playbackStarted());
 
         mPlayButton->setText("Stop");
         mPlayButton->setStyleSheet("QPushButton { background-color: red; color: white; }");

@@ -34,7 +34,7 @@ class RecordWidget : public QTabWidget
 
     signals:
         void recordingStarted();
-        void playbackStarted(const std::unordered_map<uint, Streamer::pointer> playbackStreamers);
+        void playbackStarted();
         void playbackStopped();
 
     private:
@@ -57,7 +57,7 @@ class RecordWidget : public QTabWidget
         QCheckBox *mImageDumpCheckBox, *mPointCloudDumpCheckBox, *mUltrasoundDumpCheckBox;
 
         std::string mRecordingName;
-        std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
+        std::unordered_map<std::string, Streamer::pointer> mPlaybackStreamers;
 
         QWidget* getRecordWidget();
         QWidget* getSettingsRecordWidget();
