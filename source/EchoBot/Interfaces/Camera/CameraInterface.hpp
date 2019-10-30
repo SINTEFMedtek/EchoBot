@@ -17,11 +17,13 @@ class CameraInterface : public SensorInterface {
     ECHOBOT_OBJECT(CameraInterface)
 
     public:
+        typedef enum {Stream, Playback} StreamOption;
         ~CameraInterface();
 
         void connect();
         void disconnect();
         bool isConnected(){return mConnected;};
+        void setPlayback(std::string filepath);
 
         Renderer::pointer getPointCloudRenderer();
         Renderer::pointer getDepthImageRenderer();
@@ -29,7 +31,7 @@ class CameraInterface : public SensorInterface {
 
         CameraDataProcessing::pointer getProcessObject(){ return mProcessObject;};
         DataChannel::pointer getOutputPort(uint portID = 0);
-        RealSenseStreamer::pointer getStreamObject(){ return mCameraStreamer;};
+        Streamer::pointer getStreamObject(){ return mCameraStreamer;};
 
         void setCameraROI(  float minRange = 0, float maxRange = 2000,
                         float minWidth = -1000, float maxWidth = 1000,
@@ -39,11 +41,12 @@ class CameraInterface : public SensorInterface {
         CameraInterface();
 
         SharedPointer<CameraDataProcessing> mProcessObject;
-        SharedPointer<RealSenseStreamer> mCameraStreamer;
+        SharedPointer<Streamer> mCameraStreamer;
         SharedPointer<VertexRenderer> mPointCloudRenderer;
         SharedPointer<ImageRenderer> mImageRenderer;
         SharedPointer<ImageRenderer> mDepthImageRenderer;
-
+        StreamOption mStreamOption = StreamOption::Stream;
+        std::string mPlaybackFilepath = "";
         bool mConnected = false;
 
 };

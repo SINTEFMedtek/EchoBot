@@ -6,6 +6,8 @@
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
 #include <FAST/Exporters/MetaImageExporter.hpp>
 #include <FAST/Streamers/RealSenseStreamer.hpp>
+#include <FAST/Streamers/ImageFileStreamer.hpp>
+#include <FAST/Streamers/MeshFileStreamer.hpp>
 #include <FAST/Visualization/VertexRenderer/VertexRenderer.hpp>
 #include <FAST/Visualization/ImageRenderer/ImageRenderer.hpp>
 #include <QDir>
@@ -19,21 +21,40 @@ DataChannel::pointer CameraInterface::getOutputPort(uint portID)
 
 void CameraInterface::setCameraROI(float minRange, float maxRange, float minWidth, float maxWidth, float minHeight, float maxHeight)
 {
-    mCameraStreamer->setMinRange(minRange);
-    mCameraStreamer->setMaxRange(maxRange);
-    mCameraStreamer->setMinWidth(minWidth);
-    mCameraStreamer->setMaxWidth(maxWidth);
-    mCameraStreamer->setMinHeight(minHeight);
-    mCameraStreamer->setMaxHeight(maxHeight);
+    auto streamer = std::dynamic_pointer_cast<RealSenseStreamer>(mCameraStreamer);
+    streamer->setMinRange(minRange);
+    streamer->setMaxRange(maxRange);
+    streamer->setMinWidth(minWidth);
+    streamer->setMaxWidth(maxWidth);
+    streamer->setMinHeight(minHeight);
+    streamer->setMaxHeight(maxHeight);
 }
 
 void CameraInterface::connect()
 {
-    mCameraStreamer = RealSenseStreamer::New();
     mProcessObject = CameraDataProcessing::New();
-    mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-    mProcessObject->setInputConnection(1, mCameraStreamer->getOutputPort(1));
-    mProcessObject->setInputConnection(2, mCameraStreamer->getOutputPort(2));
+
+    if(mStreamOption == StreamOption::Stream){
+        mCameraStreamer = RealSenseStreamer::New();
+        mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
+        mProcessObject->setInputConnection(1, mCameraStreamer->getOutputPort(1));
+        mProcessObject->setInputConnection(2, mCameraStreamer->getOutputPort(2));
+    } else if (mStreamOption == StreamOption::Playback) {
+        auto imageStreamer = ImageFileStreamer::New();
+        imageStreamer->setFilenameFormat(mPlaybackFilepath + "/CameraImages/Image-2D_#.mhd");
+        imageStreamer->enableLooping();
+        imageStreamer->setSleepTime(33.3);
+        mCameraStreamer = imageStreamer;
+
+        auto meshStreamer = MeshFileStreamer::New();
+        meshStreamer->setFilenameFormat(mPlaybackFilepath + "/PointClouds/#.vtk");
+        meshStreamer->enableLooping();
+        meshStreamer->setSleepTime(33.3);
+        meshStreamer->update();
+
+        mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
+        mProcessObject->setInputConnection(2, meshStreamer->getOutputPort(0));
+    }
     mConnected = true;
 }
 
@@ -43,7 +64,7 @@ void CameraInterface::disconnect()
     mCameraStreamer->stopPipeline();
     mImageRenderer->stopPipeline();
     mDepthImageRenderer->stopPipeline();
-    //mPointCloudRenderer->stopPipeline();
+    mPointCloudRenderer->stopPipeline();
     mConnected = false;
 }
 
@@ -74,7 +95,17 @@ Renderer::pointer CameraInterface::getPointCloudRenderer()
     return mPointCloudRenderer;
 }
 
+void CameraInterface::setPlayback(std::string filepath)
+{
+    mPlaybackFilepath = filepath;
+    mStreamOption = StreamOption::Playback;
+}
+
+
 CameraInterface::CameraInterface() {
+    mPointCloudRenderer = VertexRenderer::New();
+    mDepthImageRenderer = ImageRenderer::New();
+    mImageRenderer = ImageRenderer::New();
 }
 
 CameraInterface::~CameraInterface() {
