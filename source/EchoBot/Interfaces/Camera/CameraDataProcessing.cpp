@@ -12,8 +12,8 @@ namespace echobot {
 
 CameraDataProcessing::CameraDataProcessing() {
     createInputPort<Image>(0);
-    createInputPort<Image>(1);
-    createInputPort<Mesh>(2);
+    createInputPort<Image>(1, false);
+    createInputPort<Mesh>(2, false);
 
     createOutputPort<Image>(0); // RGB image clean
     createOutputPort<Image>(1); // RGB image annotated
@@ -33,18 +33,23 @@ CameraDataProcessing::CameraDataProcessing() {
 
 void CameraDataProcessing::execute() {
     Image::pointer rgbInput = getInputData<Image>(0);
-    Image::pointer depthInput = getInputData<Image>(1);
-    Mesh::pointer meshInput = getInputData<Mesh>(2);
-
     mCurrentImage = rgbInput;
-    mCurrentDepthImage = depthInput;
-    mCurrentCloud = meshInput;
+
+    if(mInputConnections.count(1)) {
+        Image::pointer depthInput = getInputData<Image>(1);
+        mCurrentDepthImage = depthInput;
+    }
+
+    if(mInputConnections.count(2)){
+        Mesh::pointer meshInput = getInputData<Mesh>(2);
+        mCurrentCloud = meshInput;
+    }
 
     if (mTargetCloudExtracted) {
         //reportInfo() << "Running ICP" << reportEnd();
         IterativeClosestPoint::pointer icp = IterativeClosestPoint::New();
         //icp->enableRuntimeMeasurements();
-        icp->setFixedMesh(meshInput);
+        icp->setFixedMesh(mCurrentCloud);
         icp->setMovingMesh(mTargetCloud);
         icp->setDistanceThreshold(100); // All points further away than 10 cm from the centroid is removed
         //icp->setMinimumErrorChange(0.5);
@@ -61,7 +66,7 @@ void CameraDataProcessing::execute() {
             mTargetCloudPlaced = true;
         }
     } else {
-        mTargetCloud = meshInput;
+        mTargetCloud = mCurrentCloud;
     }
 
     addOutputData(0, mCurrentImage);
