@@ -31,11 +31,11 @@ class ConnectionWidget : public QTabWidget
         void usDisconnected();
 
     private slots:
-        void robotConnectSlot();
-        void robotDisconnectSlot();
         void robotShutdownSlot();
         void usStreamerChangedSlot(const QString streamerOption);
         void updateCameraROI();
+
+        void robotToggleConnection();
         void usToggleConnection();
         void cameraToggleConnection();
 
@@ -48,18 +48,18 @@ class ConnectionWidget : public QTabWidget
         SharedPointer<UltrasoundInterface> mUltrasoundInterface;
 
         QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
-        QPushButton *mRobotConnectButton, *mRobotDisconnectButton, *mRobotShutdownButton;
-        QPushButton *mCameraConnectionButton, *mUSConnectionButton;
+        QPushButton *mCameraConnectionButton, *mUSConnectionButton, *mRobotConnectionButton, *mRobotShutdownButton;;
         QComboBox *mUSStreamerOptionCBox;
         QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
 
         QString mGraphicsFolderName;
+        bool mRobotConnected = false;
         bool mUSConnected = false;
         bool mCameraConnected = false;
 
-        QWidget* getRobotConnectionWidget();
-        QWidget* getCameraConnectionWidget();
-        QWidget* getUltrasoundConnectionWidget();
+        QWidget* createRobotConnectionWidget();
+        QWidget* createCameraConnectionWidget();
+        QWidget* createUltrasoundConnectionWidget();
 };
 
 }

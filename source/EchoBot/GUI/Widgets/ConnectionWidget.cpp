@@ -24,16 +24,15 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
 {
     if(sensorInterface->getNameOfClass() == "RobotInterface"){
         mRobotInterface = std::dynamic_pointer_cast<RobotInterface>(sensorInterface);
-        QWidget *robotConnectionWidget = getRobotConnectionWidget();
+        QWidget *robotConnectionWidget = createRobotConnectionWidget();
         this->addTab(robotConnectionWidget, "Robot");
 
-        connect(mRobotConnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotConnectSlot);
-        connect(mRobotDisconnectButton, &QPushButton::clicked, this, &ConnectionWidget::robotDisconnectSlot);
+        connect(mRobotConnectionButton, &QPushButton::clicked, this, &ConnectionWidget::robotToggleConnection);
         connect(mRobotShutdownButton, &QPushButton::clicked, this, &ConnectionWidget::robotShutdownSlot);
 
     } else if (sensorInterface->getNameOfClass() == "CameraInterface"){
         mCameraInterface = std::dynamic_pointer_cast<CameraInterface>(sensorInterface);
-        QWidget *cameraConnectionWidget = getCameraConnectionWidget();
+        QWidget *cameraConnectionWidget = createCameraConnectionWidget();
         this->addTab(cameraConnectionWidget, "Camera");
 
         connect(mCameraConnectionButton, &QPushButton::clicked, this, &ConnectionWidget::cameraToggleConnection);
@@ -47,7 +46,7 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
     } else if (sensorInterface->getNameOfClass() == "UltrasoundInterface")
     {
         mUltrasoundInterface = std::dynamic_pointer_cast<UltrasoundInterface>(sensorInterface);
-        QWidget *usConnectionWidget = getUltrasoundConnectionWidget();
+        QWidget *usConnectionWidget = createUltrasoundConnectionWidget();
         this->addTab(usConnectionWidget, "Ultrasound");
 
         connect(mUSConnectionButton, &QPushButton::clicked, this, &ConnectionWidget::usToggleConnection);
@@ -56,31 +55,21 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
 }
 
 
-void ConnectionWidget::robotConnectSlot()
+void ConnectionWidget::robotToggleConnection()
 {
-    mRobotInterface->robot->configure(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString() ,30003);
-    mRobotInterface->robot->start();
-
-    if(mRobotInterface->robot->isConnected() && !mRobotConnectButton->isChecked())
-    {
-        mRobotConnectButton->toggle();
+    mRobotConnected = !mRobotConnected;
+    if(mRobotConnected){
+        mRobotConnectionButton->setText("Disconnect");
+        mRobotInterface->robot->configure(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString(), 30003);
+        mRobotInterface->robot->start();
+        emit(this->robotConnected());
+    }else{
+        emit(this->robotDisconnected());
+        mRobotInterface->robot->disconnectFromRobot();
+        mRobotConnectionButton->setText("Connect");
     }
-    else if(!mRobotInterface->robot->isConnected() && mRobotConnectButton->isChecked())
-    {
-        mRobotConnectButton->toggle();
-    }
-    emit(this->robotConnected());
 }
 
-void ConnectionWidget::robotDisconnectSlot()
-{
-    mRobotInterface->robot->disconnectFromRobot();
-
-    if(!mRobotInterface->robot->isConnected() && mRobotConnectButton->isChecked())
-        mRobotConnectButton->toggle();
-
-    emit(this->robotDisconnected());
-}
 
 void ConnectionWidget::robotShutdownSlot()
 {
@@ -135,7 +124,7 @@ void ConnectionWidget::updateCameraROI(){
                                    mCameraMinHeightLineEdit->text().toFloat(),mCameraMaxHeightLineEdit->text().toFloat());
 }
 
-QWidget* ConnectionWidget::getRobotConnectionWidget()
+QWidget* ConnectionWidget::createRobotConnectionWidget()
 {
     QWidget *group = new QWidget;
     QGridLayout *mainLayout = new QGridLayout();
@@ -143,33 +132,32 @@ QWidget* ConnectionWidget::getRobotConnectionWidget()
 
     int row = 0;
     mRobotIPLineEdit = new QLineEdit();
-    mRobotConnectButton = new QPushButton();
+    mRobotConnectionButton = new QPushButton();
     mainLayout->addWidget(new QLabel("IP Address: "), row, 0, 1, 1);
     mainLayout->addWidget(mRobotIPLineEdit, row, 1,1,1);
-    mainLayout->addWidget(mRobotConnectButton,row,2,1,1);
+    mainLayout->addWidget(mRobotConnectionButton,row,2,1,1);
 
-    mRobotIPLineEdit->setText("10.218.140.123"); // 10.218.140.114
+    mRobotIPLineEdit->setText("192.168.153.129"); // 10.218.140.123 10.218.140.114
     mRobotIPLineEdit->setAlignment(Qt::AlignCenter);
 
     QIcon icon;
     icon.addFile(mGraphicsFolderName+"network-idle.ico", QSize(), QIcon::Normal, QIcon::Off);
     icon.addFile(mGraphicsFolderName+"network-transmit-receive.ico", QSize(), QIcon::Normal, QIcon::On);
-    mRobotConnectButton->setIcon(icon);
-    mRobotConnectButton->setToolTip("Connect to robot");
-    mRobotConnectButton->setText("Connect");
-    mRobotConnectButton->setCheckable(true);
-    mRobotConnectButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+    mRobotConnectionButton->setIcon(icon);
+    mRobotConnectionButton->setToolTip("Connect to robot");
+    mRobotConnectionButton->setText("Connect");
+    mRobotConnectionButton->setCheckable(true);
+    mRobotConnectionButton->setStyleSheet("QPushButton:checked { background-color: white; }");
+    mRobotConnectionButton->setFixedWidth(120);
 
     row++;
     mRobotShutdownButton = new QPushButton(QIcon(mGraphicsFolderName+"application-exit-4.png"),"Shutdown");
-    mRobotDisconnectButton = new QPushButton(QIcon(mGraphicsFolderName+"network-offline.ico"),"Disconnect");
     mainLayout->addWidget(mRobotShutdownButton,row,0,1,1);
-    mainLayout->addWidget(mRobotDisconnectButton,row,2,1,1);
 
     return group;
 }
 
-QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
+QWidget* ConnectionWidget::createUltrasoundConnectionWidget()
 {
     QWidget *group = new QWidget;
 
@@ -211,7 +199,7 @@ QWidget* ConnectionWidget::getUltrasoundConnectionWidget()
     return group;
 }
 
-QWidget* ConnectionWidget::getCameraConnectionWidget()
+QWidget* ConnectionWidget::createCameraConnectionWidget()
 {
     QWidget *group = new QWidget;
 
