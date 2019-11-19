@@ -17,7 +17,7 @@ RobotVisualizator::RobotVisualizator()
     this->addPart("wrist1", CADModelPath + "wrist1.vtk");
     this->addPart("wrist2", CADModelPath + "wrist2.vtk");
     this->addPart("wrist3", CADModelPath + "wrist3.vtk");
-    this->addTool("tool", CADModelPath + "5S-Probe.vtk");
+    this->addTool("tool", CADModelPath + "clarius_probe_with_holder.vtk");
 
     mRenderer = TriangleRenderer::New();
 }
@@ -31,40 +31,43 @@ void RobotVisualizator::setInterface(RobotInterface::pointer robotInterface)
 
 void RobotVisualizator::updatePositions()
 {
-    std::lock_guard<std::mutex> lock(mUpdateMutex);
-    romocc::Transform3d rMb = mRobotInterface->robot->getCoordinateSystem()->get_rMb();
-    romocc::Transform3d eeMt = mRobotInterface->robot->getCoordinateSystem()->get_eeMt();
-    romocc::RobotState::pointer currentState = mRobotInterface->robot->getCurrentState();
+    auto rMb = mRobotInterface->getRobot()->getCoordinateSystem()->get_rMb();
+    auto eeMt = mRobotInterface->getRobot()->getCoordinateSystem()->get_eeMt();
+    auto currentState = mRobotInterface->getRobot()->getCurrentState();
 
-    Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
-    offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
+    if(currentState->getJointConfig() != mPreviousJointConfig)
+    {
+        Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
+        offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
 
-    mParts["base"]->setTransformation(rMb);
-    mParts["shoulder"]->setTransformation(rMb*currentState->getTransformToJoint(1));
-    mParts["forearm"]->setTransformation(rMb*currentState->getTransformToJoint(1)*offset_link2);
-    mParts["forearm"]->rotate(0,0, currentState->getJointConfig()(1)*180/M_PI+90);
-    mParts["upperarm"]->setTransformation(rMb*currentState->getTransformToJoint(2));
-    mParts["upperarm"]->rotate(0,0, currentState->getJointConfig()(2)*180/M_PI);
-    mParts["wrist1"]->setTransformation(rMb*currentState->getTransformToJoint(4));
-    mParts["wrist2"]->setTransformation(rMb*currentState->getTransformToJoint(5));
-    mParts["wrist3"]->setTransformation(rMb*currentState->getTransformToJoint(6));
+        mParts["base"]->setTransformation(rMb);
+        mParts["shoulder"]->setTransformation(rMb*currentState->getTransformToJoint(1));
+        mParts["forearm"]->setTransformation(rMb*currentState->getTransformToJoint(1)*offset_link2);
+        mParts["forearm"]->rotate(0,0, currentState->getJointConfig()(1)*180/M_PI+90);
+        mParts["upperarm"]->setTransformation(rMb*currentState->getTransformToJoint(2));
+        mParts["upperarm"]->rotate(0,0, currentState->getJointConfig()(2)*180/M_PI);
+        mParts["wrist1"]->setTransformation(rMb*currentState->getTransformToJoint(4));
+        mParts["wrist2"]->setTransformation(rMb*currentState->getTransformToJoint(5));
+        mParts["wrist3"]->setTransformation(rMb*currentState->getTransformToJoint(6));
 
-    Eigen::Affine3d transformFixProbe = Eigen::Affine3d::Identity();
+        Eigen::Affine3d transformFixProbe = Eigen::Affine3d::Identity();
 
-    Eigen::Matrix3d rotProbe;
-    rotProbe = Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitZ())*
-               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())*
-               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-    transformFixProbe.linear() = transformFixProbe.linear()*rotProbe;
+        Eigen::Matrix3d rotProbe;
+        rotProbe = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ())*
+                   Eigen::AngleAxisd(-0.5*M_PI, Eigen::Vector3d::UnitX())*
+                   Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
+        transformFixProbe.linear() = transformFixProbe.linear()*rotProbe;
 
-    mTool->setTransformation(rMb*currentState->getTransformToJoint(6)*eeMt*transformFixProbe);
+        mTool->setTransformation(rMb*currentState->getTransformToJoint(6)*eeMt); // *transformFixProbe
+        mPreviousJointConfig = currentState->getJointConfig();
+    }
+
 }
 
 void RobotPart::setTransformation(Eigen::Affine3d transform)
 {
     AffineTransformation::pointer T = AffineTransformation::New();
     T->setTransform(transform.cast<float>());
-
     mMesh->getSceneGraphNode()->setTransformation(T);
 }
 

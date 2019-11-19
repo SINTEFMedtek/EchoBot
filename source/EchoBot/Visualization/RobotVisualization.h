@@ -70,6 +70,7 @@ class RobotVisualizator
         TriangleRenderer::pointer mRenderer;
         std::map<std::string, RobotPart::pointer> mParts;
         RobotTool::pointer mTool;
+        romocc::Vector6d mPreviousJointConfig;
 
         void addPart(std::string partName, std::string cadFilepath);
         void addTool(std::string toolName, std::string cadFilepath);
@@ -77,7 +78,6 @@ class RobotVisualizator
         void updatePositions();
 
         std::weak_ptr<RobotVisualizator> mPtr;
-        std::mutex mUpdateMutex;
 };
 
 }
