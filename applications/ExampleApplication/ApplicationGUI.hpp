@@ -1,12 +1,12 @@
 #ifndef ECHOBOT_APPLICATIONGUI_H
 #define ECHOBOT_APPLICATIONGUI_H
 
-#include "EchoBot/Interfaces/UltrasoundInterface.hpp"
-#include "EchoBot/Interfaces/CameraInterface.hpp"
-#include "EchoBot/Interfaces/RobotInterface.h"
+#include "EchoBot/Interfaces/Ultrasound/UltrasoundInterface.hpp"
+#include "EchoBot/Interfaces/Camera/CameraInterface.hpp"
+#include "EchoBot/Interfaces/Robot/RobotInterface.h"
 #include "EchoBot/Visualization/RobotVisualization.h"
 
-#include "EchoBot/GUI/Widgets/RobotManualMoveTab.h"
+#include "EchoBot/GUI/Widgets/RobotManualMoveWidget.h"
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
 #include "EchoBot/GUI/Widgets/RecordWidget.h"
 
@@ -21,10 +21,7 @@
 #include "FAST/Visualization/LineRenderer/LineRenderer.hpp"
 
 class QPushButton;
-class QLabel;
 class QTabWidget;
-class QElapsedTimer;
-class QListWidget;
 
 namespace echobot {
 
@@ -37,7 +34,7 @@ private slots:
     void robotConnectButtonSlot();
     void robotDisconnectButtonSlot();
     void robotShutdownButtonSlot();
-    void playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers);
+    void playbackButtonSlot();
     void stopPlaybackButtonSlot();
 
 private:
@@ -46,12 +43,11 @@ private:
     SharedPointer<RobotInterface> mRobotInterface;
     SharedPointer<CameraInterface> mCameraInterface;
     SharedPointer<UltrasoundInterface> mUltrasoundInterface;
-
     SharedPointer<RobotVisualizator> mRobotVisualizator;
 
     std::unordered_map<uint, Streamer::pointer> mCameraPlaybackStreamers;
 
-    RobotManualMoveLayout* mMoveLayout;
+    RobotManualMoveWidget* mRobotMoveWidget;
     ConnectionWidget* mConnectionWidget;
     RecordWidget* mRecordWidget;
 
@@ -60,6 +56,7 @@ private:
     void stopStreaming();
 
     void connectToUltrasound();
+    void disconnectFromUltrasound();
 
     void setupUI();
 
@@ -79,7 +76,7 @@ private:
     void restartCamera();
 
     void setupRobotManipulatorVisualization();
-    void setupCameraVisualization(bool cameraPlayback = false);
+    void setupCameraVisualization();
     void setupUltrasoundVisualization();
 
     void setupConnections();
@@ -89,16 +86,6 @@ private:
     void moveToolToManualTarget();
     void moveToolToRegisteredTarget();
     void registerCloudToData();
-
-    std::vector<Renderer::pointer> mView3DRenderers;
-    std::vector<Renderer::pointer> mView2DRenderers;
-    std::vector<Renderer::pointer> mViewUSRenderers;
-
-    void clearRenderVectors();
-
-    void updateRenderers(std::vector<Renderer::pointer> view3DRenderers,
-                         std::vector<Renderer::pointer> view2DRenderers = std::vector<Renderer::pointer>(),
-                         std::vector<Renderer::pointer> viewUSRenderers = std::vector<Renderer::pointer>());
 
     void loadPreoperativeData();
     Mesh::pointer mPreoperativeData;

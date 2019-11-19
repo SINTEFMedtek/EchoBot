@@ -60,16 +60,19 @@ void ApplicationGUI::setupConnections()
 
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraConnected, std::bind(&ApplicationGUI::connectToCamera, this));
     QObject::connect(mConnectionWidget, &ConnectionWidget::cameraDisconnected, std::bind(&ApplicationGUI::disconnectFromCamera, this));
+
     QObject::connect(mConnectionWidget, &ConnectionWidget::usConnected, std::bind(&ApplicationGUI::connectToUltrasound, this));
+    QObject::connect(mConnectionWidget, &ConnectionWidget::usDisconnected, std::bind(&ApplicationGUI::disconnectFromUltrasound, this));
+
+
+    QObject::connect(mRecordWidget, &RecordWidget::playbackStopped, std::bind(&ApplicationGUI::stopPlaybackButtonSlot, this));
+    QObject::connect(mRecordWidget, &RecordWidget::playbackStarted, std::bind(&ApplicationGUI::playbackButtonSlot, this));
 
     QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
-    QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
-    QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
-    QObject::connect(moveToolManualButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToManualTarget, this));
-    QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
-
-    connect(mRecordWidget, &RecordWidget::playbackStarted, this, &ApplicationGUI::playbackButtonSlot);
-    connect(mRecordWidget, &RecordWidget::playbackStopped, this, &ApplicationGUI::stopPlaybackButtonSlot);
+//    QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
+//    QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
+//    QObject::connect(moveToolManualButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToManualTarget, this));
+//    QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
 }
 
 
@@ -78,277 +81,186 @@ void ApplicationGUI::setupConnections()
 void ApplicationGUI::robotConnectButtonSlot()
 {
     stopComputationThread();
-    clearRenderVectors();
+    removeAllRenderers();
     setupRobotManipulatorVisualization();
+    calibrateSystem();
 
-    if(mCameraStreaming || mCameraPlayback)
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
         setupCameraVisualization();
+    }
 
-    if(mUltrasoundStreaming)
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
         setupUltrasoundVisualization();
+    }
 
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+    reinitializeViews();
     startComputationThread();
 }
 
 void ApplicationGUI::robotDisconnectButtonSlot()
 {
     stopComputationThread();
-    getView(1)->removeAllRenderers();
+    removeAllRenderers();
+
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
+        setupUltrasoundVisualization();
+    }
+
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
+        setupCameraVisualization();
+    }
+
     startComputationThread();
 }
 
 void ApplicationGUI::robotShutdownButtonSlot()
 {
-    mRobotInterface->robot->shutdown();
+    mRobotInterface->getRobot()->shutdown();
 }
 
 void ApplicationGUI::setupRobotManipulatorVisualization()
 {
-    mView3DRenderers.push_back(mRobotVisualizator->getRenderer());
-    mView3DRenderers.push_back(mRobotVisualizator->getTool()->getRenderer());
-}
-
-void ApplicationGUI::clearRenderVectors()
-{
-    mView3DRenderers.clear();
-    mView2DRenderers.clear();
-    mViewUSRenderers.clear();
+    getView(1)->addRenderer(mRobotVisualizator->getRenderer());
+    getView(1)->addRenderer(mRobotVisualizator->getTool()->getRenderer());
 }
 
 // Camera
 
 void ApplicationGUI::connectToCamera() {
-    //cameraConnectButton->setChecked(0);
-    //mCameraStreamer->setPointCloudFiltering(true);
-
-    //mCameraStreamer = RealSenseStreamer::New();
-    //mCameraInterface->setCameraStreamer(mCameraStreamer);
-    //mCameraStreamer->getReporter().setReportMethod(Reporter::COUT);
-    //std::cout << mCameraStreamer << std::endl;
-
-    // Tracking
-
     stopComputationThread();
+    removeAllRenderers();
 
-    clearRenderVectors();
     setupCameraVisualization();
 
-    if(mRobotInterface->robot->isConnected())
+    if(mRobotInterface->getRobot()->isConnected()){
         setupRobotManipulatorVisualization();
+    }
 
-    if(mUltrasoundStreaming)
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
         setupUltrasoundVisualization();
-
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
-    getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
+    }
 
     mCameraStreaming = true;
+    reinitializeViews();
     startComputationThread();
 }
-
-void ApplicationGUI::playbackButtonSlot(std::unordered_map<uint, Streamer::pointer> streamers)
-{
-    //mCameraInterface = CameraInterface::New();
-    mCameraInterface->getProcessObject()->setInputConnection(0, streamers[0]->getOutputPort());
-    mCameraInterface->getProcessObject()->setInputConnection(1, streamers[1]->getOutputPort());
-
-    mCameraPlaybackStreamers = streamers;
-
-    stopComputationThread();
-    clearRenderVectors();
-
-    setupCameraVisualization(true);
-    if(mRobotInterface->robot->isConnected())
-        setupRobotManipulatorVisualization();
-
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
-    getView(0)->installEventFilter(new MouseListener(mCameraInterface, getView(0)));
-
-    startComputationThread();
-}
-
-void ApplicationGUI::stopPlaybackButtonSlot()
-{
-    mCameraPlaybackStreamers[0]->stopPipeline();
-    mCameraPlaybackStreamers[1]->stopPipeline();
-    this->stopStreaming();
-}
-
-void ApplicationGUI::setupCameraVisualization(bool cameraPlayback) {
-
-    if(cameraPlayback){
-        for(auto it: mCameraPlaybackStreamers){
-            std::cout << it.first << std::endl;
-            mCameraInterface->getProcessObject()->setInputConnection(it.first, it.second->getOutputPort(0));
-        }
-    }
-    else{
-        mCameraInterface->getProcessObject()->setInputConnection(0, mCameraInterface->getStreamObject()->getOutputPort(0));
-        mCameraInterface->getProcessObject()->setInputConnection(1, mCameraInterface->getStreamObject()->getOutputPort(2));
-    }
-
-    // Renderer RGB image
-    ImageRenderer::pointer imageRenderer = ImageRenderer::New();
-    imageRenderer->addInputConnection(mCameraInterface->getOutputPort(0));
-
-    // Renderer annotations
-    SegmentationRenderer::pointer annotationRenderer = SegmentationRenderer::New();
-    annotationRenderer->addInputConnection(mCameraInterface->getOutputPort(1));
-    annotationRenderer->setFillArea(false);
-
-    // Renderer point cloud
-    VertexRenderer::pointer cloudRenderer = VertexRenderer::New();
-    cloudRenderer->addInputConnection(mCameraInterface->getOutputPort(2));
-    cloudRenderer->setDefaultSize(1.5);
-
-    mView3DRenderers.push_back(cloudRenderer);
-    mView2DRenderers.push_back(imageRenderer);
-
-    // Render target cloud if exists
-    if(mCameraInterface->getProcessObject()->isTargetCloudExtracted()){
-        VertexRenderer::pointer targetCloudRenderer = VertexRenderer::New();
-        targetCloudRenderer->addInputConnection(mCameraInterface->getOutputPort(3));
-        targetCloudRenderer->setDefaultSize(1.5);
-        targetCloudRenderer->setDefaultColor(Color::Green());
-        mView3DRenderers.push_back(targetCloudRenderer);
-    } else {
-        mView2DRenderers.push_back(annotationRenderer);
-    }
-}
-
-void ApplicationGUI::updateRenderers(std::vector<Renderer::pointer> mView3DRenderers,
-                                     std::vector<Renderer::pointer> mView2DRenderers,
-                                     std::vector<Renderer::pointer> mViewUSRenderers)
-{
-    getView(0)->removeAllRenderers();
-    getView(0)->set2DMode();
-    getView(0)->setBackgroundColor(Color::White());
-    for(auto it: mView2DRenderers) {
-        std::cout << "2D: " << it->getNameOfClass() << std::endl;
-        getView(0)->addRenderer(it);
-    }
-    getView(0)->reinitialize();
-
-    getView(1)->removeAllRenderers();
-    getView(1)->set3DMode();
-    getView(1)->setBackgroundColor(Color::White());
-
-    for(auto it: mView3DRenderers){
-        std::cout << "3D: " << it->getNameOfClass() << std::endl;
-        getView(1)->addRenderer(it);
-    }
-
-    getView(1)->reinitialize();
-
-    getView(2)->removeAllRenderers();
-    getView(2)->set2DMode();
-    getView(2)->setBackgroundColor(Color::White());
-
-    for(auto it: mViewUSRenderers){
-        std::cout << "US: " << it->getNameOfClass() << std::endl;
-        getView(2)->addRenderer(it);
-    }
-
-    getView(2)->reinitialize();
-}
-
 
 void ApplicationGUI::disconnectFromCamera() {
     stopComputationThread();
-    mCameraInterface->getStreamObject()->stop();
+    removeAllRenderers();
+
+    if(mRobotInterface->getRobot()->isConnected()){
+        mRobotInterface->getRobot()->connect();
+        setupRobotManipulatorVisualization();
+    }
+
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
+        setupUltrasoundVisualization();
+    }
     mCameraStreaming = false;
+
     startComputationThread();
+}
+
+void ApplicationGUI::setupCameraVisualization() {
+    getView(0)->addRenderer(mCameraInterface->getImageRenderer());
+    getView(1)->addRenderer(mCameraInterface->getPointCloudRenderer());
 }
 
 void ApplicationGUI::restartCamera() {
 
     stopComputationThread();
-    clearRenderVectors();
 
     setupCameraVisualization();
 
-    if(mRobotInterface->robot->isConnected())
+    if(mRobotInterface->getRobot()->isConnected())
         setupRobotManipulatorVisualization();
 
     if(mUltrasoundStreaming)
         setupUltrasoundVisualization();
 
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
     startComputationThread();
 }
 
 void ApplicationGUI::stopStreaming()
 {
     stopComputationThread();
-    getView(0)->removeAllRenderers();
-    getView(1)->removeAllRenderers();
-    getView(2)->removeAllRenderers();
+    removeAllRenderers();
     startComputationThread();
+}
+
+void ApplicationGUI::playbackButtonSlot()
+{
+    stopComputationThread();
+    removeAllRenderers();
+
+    setupUltrasoundVisualization();
+    mUltrasoundStreaming = true;
+
+    setupCameraVisualization();
+    mCameraStreaming = true;
+
+    reinitializeViews();
+    startComputationThread();
+}
+
+void ApplicationGUI::stopPlaybackButtonSlot()
+{
+    mUltrasoundStreaming = false;
+    this->stopStreaming();
 }
 
 // Ultrasound
 void ApplicationGUI::connectToUltrasound() {
-
     stopComputationThread();
-    clearRenderVectors();
-
+    removeAllRenderers();
     setupUltrasoundVisualization();
 
-    if(mRobotInterface->robot->isConnected())
+    if(mRobotInterface->isConnected())
         setupRobotManipulatorVisualization();
-        //mUltrasoundInterface->setRobotInterface(mRobotInterface);
 
-    if(mCameraStreaming || mCameraPlayback)
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
         setupCameraVisualization();
-
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+    }
 
     mUltrasoundStreaming = true;
+    reinitializeViews();
+    startComputationThread();
+}
+
+void ApplicationGUI::disconnectFromUltrasound() {
+    stopComputationThread();
+    removeAllRenderers();
+
+    if(mRobotInterface->isConnected())
+        setupRobotManipulatorVisualization();
+
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
+        setupCameraVisualization();
+    }
+
+    reinitializeViews();
     startComputationThread();
 }
 
 void ApplicationGUI::setupUltrasoundVisualization()
 {
-    if(mUltrasoundStreaming) {
-        //mUltrasoundStreamer->stopPipeline();
-        //mUltrasoundInterface->stopPipeline();
-
-        //mUltrasoundStreamer = ClariusStreamer::New(); //IGTLinkStreamer::New();
-        //mUltrasoundStreamer->setConnectionAddress(mUsIPLineEdit->text().toStdString());
-        //mUltrasoundStreamer->setConnectionPort(18944);
-
-        //mUltrasoundInterface->setInputConnection(mUltrasoundStreamer->getOutputPort());
-
-        //if(mRobotInterface->robot->isConnected())
-        //    mUltrasoundInterface->setRobotInterface(mRobotInterface);
-    }
-
-    auto usRenderer = ImageRenderer::New();
-    usRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(0));
-
-//    auto segmentationRenderer = SegmentationRenderer::New();
-//    segmentationRenderer->addInputConnection(mUltrasoundInterface->getOutputPort(1));
-//
-//    SegmentationVolumeReconstructor::pointer reconstructor = SegmentationVolumeReconstructor::New();
-//    reconstructor->setInputConnection(mUltrasoundInterface->getOutputPort(1));
-//
-//    SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
-//    extraction->setInputConnection(reconstructor->getOutputPort());
-//
-//    TriangleRenderer::pointer surfaceRenderer = TriangleRenderer::New();
-//    surfaceRenderer->addInputConnection(extraction->getOutputPort());
-
-    mViewUSRenderers.push_back(usRenderer);
-    //mView3DRenderers.push_back(usRenderer);
-
-    //mViewUSRenderers.push_back(segmentationRenderer);
-    //mView3DRenderers.push_back(surfaceRenderer);
+    getView(1)->addRenderer(mUltrasoundInterface->getRendererObject());
+    getView(2)->addRenderer(mUltrasoundInterface->getRendererObject());
 }
 
 // Calibration
 void ApplicationGUI::calibrateSystem()
 {
+    std::cout << "Calibrating system" << std::endl;
     Eigen::Affine3d rMb = Eigen::Affine3d::Identity();
 
     Eigen::Matrix3d m;
@@ -359,19 +271,19 @@ void ApplicationGUI::calibrateSystem()
     rMb.translate(Eigen::Vector3d(-800,150,950)); // -500, 370, 1000 (y,x,z)
     rMb.linear() = rMb.linear()*m;
 
-    mRobotInterface->robot->getCoordinateSystem()->set_rMb(rMb);
+    mRobotInterface->getRobot()->getCoordinateSystem()->set_rMb(rMb);
 
     Eigen::Affine3d eeMt = Eigen::Affine3d::Identity();
 
     Eigen::Matrix3d rotProbe;
     rotProbe = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ())*
-               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())*
+               Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitX())*
                Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
 
-    eeMt.translate(Eigen::Vector3d(-100,0,100));
+    eeMt.translate(Eigen::Vector3d(0,-65,130));
     eeMt.linear() = eeMt.linear()*rotProbe;
 
-    mRobotInterface->robot->getCoordinateSystem()->set_eeMt(eeMt);
+    mRobotInterface->getRobot()->getCoordinateSystem()->set_eeMt(eeMt);
 }
 
 // Registration
@@ -476,7 +388,7 @@ void ApplicationGUI::moveToolToManualTarget()
     if(mMovingToTarget)
     {
         moveToolManualButton->setText("Move to target");
-        mRobotInterface->robot->stopMove(romocc::MotionType::stopj, 50);
+        mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopj, 50);
     }else{
         Mesh::pointer targetCloud = mCameraInterface->getProcessObject()->getTargetCloud();
         MeshAccess::pointer targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
@@ -487,10 +399,10 @@ void ApplicationGUI::moveToolToManualTarget()
         Eigen::Affine3d rMtarget = Eigen::Affine3d::Identity();
         rMtarget.translation() = pointCloudCentroid.cast<double>();
 
-        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->robot->getCoordinateSystem();
+        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->getRobot()->getCoordinateSystem();
         Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
 
-        mRobotInterface->robot->move(romocc::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->getRobot()->move(romocc::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
     }
     mMovingToTarget = !mMovingToTarget;
@@ -501,7 +413,7 @@ void ApplicationGUI::moveToolToRegisteredTarget()
     if(mMovingToTarget)
     {
         moveToolRegisteredButton->setText("Move to registered target");
-        mRobotInterface->robot->stopMove(romocc::MotionType::stopj, 50);
+        mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopj, 50);
     }else{
         Eigen::Affine3f rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
         Eigen::Affine3d dataMtarget;
@@ -518,12 +430,12 @@ void ApplicationGUI::moveToolToRegisteredTarget()
 
         Eigen::Affine3d rMtarget = rMdata.cast<double>()*dataMtarget;
 
-        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->robot->getCoordinateSystem();
+        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->getRobot()->getCoordinateSystem();
         Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
 
         std::cout << new_bMee.matrix() << std::endl;
 
-        mRobotInterface->robot->move(romocc::MotionType::movep, new_bMee, 50, 25);
+        mRobotInterface->getRobot()->move(romocc::MotionType::movep, new_bMee, 50, 25);
         moveToolManualButton->setText("Abort move");
 
     }
@@ -532,24 +444,24 @@ void ApplicationGUI::moveToolToRegisteredTarget()
 
 void ApplicationGUI::extractPointCloud() {
     stopComputationThread();
-    clearRenderVectors();
+    //clearRenderVectors();
 
     if(mCameraPlayback)
     {
         std::cout << "Point cloud from playback not implemented." << std::endl;
     } else {
-        mCameraInterface->getProcessObject()->calculateTargetCloud(mCameraInterface->getStreamObject());
+        //mCameraInterface->getProcessObject()->calculateTargetCloud(mCameraInterface->getStreamObject());
     }
 
     setupCameraVisualization();
 
-    if(mRobotInterface->robot->isConnected())
+    if(mRobotInterface->getRobot()->isConnected())
         setupRobotManipulatorVisualization();
 
     if(mUltrasoundStreaming)
         setupUltrasoundVisualization();
 
-    updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+    //updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
 
     startComputationThread();
 }
@@ -581,28 +493,33 @@ void ApplicationGUI::setupUI()
 
     QVBoxLayout* menuLayout = new QVBoxLayout;
     menuLayout->setAlignment(Qt::AlignTop);
+    int menuWidth = 540;
 
     // Title label
     QLabel* title = new QLabel;
     title->setText("<div style=\"text-align: center; font-weight: bold; font-size: 24px;\">Example application</div>");
     menuLayout->addWidget(title);
 
-    mConnectionWidget = new ConnectionWidget();
+    mConnectionWidget = new ConnectionWidget(menuWidth);
     mConnectionWidget->addInterface(mRobotInterface);
     mConnectionWidget->addInterface(mCameraInterface);
     mConnectionWidget->addInterface(mUltrasoundInterface);
     menuLayout->addWidget(mConnectionWidget);
 
-    mMoveLayout = new RobotManualMoveLayout(mRobotInterface);
+    mRobotMoveWidget = new RobotManualMoveWidget(mRobotInterface);
 
     QWidget *workflowWidget = getWorkflowWidget();
+    workflowWidget->setFixedWidth(menuWidth);
+
     tabWidget = new QTabWidget;
     tabWidget->addTab(workflowWidget, "Workflow");
-    tabWidget->addTab(mMoveLayout->tabWindow, "Robot manual motion");
+    tabWidget->addTab(mRobotMoveWidget, "Robot manual motion");
+    tabWidget->setFixedWidth(menuWidth);
     menuLayout->addWidget(tabWidget);
 
-    mRecordWidget = new RecordWidget(mCameraInterface, mUltrasoundInterface);
+    mRecordWidget = new RecordWidget(mCameraInterface, mUltrasoundInterface, menuWidth);
     menuLayout->addWidget(mRecordWidget);
+    menuLayout->addStretch();
 
     // Quit button
     QPushButton* quitButton = new QPushButton;
@@ -669,35 +586,35 @@ QWidget* ApplicationGUI::getWorkflowWidget()
     return group;
 }
 
-MouseListener::MouseListener(CameraInterface::pointer cameraInterface, View* view) : QObject(view) {
-    mCameraInterface = cameraInterface;
-    mPreviousMousePosition = Vector2i(-1, -1);
-    mView = view;
-}
-
-bool MouseListener::eventFilter(QObject *obj, QEvent *event) {
-    if(event->type() == QEvent::MouseButtonRelease) {
-        mPreviousMousePosition = Vector2i(-1, -1);
-    }
-    if(event->type() == QEvent::MouseMove) {
-        // Releay mouse movement to tracking
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        // TODO need to go from view coordinates to physical to image coordinates
-        const Matrix4f perspectiveMatrix = mView->getPerspectiveMatrix();
-        const Matrix4f viewMatrix = mView->getViewMatrix();
-        Vector3f current(2.0f*(float)mouseEvent->x()/mView->width() - 1.0f, -(2.0f*(float)mouseEvent->y()/mView->height() -1.0f), 0);
-        current = (viewMatrix.inverse()*perspectiveMatrix.inverse()*current.homogeneous()).head(3);
-        if(mPreviousMousePosition.x() == -1 && mPreviousMousePosition.y() == -1) {
-            mPreviousMousePosition = current.cast<int>().head(2);
-        } else {
-            mCameraInterface->getProcessObject()->addLine(mPreviousMousePosition, current.cast<int>().head(2));
-            mPreviousMousePosition = current.cast<int>().head(2);
-        }
-    }
-
-    // standard event processing
-    return QObject::eventFilter(obj, event);
-}
+//MouseListener::MouseListener(CameraInterface::pointer cameraInterface, View* view) : QObject(view) {
+//    mCameraInterface = cameraInterface;
+//    mPreviousMousePosition = Vector2i(-1, -1);
+//    mView = view;
+//}
+//
+//bool MouseListener::eventFilter(QObject *obj, QEvent *event) {
+//    if(event->type() == QEvent::MouseButtonRelease) {
+//        mPreviousMousePosition = Vector2i(-1, -1);
+//    }
+//    if(event->type() == QEvent::MouseMove) {
+//        // Releay mouse movement to tracking
+//        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+//        // TODO need to go from view coordinates to physical to image coordinates
+//        const Matrix4f perspectiveMatrix = mView->getPerspectiveMatrix();
+//        const Matrix4f viewMatrix = mView->getViewMatrix();
+//        Vector3f current(2.0f*(float)mouseEvent->x()/mView->width() - 1.0f, -(2.0f*(float)mouseEvent->y()/mView->height() -1.0f), 0);
+//        current = (viewMatrix.inverse()*perspectiveMatrix.inverse()*current.homogeneous()).head(3);
+//        if(mPreviousMousePosition.x() == -1 && mPreviousMousePosition.y() == -1) {
+//            mPreviousMousePosition = current.cast<int>().head(2);
+//        } else {
+//            mCameraInterface->getProcessObject()->addLine(mPreviousMousePosition, current.cast<int>().head(2));
+//            mPreviousMousePosition = current.cast<int>().head(2);
+//        }
+//    }
+//
+//    // standard event processing
+//    return QObject::eventFilter(obj, event);
+//}
 
 void ApplicationGUI::loadPreoperativeData() {
     QFileDialog fileDialog(mWidget);
@@ -712,7 +629,7 @@ void ApplicationGUI::loadPreoperativeData() {
             QString extension = fi.suffix();
 
             stopComputationThread();
-            clearRenderVectors();
+            //clearRenderVectors();
 
             DataChannel::pointer port;
 
@@ -737,7 +654,7 @@ void ApplicationGUI::loadPreoperativeData() {
 
                 auto surfaceRenderer = TriangleRenderer::New();
                 surfaceRenderer->setInputData(mPreoperativeData);
-                mView3DRenderers.push_back(surfaceRenderer);
+                //mView3DRenderers.push_back(surfaceRenderer);
 
             } else{
                 auto importer = VTKMeshFileImporter::New();
@@ -748,19 +665,19 @@ void ApplicationGUI::loadPreoperativeData() {
                 mPreoperativeData = port->getNextFrame<Mesh>();
                 auto vertexRenderer = VertexRenderer::New();
                 vertexRenderer->addInputData(mPreoperativeData, Color::Green(), 3.0);
-                mView3DRenderers.push_back(vertexRenderer);
+                //mView3DRenderers.push_back(vertexRenderer);
             }
 
             if(mUltrasoundStreaming)
                 setupUltrasoundVisualization();
 
-            if(mRobotInterface->robot->isConnected())
+            if(mRobotInterface->getRobot()->isConnected())
                 setupRobotManipulatorVisualization();
 
             if(mCameraStreaming || mCameraPlayback)
                 setupCameraVisualization();
 
-            updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+            //updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
             startComputationThread();
         }
     }
@@ -769,7 +686,6 @@ void ApplicationGUI::loadPreoperativeData() {
 void ApplicationGUI::initializeRenderers()
 {
     // Small hack to avoid transparent cad models in viewer
-
     getView(1)->addRenderer(mRobotVisualizator->getRenderer());
 
     QTimer* timer = new QTimer(this);
