@@ -1,8 +1,6 @@
 #ifndef ROBOTMANUALMOVEWIDGET_H
 #define ROBOTMANUALMOVEWIDGET_H
 
-#include <mutex>
-
 #include <QLineEdit>
 #include <QPushButton>
 #include <QGridLayout>
@@ -29,7 +27,7 @@ class RobotManualMoveWidget : public QWidget
 
     public:
         RobotManualMoveWidget(RobotInterface::pointer robotInterface, int widgetWidth=540, int widgetHeight=500);
-        virtual ~RobotManualMoveWidget();
+        virtual ~RobotManualMoveWidget(){};
 
     private:
         void setupWidget();
@@ -76,11 +74,11 @@ class RobotManualMoveWidget : public QWidget
 
         void setAutoRepeat(bool isRepeated, QButtonGroup *buttons);
         void setMaximumWidth(int width, QButtonGroup *buttons);
-        void setupLayout();
 
-        std::mutex mUpdateMutex;
 
-    private slots:
+    public slots:
+        void updatePositions();
+
         void moveButtonReleased();
         void jointButtonReleased();
 
@@ -110,7 +108,6 @@ class RobotManualMoveWidget : public QWidget
         void q5NegButtonPressed();
         void q6NegButtonPressed();
 
-        void updatePositions();
 };
 
 } // end namespace echobot

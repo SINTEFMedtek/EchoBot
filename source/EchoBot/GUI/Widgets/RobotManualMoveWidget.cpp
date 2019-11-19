@@ -6,6 +6,9 @@
 #include <QApplication>
 #include <QGroupBox>
 #include <QList>
+#include <QTimer>
+
+#include <iostream>
 
 namespace echobot
 {
@@ -17,23 +20,16 @@ RobotManualMoveWidget::RobotManualMoveWidget(RobotInterface::pointer robotInterf
 {
     setupWidget();
     setupConnections();
-
-    this->setFixedWidth(mWidgetWidth);
-    this->setFixedHeight(mWidgetHeight);
-}
-
-RobotManualMoveWidget::~RobotManualMoveWidget()
-{
 }
 
 void RobotManualMoveWidget::setupWidget()
 {
     mainLayout = new QHBoxLayout();
-    QWidget *leftColumnWidgets = new QWidget();
-    QVBoxLayout *leftColumnLayout = new QVBoxLayout(leftColumnWidgets);
+    auto leftColumnWidgets = new QWidget();
+    auto leftColumnLayout = new QVBoxLayout(leftColumnWidgets);
 
-    QWidget *rightColumnWidgets = new QWidget();
-    QVBoxLayout *rightColumnLayout = new QVBoxLayout(rightColumnWidgets);
+    auto rightColumnWidgets = new QWidget();
+    auto rightColumnLayout = new QVBoxLayout(rightColumnWidgets);
 
     setMoveToolLayout(leftColumnLayout);
     setJointMoveWidget(leftColumnLayout);
@@ -44,6 +40,8 @@ void RobotManualMoveWidget::setupWidget()
     mainLayout->addWidget(rightColumnWidgets,0,Qt::AlignTop|Qt::AlignLeft);
 
     this->setLayout(mainLayout);
+    this->setFixedWidth(mWidgetWidth);
+    this->setFixedHeight(mWidgetHeight);
 }
 
 void RobotManualMoveWidget::setupConnections()
@@ -51,8 +49,10 @@ void RobotManualMoveWidget::setupConnections()
     this->connectMovementButtons();
     this->connectJointButtons();
     this->updatePositions();
-    QObject::connect(mRobotInterface.get(), &RobotInterface::stateUpdated,
-                     std::bind(&RobotManualMoveWidget::updatePositions, this));
+
+    QTimer *timer = new QTimer(this);
+    QObject::connect(timer, &QTimer::timeout, std::bind(&RobotManualMoveWidget::updatePositions, this));
+    timer->start(25);
 }
 
 
@@ -63,7 +63,7 @@ void RobotManualMoveWidget::setMoveToolLayout(QVBoxLayout *parent)
     group->setFlat(true);
     parent->addWidget(group);
 
-    QGridLayout *keyLayout = new QGridLayout();
+    auto keyLayout = new QGridLayout();
     group->setLayout(keyLayout);
     keyLayout->setSpacing(0);
     keyLayout->setMargin(0);
@@ -157,7 +157,7 @@ void RobotManualMoveWidget::setMoveSettingsWidget(QVBoxLayout *parent)
     group->setFlat(true);
     parent->addWidget(group);
 
-    QGridLayout *velAccLayout = new QGridLayout();
+    auto velAccLayout = new QGridLayout();
     group->setLayout(velAccLayout);
 
     velAccLayout->setSpacing(5);
@@ -167,13 +167,13 @@ void RobotManualMoveWidget::setMoveSettingsWidget(QVBoxLayout *parent)
     velAccLayout->addWidget(new QLabel("Vel"), 0, 0, 1, 1);
     velocityLineEdit = new QLineEdit();
     velAccLayout->addWidget(velocityLineEdit, 0, 1, 1, 1);
-    velocityLineEdit->setText(QApplication::translate("Ur5Widget", "50", 0));
+    velocityLineEdit->setText(QApplication::translate("Ur5Widget", "50", nullptr));
     velAccLayout->addWidget(new QLabel("mm/s"), 0, 2, 1, 1);
 
     // Acceleration
     accelerationLineEdit = new QLineEdit();
     velAccLayout->addWidget(accelerationLineEdit, 1, 1, 1, 1);
-    accelerationLineEdit->setText(QApplication::translate("Ur5Widget", "250", 0));
+    accelerationLineEdit->setText(QApplication::translate("Ur5Widget", "250", nullptr));
     velAccLayout->addWidget(new QLabel("Acc"), 1, 0, 1, 1);
     velAccLayout->addWidget(new QLabel("mm/s^2"), 1, 2, 1, 1);
 
@@ -181,7 +181,7 @@ void RobotManualMoveWidget::setMoveSettingsWidget(QVBoxLayout *parent)
     velAccLayout->addWidget(new QLabel("Time"), 2, 0, 1, 1);
     timeLineEdit = new QLineEdit();
     velAccLayout->addWidget(timeLineEdit, 2, 1, 1, 1);
-    timeLineEdit->setText(QApplication::translate("Ur5Widget", "0.5", 0));
+    timeLineEdit->setText(QApplication::translate("Ur5Widget", "0.5", nullptr));
     velAccLayout->addWidget(new QLabel("s"), 2, 2, 1, 1);
 
     timeLineEdit->setMinimumWidth(40);
@@ -196,7 +196,7 @@ void RobotManualMoveWidget::setCoordInfoWidget(QVBoxLayout *parent)
     group->setFlat(true);
     parent->addWidget(group);
 
-    QGridLayout *coordInfoLayout = new QGridLayout();
+    auto coordInfoLayout = new QGridLayout();
     group->setLayout(coordInfoLayout);
 
     coordInfoLayout->setSpacing(5);
@@ -255,7 +255,7 @@ void RobotManualMoveWidget::setJointMoveWidget(QVBoxLayout *parent)
     group->setFlat(true);
     parent->addWidget(group);
 
-    QGridLayout *coordInfoLayout = new QGridLayout();
+    auto coordInfoLayout = new QGridLayout();
     group->setLayout(coordInfoLayout);
 
     coordInfoLayout->setSpacing(5);
@@ -373,24 +373,22 @@ void RobotManualMoveWidget::setMaximumWidth(int width, QButtonGroup *buttons)
 
 void RobotManualMoveWidget::updatePositions()
 {
-    std::lock_guard<std::mutex> lock(mUpdateMutex);
-    romocc::RobotState::pointer currentState = mRobotInterface->robot->getCurrentState();
-    romocc::Vector6d operationalConfig = currentState->getOperationalConfig();
-    romocc::Vector6d jointConfig = currentState->getJointConfig();
+        romocc::Vector6d operationalConfig = mRobotInterface->getCurrentState()->getOperationalConfig();
+        romocc::Vector6d jointConfig = mRobotInterface->getCurrentState()->getJointConfig();
 
-    xPosLineEdit->setText(QString::number(operationalConfig(0),'f',2));
-    yPosLineEdit->setText(QString::number(operationalConfig(1),'f',2));
-    zPosLineEdit->setText(QString::number(operationalConfig(2),'f',2));
-    rxLineEdit->setText(QString::number(operationalConfig(3),'f',4));
-    ryLineEdit->setText(QString::number(operationalConfig(4),'f',4));
-    rzLineEdit->setText(QString::number(operationalConfig(5),'f',4));
+        xPosLineEdit->setText(QString::number(operationalConfig(0),'f',2));
+        yPosLineEdit->setText(QString::number(operationalConfig(1),'f',2));
+        zPosLineEdit->setText(QString::number(operationalConfig(2),'f',2));
+        rxLineEdit->setText(QString::number(operationalConfig(3),'f',4));
+        ryLineEdit->setText(QString::number(operationalConfig(4),'f',4));
+        rzLineEdit->setText(QString::number(operationalConfig(5),'f',4));
 
-    q1LineEdit->setText(QString::number(jointConfig(0),'f',4));
-    q2LineEdit->setText(QString::number(jointConfig(1),'f',4));
-    q3LineEdit->setText(QString::number(jointConfig(2),'f',4));
-    q4LineEdit->setText(QString::number(jointConfig(3),'f',4));
-    q5LineEdit->setText(QString::number(jointConfig(4),'f',4));
-    q6LineEdit->setText(QString::number(jointConfig(5),'f',4));
+        q1LineEdit->setText(QString::number(jointConfig(0),'f',4));
+        q2LineEdit->setText(QString::number(jointConfig(1),'f',4));
+        q3LineEdit->setText(QString::number(jointConfig(2),'f',4));
+        q4LineEdit->setText(QString::number(jointConfig(3),'f',4));
+        q5LineEdit->setText(QString::number(jointConfig(4),'f',4));
+        q6LineEdit->setText(QString::number(jointConfig(5),'f',4));
 }
 
 
@@ -529,7 +527,7 @@ void RobotManualMoveWidget::coordButtonPressed(int axis, int sign)
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
     operationalVelocity(axis) = (sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->getRobot()->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveWidget::jointButtonPressed(int joint,int sign)
@@ -537,7 +535,7 @@ void RobotManualMoveWidget::jointButtonPressed(int joint,int sign)
     Eigen::RowVectorXd jointVelocity(6);
     jointVelocity << 0,0,0,0,0,0;
     jointVelocity(joint)=(sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot->move(romocc::MotionType::speedj,jointVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->getRobot()->move(romocc::MotionType::speedj,jointVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveWidget::rotButtonPressed(int angle, int sign)
@@ -545,7 +543,7 @@ void RobotManualMoveWidget::rotButtonPressed(int angle, int sign)
     Eigen::RowVectorXd operationalVelocity(6);
     operationalVelocity << 0,0,0,0,0,0;
     operationalVelocity(angle+3)=(sign)*velocityLineEdit->text().toDouble()/1000;
-    mRobotInterface->robot->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
+    mRobotInterface->getRobot()->move(romocc::MotionType::speedl,operationalVelocity,accelerationLineEdit->text().toDouble(),0,timeLineEdit->text().toDouble(),0);
 }
 
 void RobotManualMoveWidget::posZButtonPressed()
@@ -610,12 +608,12 @@ void RobotManualMoveWidget::negRZButtonPressed()
 
 void RobotManualMoveWidget::moveButtonReleased()
 {
-    mRobotInterface->robot->stopMove(romocc::MotionType::stopl, accelerationLineEdit->text().toDouble());
+    mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopl, accelerationLineEdit->text().toDouble());
 }
 
 void RobotManualMoveWidget::jointButtonReleased()
 {
-    mRobotInterface->robot->stopMove(romocc::MotionType::stopj, accelerationLineEdit->text().toDouble());
+    mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopj, accelerationLineEdit->text().toDouble());
 }
 
 }
