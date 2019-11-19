@@ -60,12 +60,12 @@ void ConnectionWidget::robotToggleConnection()
     mRobotConnected = !mRobotConnected;
     if(mRobotConnected){
         mRobotConnectionButton->setText("Disconnect");
-        mRobotInterface->robot->configure(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString(), 30003);
-        mRobotInterface->robot->start();
+        mRobotInterface->setConfiguration(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString(), 30003);
+        mRobotInterface->connect();
         emit(this->robotConnected());
     }else{
         emit(this->robotDisconnected());
-        mRobotInterface->robot->disconnectFromRobot();
+        mRobotInterface->disconnect();
         mRobotConnectionButton->setText("Connect");
     }
 }
@@ -73,7 +73,7 @@ void ConnectionWidget::robotToggleConnection()
 
 void ConnectionWidget::robotShutdownSlot()
 {
-    mRobotInterface->robot->shutdown();
+    mRobotInterface->getRobot()->shutdown();
     emit(this->robotShutdown());
 }
 
