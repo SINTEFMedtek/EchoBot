@@ -92,13 +92,6 @@ void RecordApplicationGUI::setupCameraVisualization() {
     getView(1)->addRenderer(mCameraInterface->getDepthImageRenderer());
 }
 
-void RecordApplicationGUI::reinitializeViews()
-{
-    for(auto view: getViews()){
-        view->reinitialize();
-    }
-}
-
 void RecordApplicationGUI::stopStreaming()
 {
     stopComputationThread();

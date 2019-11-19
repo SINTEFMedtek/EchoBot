@@ -38,8 +38,6 @@ class RecordApplicationGUI : public Window {
         void setupUltrasoundVisualization();
         void setupConnections();
 
-        void reinitializeViews();
-
     private slots:
         void playbackButtonSlot();
         void stopPlaybackButtonSlot();
