@@ -183,7 +183,7 @@ QWidget* ConnectionWidget::createUltrasoundConnectionWidget()
     mUSStreamerOptionCBox->addItem(tr("IGTLink"));
     mUSStreamerOptionCBox->addItem(tr("Clarius"));
 
-    mUsIPLineEdit->setText("192.168.140.116"); // 10.218.140.114
+    mUsIPLineEdit->setText("localhost"); // 192.168.140.116, 10.218.140.114
     mUsIPLineEdit->setAlignment(Qt::AlignCenter);
 
     QIcon icon;
