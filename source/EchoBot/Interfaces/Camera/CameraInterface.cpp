@@ -1,16 +1,16 @@
 #include "CameraInterface.hpp"
-
 #include "FAST/Data/Image.hpp"
 #include "FAST/Data/Mesh.hpp"
 #include "FAST/Algorithms/IterativeClosestPoint/IterativeClosestPoint.hpp"
 #include <FAST/Exporters/VTKMeshFileExporter.hpp>
-#include <FAST/Exporters/MetaImageExporter.hpp>
 #include <FAST/Streamers/RealSenseStreamer.hpp>
+#include <FAST/Exporters/MetaImageExporter.hpp>
 #include <FAST/Streamers/ImageFileStreamer.hpp>
 #include <FAST/Streamers/MeshFileStreamer.hpp>
 #include <FAST/Visualization/VertexRenderer/VertexRenderer.hpp>
 #include <FAST/Visualization/ImageRenderer/ImageRenderer.hpp>
 #include <QDir>
+
 
 namespace echobot {
 
@@ -46,14 +46,14 @@ void CameraInterface::connect()
         imageStreamer->setSleepTime(33.3);
         mCameraStreamer = imageStreamer;
 
-        auto meshStreamer = MeshFileStreamer::New();
-        meshStreamer->setFilenameFormat(mPlaybackFilepath + "/PointClouds/#.vtk");
-        meshStreamer->enableLooping();
-        meshStreamer->setSleepTime(33.3);
-        meshStreamer->update();
+//        auto meshStreamer = MeshFileStreamer::New();
+//        meshStreamer->setFilenameFormat(mPlaybackFilepath + "/PointClouds/#.vtk");
+//        meshStreamer->enableLooping();
+//        meshStreamer->setSleepTime(33.3);
+//        meshStreamer->update();
 
         mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-        mProcessObject->setInputConnection(2, meshStreamer->getOutputPort(0));
+        mProcessObject->setInputConnection(1, mCameraStreamer->getOutputPort(0));
     }
     mConnected = true;
 }
