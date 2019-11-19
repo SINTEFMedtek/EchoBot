@@ -31,11 +31,13 @@ void RobotVisualizator::setInterface(RobotInterface::pointer robotInterface)
 
 void RobotVisualizator::updatePositions()
 {
+    auto currentState = mRobotInterface->getRobot()->getCurrentState();
     auto rMb = mRobotInterface->getRobot()->getCoordinateSystem()->get_rMb();
     auto eeMt = mRobotInterface->getRobot()->getCoordinateSystem()->get_eeMt();
-    auto currentState = mRobotInterface->getRobot()->getCurrentState();
 
-    if(currentState->getJointConfig() != mPreviousJointConfig)
+    if(currentState->getJointConfig() != mPreviousJointConfig
+    || rMb.matrix() != mPrevious_rMb.matrix()
+    || eeMt.matrix() != mPrevious_eeMt.matrix())
     {
         Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
         offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
@@ -59,7 +61,10 @@ void RobotVisualizator::updatePositions()
         transformFixProbe.linear() = transformFixProbe.linear()*rotProbe;
 
         mTool->setTransformation(rMb*currentState->getTransformToJoint(6)*eeMt); // *transformFixProbe
+
         mPreviousJointConfig = currentState->getJointConfig();
+        mPrevious_rMb = rMb;
+        mPrevious_eeMt = eeMt;
     }
 
 }

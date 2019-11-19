@@ -70,6 +70,8 @@ class RobotVisualizator
         TriangleRenderer::pointer mRenderer;
         std::map<std::string, RobotPart::pointer> mParts;
         RobotTool::pointer mTool;
+
+        romocc::Transform3d mPrevious_rMb, mPrevious_eeMt;
         romocc::Vector6d mPreviousJointConfig;
 
         void addPart(std::string partName, std::string cadFilepath);
