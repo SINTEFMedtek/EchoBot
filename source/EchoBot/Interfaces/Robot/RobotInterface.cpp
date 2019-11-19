@@ -8,8 +8,33 @@ namespace echobot
 {
 
 RobotInterface::RobotInterface() {
-    robot = SharedPointer<romocc::Robot>(new romocc::Robot);
-    robot->addUpdateSubscription(std::bind(&RobotInterface::stateUpdated, this));
+    mRobot = SharedPointer<romocc::Robot>(new romocc::Robot);
+}
+
+void RobotInterface::setConfiguration(romocc::Manipulator manipulator, const std::string& ip_address, const int& port){
+    mManipulatorType = manipulator;
+    mHost = ip_address;
+    mPort = port;
+}
+
+void RobotInterface::connect(){
+    mRobot->addUpdateSubscription(std::bind(&RobotInterface::stateUpdated, this));
+    mRobot->configure(mManipulatorType, mHost, mPort);
+    mRobot->connect();
+}
+
+void RobotInterface::disconnect(){
+    mRobot->disconnect();
+}
+
+bool RobotInterface::isConnected()
+{
+    return mRobot->isConnected();
+}
+
+RobotState::pointer RobotInterface::getCurrentState()
+{
+    return mRobot->getCurrentState();
 }
 
 }

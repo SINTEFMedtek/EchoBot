@@ -13,6 +13,8 @@
 namespace echobot
 {
 
+using namespace romocc;
+
 class RobotInterface : public QObject, public SensorInterface
 {
     Q_OBJECT
@@ -20,7 +22,22 @@ class RobotInterface : public QObject, public SensorInterface
 
     public:
         RobotInterface();
-        SharedPointer<romocc::Robot> robot;
+        Robot::pointer getRobot(){ return mRobot;};
+
+        void connect();
+        void disconnect();
+        bool isConnected();
+
+        void setConfiguration(romocc::Manipulator manipulator, const std::string& ip_address, const int& port);
+
+        RobotState::pointer getCurrentState();
+
+    private:
+        SharedPointer<romocc::Robot> mRobot;
+        Manipulator mManipulatorType;
+        std::string mHost;
+        int mPort;
+
 
     signals:
         void stateUpdated();
