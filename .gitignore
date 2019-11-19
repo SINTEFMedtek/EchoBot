@@ -32,5 +32,5 @@
 *.app
 
 .idea/
-build/
+build*/
 data/
