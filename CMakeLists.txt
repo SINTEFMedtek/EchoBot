@@ -8,6 +8,7 @@ option(ECHOBOT_BUILD_TESTS "Build tests." ON)
 option(ECHOBOT_BUILD_QT5 "Download and build Qt. Turn OFF if you want to use pre-built binaries existing on your machine." ON)
 option(ECHOBOT_BUILD_FAST "Download and build FAST." OFF)
 option(ECHOBOT_BUILD_ROMOCC "Download and build libromocc." ON)
+option(ECHOBOT_BUILD_FMT "Download and build fmt." ON)
 option(ECHOBOT_ENABLE_CLARIUS_STREAMING "Enable streaming from Clarius probe." OFF)
 
 # Enable C++ 14
