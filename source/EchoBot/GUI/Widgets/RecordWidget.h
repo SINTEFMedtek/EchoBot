@@ -69,6 +69,8 @@ class RecordWidget : public QTabWidget
         bool mRecording = false;
         bool mCameraPlayback = false;
         bool mCameraStreaming = false;
+
+        void updateQueueSize();
 };
 
 } // end namespace echobot

@@ -21,6 +21,7 @@
 #include <QTabWidget>
 #include <QFileDialog>
 #include <QCheckBox>
+#include <QTimer>
 
 #include "RecordWidget.h"
 
@@ -87,6 +88,9 @@ void RecordWidget::toggleRecord() {
 
         mRecordTool->startRecording(recordingPath);
 
+        QTimer *timer = new QTimer(this);
+        QObject::connect(timer, &QTimer::timeout, std::bind(&RecordWidget::updateQueueSize, this));
+        timer->start(100);
     } else {
         mRecordButton->setText("Record");
         mRecordButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
@@ -106,6 +110,15 @@ void RecordWidget::refreshRecordingsList() {
         if(next.size() > 4)
             mRecordingsList->addItem(next);
     }
+}
+
+void RecordWidget::updateQueueSize() {
+    auto queueSize = mRecordTool->getQueueSize();
+    mRecordingInformation->setText("Data dumping: " + QString::number(queueSize) + " objects left. "
+                                                                                   "Don't close application.");
+
+    if(queueSize == 0)
+        mRecordingInformation->setHidden(true);
 }
 
 void RecordWidget::playRecording() {
@@ -192,15 +205,15 @@ QWidget* RecordWidget::getRecordWidget()
     mPlayButton->setStyleSheet("QPushButton { background-color: green; color: white; }");
     mainLayout->addWidget(mPlayButton, 2, 1, 1, 1);
 
-    mRecordingInformation = new QLabel;
-    mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
-    mainLayout->addWidget(mRecordingInformation);
-
     mRecordingsList = new QListWidget;
     mainLayout->addWidget(mRecordingsList, 3, 0, 1, 2);
     mRecordingsList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     mRecordingsList->setSortingEnabled(true);
     refreshRecordingsList();
+
+    mRecordingInformation = new QLabel;
+    mRecordingInformation->setStyleSheet("QLabel { font-size: 14px; }");
+    mainLayout->addWidget(mRecordingInformation, 4, 0, 1, 2);
 
     return group;
 }

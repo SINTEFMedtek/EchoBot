@@ -85,6 +85,11 @@ else(ECHOBOT_BUILD_ROMOCC)
     list(APPEND ECHOBOT_EXTERNAL_LIBRARIES ${ROMOCC_LIBRARY_DIRS})
 endif(ECHOBOT_BUILD_ROMOCC)
 
+# Romocc
+if(ECHOBOT_BUILD_FMT)
+    include(cmake/ExternalFMT.cmake)
+endif(ECHOBOT_BUILD_FMT)
+
 # Make sure project can find external includes and libaries
 link_directories(${ECHOBOT_EXTERNAL_INSTALL_DIR}/lib/ ${ECHOBOT_EXTERNAL_LIBRARIES})
 list(APPEND ECHOBOT_INCLUDE_DIRS ${ECHOBOT_EXTERNAL_INSTALL_DIR}/include)

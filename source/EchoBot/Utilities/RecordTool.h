@@ -23,7 +23,7 @@ class RecordTool : public ProcessObject {
         void startRecording(std::string path);
         void stopRecording();
 
-        uint getFramesStored() const;
+        uint getQueueSize() const;
         bool isRecording() const;
 
     private:
@@ -35,7 +35,17 @@ class RecordTool : public ProcessObject {
         void queueForDataDump();
 
         std::map<std::string, DataChannel::pointer> mRecordChannels;
-        typedef std::map<std::string, SharedPointer<DataObject>> DataContainer;
+
+        struct DumpData{
+            DumpData(std::string path = "", uint frameNr = 0, DataObject::pointer data = nullptr)
+                    : storagePath(path), frameNr(frameNr), data(data){}
+
+            std::string storagePath;
+            uint frameNr;
+            DataObject::pointer data;
+        };
+
+        typedef std::map<std::string, DumpData> DataContainer;
 
         std::queue<DataContainer> mDataQueue;
         std::map<std::string, uint64_t>  mLastTimeStamps;

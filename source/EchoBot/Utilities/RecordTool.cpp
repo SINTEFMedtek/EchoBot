@@ -4,6 +4,7 @@
 #include <FAST/Exporters/MetaImageExporter.hpp>
 #include "FAST/Streamers/ImageFileStreamer.hpp"
 #include "FAST/Streamers/MeshFileStreamer.hpp"
+#include "EchoBot/Exporters/PointCloudExporter.h"
 
 #include <QString>
 #include <QDir>
@@ -30,16 +31,16 @@ void RecordTool::startRecording(std::string path) {
     for (auto ch: mRecordChannels)
         createDirectories((mStoragePath + "/" + ch.first));
 
-    m_fillCount = std::make_unique<LightweightSemaphore>(0);
-    m_emptyCount = std::make_unique<LightweightSemaphore>(4000);
-
     mRecording = true;
     mRecordThread = new std::thread(std::bind(&RecordTool::queueForDataDump, this));
-    mDumpThread = new std::thread(std::bind(&RecordTool::dataDumpThread, this));
+
+    if(mDumpThread == nullptr || mDataQueue.size() == 0)
+        mDumpThread = new std::thread(std::bind(&RecordTool::dataDumpThread, this));
 }
 
 void RecordTool::stopRecording() {
     mRecording = false;
+    mRecordThread->join();
 }
 
 void RecordTool::execute()
@@ -48,46 +49,47 @@ void RecordTool::execute()
 
 RecordTool::RecordTool()
 {
+    m_fillCount = std::make_unique<LightweightSemaphore>(0);
+    m_emptyCount = std::make_unique<LightweightSemaphore>(4000);
 }
 
 void RecordTool::queueForDataDump()
 {
-    while(true) {
-        if (mRecording) {
-            if(mTimeStampUpdated)
-                m_emptyCount->wait();
+    while(mRecording) {
+        if(mTimeStampUpdated)
+            m_emptyCount->wait();
 
-            {
-                std::unique_lock<std::mutex> lock(mRecordBufferMutex);
-                if (!mRecording)
-                    break;
+        {
+            std::unique_lock<std::mutex> lock(mRecordBufferMutex);
+            if (!mRecording)
+                break;
 
-                std::map<std::string, DataObject::pointer> latestData;
-                std::map<std::string, uint64_t>  latestTimeStamps;
+            std::map<std::string, DumpData> latestData;
+            std::map<std::string, uint64_t>  latestTimeStamps;
 
-                for (auto ch: mRecordChannels) {
-                    latestData[ch.first] = ch.second->getNextFrame();
-                    latestTimeStamps[ch.first] = latestData[ch.first]->getCreationTimestamp();
-                }
-
-                mTimeStampUpdated = false;
-                int count = 0;
-                for (auto stamp: latestTimeStamps){
-                    //std::cout << stamp.second << " " << mLastTimeStamps[stamp.first] << " " << int(stamp.second > mLastTimeStamps[stamp.first]) << std::endl;
-                    if(stamp.second > mLastTimeStamps[stamp.first])
-                        count = count+1;
-                }
-
-                if(count == latestTimeStamps.size())
-                {
-                    mTimeStampUpdated = true;
-                    mLastTimeStamps = latestTimeStamps;
-                    mDataQueue.push(latestData);
-                }
+            for (auto ch: mRecordChannels) {
+                auto dumpData = DumpData(mStoragePath, mFrameCounter, ch.second->getNextFrame());
+                latestData[ch.first] = dumpData;
+                latestTimeStamps[ch.first] = latestData[ch.first].data->getCreationTimestamp();
             }
 
-            if(mTimeStampUpdated)
-                m_fillCount->signal();
+            mTimeStampUpdated = false;
+            int count = 0;
+            for (auto stamp: latestTimeStamps){
+                if(stamp.second > mLastTimeStamps[stamp.first])
+                    count = count+1;
+            }
+
+            if(count == latestTimeStamps.size())
+            {
+                mTimeStampUpdated = true;
+                mLastTimeStamps = latestTimeStamps;
+                mDataQueue.push(latestData);
+                ++mFrameCounter;
+            }
+
+        if(mTimeStampUpdated)
+            m_fillCount->signal();
         }
     }
 }
@@ -102,35 +104,33 @@ void RecordTool::dataDumpThread() {
         else if (mDataQueue.empty() && !mRecording)
             break;
 
-        std::cout << mDataQueue.size() << std::endl;
-        std::string frameNr = std::to_string(mFrameCounter);
-
         for (auto data: mDataQueue.front()) {
-            auto className = data.second->getNameOfClass();
+            auto className = data.second.data->getNameOfClass();
+            auto parentPath = data.second.storagePath + "/" + data.first + "/";
+            std::string frameNr = std::to_string(data.second.frameNr);
 
             if (className == "Mesh") {
-                VTKMeshFileExporter::pointer meshExporter = VTKMeshFileExporter::New();
-                meshExporter->setInputData(data.second);
+                auto meshExporter = PointCloudExporter::New();
+                meshExporter->setInputData(data.second.data);
                 meshExporter->setWriteNormals(false);
                 meshExporter->setWriteColors(true);
-                meshExporter->setFilename(mStoragePath + "/" + data.first + "/" + frameNr + ".vtk");
+                meshExporter->setFilename(parentPath + frameNr + ".vtk");
                 meshExporter->update();
             } else if (className == "Image") {
                 MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
-                imageExporter->setInputData(data.second);
-                imageExporter->setFilename(mStoragePath + "/" + data.first + "/" + "Image-2D_" + frameNr + ".mhd");
+                imageExporter->setInputData(data.second.data);
+                imageExporter->setFilename(parentPath + "Image-2D_" + frameNr + ".mhd");
                 imageExporter->update();
             }
         }
-        ++mFrameCounter;
         mDataQueue.pop();
         m_emptyCount->signal();
     }
 }
 
 
-uint RecordTool::getFramesStored() const {
-    return mFrameCounter;
+uint RecordTool::getQueueSize() const {
+    return mDataQueue.size();
 }
 
 bool RecordTool::isRecording() const {

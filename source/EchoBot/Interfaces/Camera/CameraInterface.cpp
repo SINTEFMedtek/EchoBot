@@ -46,14 +46,14 @@ void CameraInterface::connect()
         imageStreamer->setSleepTime(33.3);
         mCameraStreamer = imageStreamer;
 
-//        auto meshStreamer = MeshFileStreamer::New();
-//        meshStreamer->setFilenameFormat(mPlaybackFilepath + "/PointClouds/#.vtk");
-//        meshStreamer->enableLooping();
-//        meshStreamer->setSleepTime(33.3);
-//        meshStreamer->update();
+        auto meshStreamer = MeshFileStreamer::New();
+        meshStreamer->setFilenameFormat(mPlaybackFilepath + "/PointClouds/#.vtk");
+        meshStreamer->enableLooping();
+        meshStreamer->setSleepTime(33.3);
+        meshStreamer->update();
 
         mProcessObject->setInputConnection(0, mCameraStreamer->getOutputPort(0));
-        mProcessObject->setInputConnection(1, mCameraStreamer->getOutputPort(0));
+        mProcessObject->setInputConnection(2, meshStreamer->getOutputPort(0));
     }
     mConnected = true;
 }
