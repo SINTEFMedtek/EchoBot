@@ -15,11 +15,13 @@ namespace echobot {
 UltrasoundImageProcessing::UltrasoundImageProcessing() {
     createInputPort<Image>(0);
 
-    createOutputPort<Image>(0);
-    createOutputPort<Image>(1); // Segmentation
+    createOutputPort<Image>(0); // Raw image
+    createOutputPort<Image>(1); // Processed image
 
     mSegmentationThread = new std::thread(std::bind(&UltrasoundImageProcessing::segmentationThread, this));
     setupNeuralNetworks();
+
+    mImageTransform = Eigen::Affine3d::Identity();
 }
 
 UltrasoundImageProcessing::~UltrasoundImageProcessing() {
@@ -31,22 +33,13 @@ UltrasoundImageProcessing::~UltrasoundImageProcessing() {
 }
 
 void UltrasoundImageProcessing::execute() {
-    fast::Image::pointer input = getInputData<fast::Image>(0);
+    auto port = getInputPort(0);
 
-//    ImageCropper::pointer cropper = ImageCropper::New();
-//    cropper->setInputData(input);
-//    cropper->setOffset(Vector3i(50, 75, 0));
-//    cropper->setSize(Vector3i(580, 470, 1));
-//
-//    auto cropPort = cropper->getOutputPort();
-//    cropper->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
-//
-//    mCurrentImage = cropPort->getNextFrame<fast::Image>();
-//    mCurrentImage->setSpacing(Vector3f(0.435, 0.435, 1)); // Bug hack spacing (spacing*10/2
-//
-//    if (mRobotInterface->robot.isConnected())
-//        transformImageToProbeCenter();
-//
+    auto cropper = UltrasoundImageCropper::New();
+    cropper->setInputConnection(port);
+    port = cropper->getOutputPort();
+    cropper->update();
+
 //    Image::pointer segmentation;
 //    if (mSegmentationEnabled) {
 //        mPixelClassifier->setInputData(mCurrentImage);
@@ -57,16 +50,20 @@ void UltrasoundImageProcessing::execute() {
 //    } else {
 //        segmentation = mCurrentImage;
 //    }
-    auto segmentation = input;
-    mCurrentImage = input;
+
+    mRawImage = getInputData<fast::Image>(0);
+    mProcessedImage = port->getNextFrame<fast::Image>();
+
+    AffineTransformation::pointer T = AffineTransformation::New();
+    T->setTransform(mImageTransform.cast<float>());
+    mProcessedImage->getSceneGraphNode()->setTransformation(T);
 
     try {
-        addOutputData(0, mCurrentImage);
-        addOutputData(1, segmentation);
+        addOutputData(0, mRawImage);
+        addOutputData(1, mProcessedImage);
     } catch (ThreadStopped &e) {
         std::cout << "Thread stopped in USImageProcessing" << std::endl;
     }
-
 
 }
 
@@ -78,6 +75,10 @@ void UltrasoundImageProcessing::segmentationThread() {
                 break;
         }
     }
+}
+
+void UltrasoundImageProcessing::setImageTransform(Eigen::Affine3d transform){
+    mImageTransform = transform;
 }
 
 void UltrasoundImageProcessing::setupNeuralNetworks() {
