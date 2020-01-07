@@ -21,13 +21,12 @@ DataChannel::pointer CameraInterface::getOutputPort(uint portID)
 
 void CameraInterface::setCameraROI(float minRange, float maxRange, float minWidth, float maxWidth, float minHeight, float maxHeight)
 {
-    auto streamer = std::dynamic_pointer_cast<RealSenseStreamer>(mCameraStreamer);
-    streamer->setMinRange(minRange);
-    streamer->setMaxRange(maxRange);
-    streamer->setMinWidth(minWidth);
-    streamer->setMaxWidth(maxWidth);
-    streamer->setMinHeight(minHeight);
-    streamer->setMaxHeight(maxHeight);
+    mProcessObject->setMinRange(minRange);
+    mProcessObject->setMaxRange(maxRange);
+    mProcessObject->setMinWidth(minWidth);
+    mProcessObject->setMaxWidth(maxWidth);
+    mProcessObject->setMinHeight(minHeight);
+    mProcessObject->setMaxHeight(maxHeight);
 }
 
 void CameraInterface::connect()

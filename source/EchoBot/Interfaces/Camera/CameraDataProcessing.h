@@ -25,7 +25,12 @@ class CameraDataProcessing : public ProcessObject {
 
         void addLine(Vector2i start, Vector2i end);
 
-        Mesh::pointer createReducedSample(SharedPointer<Mesh> pointCloud, double fractionOfPointsToKeep);
+        void setMaxRange(float range);
+        void setMinRange(float range);
+        void setMaxWidth(float range);
+        void setMinWidth(float range);
+        void setMaxHeight(float range);
+        void setMinHeight(float range);
 
     private:
         CameraDataProcessing();
@@ -42,6 +47,13 @@ class CameraDataProcessing : public ProcessObject {
         bool mTargetCloudExtracted = false;
         bool mTargetRegistered = false;
         bool mTargetCloudPlaced = false;
+
+        float mMaxRange = std::numeric_limits<float>::max();
+        float mMinRange = 0;
+        float mMaxWidth = std::numeric_limits<float>::max();
+        float mMinWidth = -std::numeric_limits<float>::max();
+        float mMaxHeight = std::numeric_limits<float>::max();
+        float mMinHeight = -std::numeric_limits<float>::max();
 };
 
 }
