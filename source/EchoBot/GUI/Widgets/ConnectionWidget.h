@@ -30,10 +30,12 @@ class ConnectionWidget : public QTabWidget
         void usConnected();
         void usDisconnected();
 
+    public slots:
+        void updateCameraROI();
+
     private slots:
         void robotShutdownSlot();
         void usStreamerChangedSlot(const QString streamerOption);
-        void updateCameraROI();
 
         void robotToggleConnection();
         void usToggleConnection();
