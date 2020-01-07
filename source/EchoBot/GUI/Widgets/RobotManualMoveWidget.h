@@ -26,7 +26,7 @@ class RobotManualMoveWidget : public QWidget
     Q_OBJECT
 
     public:
-        RobotManualMoveWidget(RobotInterface::pointer robotInterface, int widgetWidth=540, int widgetHeight=500);
+        RobotManualMoveWidget(RobotInterface::pointer robotInterface, int widgetWidth=540, int widgetHeight=380);
         virtual ~RobotManualMoveWidget(){};
 
     private:
