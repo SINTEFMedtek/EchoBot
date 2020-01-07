@@ -5,4 +5,6 @@ project_add_sources(
         ConnectionWidget.h
         RecordWidget.cpp
         RecordWidget.h
+        CalibrationWidget.cpp
+        CalibrationWidget.h
 )

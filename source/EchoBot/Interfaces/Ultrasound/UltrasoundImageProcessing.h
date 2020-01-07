@@ -25,19 +25,23 @@ class UltrasoundImageProcessing : public ProcessObject {
     public:
         ~UltrasoundImageProcessing();
 
+        SharedPointer<fast::Image> getProcessedImage(){ return mProcessedImage;};
+        void setImageTransform(Eigen::Affine3d transform);
+
     private:
         UltrasoundImageProcessing();
 
         void execute();
 
-        SharedPointer<fast::Image> mCurrentImage;
+        SharedPointer<fast::Image> mRawImage, mProcessedImage;
+        Eigen::Affine3d mImageTransform;
 
         void segmentationThread();
 
         std::thread *mSegmentationThread;
         std::mutex mFrameBufferMutex;
-        bool mSegmentationEnabled = true;
 
+        bool mSegmentationEnabled = true;
         SharedPointer<PixelClassifier> mPixelClassifier;
 
         void setupNeuralNetworks();

@@ -34,6 +34,7 @@ set(QT_HEADERS
         source/EchoBot/GUI/Widgets/ConnectionWidget.h
         source/EchoBot/GUI/Widgets/RecordWidget.h
         source/EchoBot/GUI/Widgets/RobotManualMoveWidget.h
+        source/EchoBot/GUI/Widgets/CalibrationWidget.h
         )
 
 # Set debug define if debug mode is set

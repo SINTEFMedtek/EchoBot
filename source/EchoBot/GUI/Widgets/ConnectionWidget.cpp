@@ -42,7 +42,6 @@ void ConnectionWidget::addInterface(SensorInterface::pointer sensorInterface)
         connect(mCameraMaxWidthLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
         connect(mCameraMinHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
         connect(mCameraMaxHeightLineEdit, &QLineEdit::textChanged, this, &ConnectionWidget::updateCameraROI);
-
     } else if (sensorInterface->getNameOfClass() == "UltrasoundInterface")
     {
         mUltrasoundInterface = std::dynamic_pointer_cast<UltrasoundInterface>(sensorInterface);
@@ -208,13 +207,13 @@ QWidget* ConnectionWidget::createCameraConnectionWidget()
 
     mCameraMinDepthLineEdit = new QLineEdit();
     mCameraMaxDepthLineEdit = new QLineEdit();
-    mCameraMinDepthLineEdit->setText(QString("0"));
-    mCameraMaxDepthLineEdit->setText(QString("2000"));
+    mCameraMinDepthLineEdit->setText(QString("1000")); // 0
+    mCameraMaxDepthLineEdit->setText(QString("1700")); // 2000
 
     mCameraMinWidthLineEdit = new QLineEdit();
     mCameraMaxWidthLineEdit = new QLineEdit();
-    mCameraMinWidthLineEdit->setText(QString("-1000"));
-    mCameraMaxWidthLineEdit->setText(QString("1000"));
+    mCameraMinWidthLineEdit->setText(QString("-600"));
+    mCameraMaxWidthLineEdit->setText(QString("300"));
 
     mCameraMinHeightLineEdit = new QLineEdit();
     mCameraMaxHeightLineEdit = new QLineEdit();
