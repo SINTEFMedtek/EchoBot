@@ -68,8 +68,12 @@ DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
 Renderer::pointer UltrasoundInterface::getRendererObject()
 {
     mRendererObject = ImageRenderer::New();
-    mRendererObject->addInputConnection(mProcessObject->getOutputPort());
+    mRendererObject->addInputConnection(mProcessObject->getOutputPort(1));
     return mRendererObject;
+}
+
+void UltrasoundInterface::setImageTransform(Eigen::Affine3d transform) {
+    mProcessObject->setImageTransform(transform);
 }
 
 }
