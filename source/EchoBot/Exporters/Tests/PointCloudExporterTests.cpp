@@ -1,13 +1,8 @@
-//
-// Created by androst on 06.08.19.
-//
-
 #include "EchoBot/Tests/catch.hpp"
 #include "EchoBot/Exporters/PointCloudExporter.h"
 #include "FAST/Data/Mesh.hpp"
 
 using namespace echobot;
-using namespace fast;
 
 TEST_CASE("Export point cloud", "[EchoBot][Exporters]") {
         Mesh::pointer mesh = Mesh::New();
