@@ -24,6 +24,12 @@ set(ECHOBOT_TEST_DATA_DIR "" CACHE PATH "Directory of test data. Default is ROOT
 set(ECHOBOT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/source/EchoBot")
 set(ECHOBOT_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source/ ${CMAKE_CURRENT_BINARY_DIR})
 
+## Set build folders
+# First for the generic no-config case (e.g. with mingw)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+
 #### Module path
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/ ${CMAKE_MODULE_PATH}) # For finding the custom Find modules
 
