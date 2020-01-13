@@ -5,4 +5,6 @@ project_add_sources(
         CalibrationTool.h
         PointCloudUtilities.cpp
         PointCloudUtilities.h
+        Utilities.cpp
+        Utilities.h
 )
