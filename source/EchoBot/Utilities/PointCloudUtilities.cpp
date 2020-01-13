@@ -4,12 +4,13 @@
 
 #include "PointCloudUtilities.h"
 #include <random>
+#include <fmt/format.h>
 
 namespace echobot{
 
 Mesh::pointer decimateMesh(Mesh::pointer pointCloud, double fractionOfPointsToKeep) {
-    MeshAccess::pointer accessFixedSet = pointCloud->getMeshAccess(ACCESS_READ);
-    std::vector<MeshVertex> vertices = accessFixedSet->getVertices();
+    auto accessFixedSet = pointCloud->getMeshAccess(ACCESS_READ);
+    auto vertices = accessFixedSet->getVertices();
 
     // Sample the preferred amount of points from the point cloud
     auto numVertices = (unsigned int) vertices.size();
@@ -51,7 +52,7 @@ Mesh::pointer decimateMesh(Mesh::pointer pointCloud, double fractionOfPointsToKe
     return newCloud;
 }
 
-Mesh::pointer reduceMeshExtent(Mesh::pointer mesh, float zMin, float zMax, float xMin, float xMax, float yMin, float yMax) {
+Mesh::pointer reduceMeshExtent(Mesh::pointer mesh, float xMin, float xMax, float yMin, float yMax, float zMin, float zMax) {
     auto meshAccess = mesh->getMeshAccess(ACCESS_READ);
     std::vector<MeshVertex> vertices = meshAccess->getVertices();
     std::vector<MeshVertex> filteredPoints;
@@ -74,6 +75,47 @@ Mesh::pointer reduceMeshExtent(Mesh::pointer mesh, float zMin, float zMax, float
     reducedMesh->create(filteredPoints);
     reducedMesh->setCreationTimestamp(mesh->getCreationTimestamp());
     return reducedMesh;
+}
+
+Vector3f calculateCentroid(std::vector<MeshVertex> vertices) {
+    auto output = Eigen::Vector3f();
+    for(auto vertix: vertices)
+        output += vertix.getPosition();
+
+    output = output/vertices.size();
+    return output;
+}
+
+MeshProcessing::MeshProcessing() {
+    createInputPort<Mesh>(0);
+    createOutputPort<Mesh>(0);
+}
+
+void MeshProcessing::execute() {
+    auto input = getInputData<Mesh>();
+    auto output = input;
+
+    if(mBoundsModified)
+        output = reduceMeshExtent(input, m_xMin, m_xMax, m_yMin, m_yMax, m_zMin, m_zMax);
+
+    if(mDecimationFraction < 1.0)
+        output = decimateMesh(output, mDecimationFraction);
+
+    addOutputData(0, output);
+}
+
+void MeshProcessing::setBounds(float xMin, float xMax, float yMin, float yMax, float zMin, float zMax) {
+    m_xMin = xMin;
+    m_xMax = xMax;
+    m_yMin = yMin;
+    m_yMax = yMax;
+    m_zMin = zMin;
+    m_zMax = zMax;
+    mBoundsModified = true;
+}
+
+void MeshProcessing::setDecimationFraction(float fraction) {
+    mDecimationFraction = fraction;
 }
 
 }
