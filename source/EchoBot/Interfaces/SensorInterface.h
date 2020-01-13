@@ -6,6 +6,7 @@
 #define ECHOBOT_SENSORINTERFACE_H
 
 #include <EchoBot/Core/SmartPointers.h>
+#include <EchoBot/Core/DataTypes.h>
 
 namespace echobot
 {
