@@ -2,6 +2,7 @@
 #define ECHOBOT_CAMERADATAPROCESSING_H
 
 #include "EchoBot/Core/SmartPointers.h"
+#include "EchoBot/Core/DataTypes.h"
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Mesh.hpp"
@@ -9,13 +10,12 @@
 
 namespace echobot
 {
-using namespace fast;
 
 class CameraDataProcessing : public ProcessObject {
     ECHOBOT_OBJECT(CameraDataProcessing)
 
     public:
-        void calculateTargetCloud(SharedPointer<RealSenseStreamer> streamer);
+        void calculateTargetCloud(SharedPointer<fast::RealSenseStreamer> streamer);
 
         void removeTargetCloud();
 
@@ -23,7 +23,7 @@ class CameraDataProcessing : public ProcessObject {
 
         SharedPointer<Mesh> getTargetCloud();
 
-        void addLine(Vector2i start, Vector2i end);
+        void addLine(Eigen::Vector2i start, Eigen::Vector2i end);
 
         void setMaxRange(float range);
         void setMinRange(float range);

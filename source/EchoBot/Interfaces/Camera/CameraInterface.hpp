@@ -11,7 +11,6 @@
 
 namespace echobot
 {
-using namespace fast;
 
 class CameraInterface : public SensorInterface {
     ECHOBOT_OBJECT(CameraInterface)

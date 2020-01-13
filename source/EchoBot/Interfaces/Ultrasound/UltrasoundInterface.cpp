@@ -9,7 +9,7 @@ namespace echobot
 {
 
 UltrasoundInterface::UltrasoundInterface() {
-    Config::setStreamingMode(STREAMING_MODE_NEWEST_FRAME_ONLY);
+    fast::Config::setStreamingMode(fast::STREAMING_MODE_NEWEST_FRAME_ONLY);
 }
 
 UltrasoundInterface::~UltrasoundInterface() {
@@ -18,16 +18,16 @@ UltrasoundInterface::~UltrasoundInterface() {
 void UltrasoundInterface::connect()
 {
     if(mStreamerType == Clarius){
-        mUltrasoundStreamer = ClariusStreamer::New();
+        mUltrasoundStreamer = fast::ClariusStreamer::New();
     }
     else if(mStreamerType == IGTLink){
-        auto usStreamer = OpenIGTLinkStreamer::New();
+        auto usStreamer = fast::OpenIGTLinkStreamer::New();
         usStreamer->setConnectionAddress(mIP);
         usStreamer->setConnectionPort(mPort);
         mUltrasoundStreamer = usStreamer;
     }
     else if(mStreamerType == Playback){
-        auto usStreamer = ImageFileStreamer::New();
+        auto usStreamer = fast::ImageFileStreamer::New();
         usStreamer->setFilenameFormat(mPlaybackFilepath);
         usStreamer->enableLooping();
         usStreamer->setSleepTime(33.3);
@@ -67,7 +67,7 @@ DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
 
 Renderer::pointer UltrasoundInterface::getRendererObject()
 {
-    mRendererObject = ImageRenderer::New();
+    mRendererObject = fast::ImageRenderer::New();
     mRendererObject->addInputConnection(mProcessObject->getOutputPort(1));
     return mRendererObject;
 }

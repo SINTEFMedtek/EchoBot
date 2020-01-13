@@ -35,7 +35,7 @@ UltrasoundImageProcessing::~UltrasoundImageProcessing() {
 void UltrasoundImageProcessing::execute() {
     auto port = getInputPort(0);
 
-    auto cropper = UltrasoundImageCropper::New();
+    auto cropper = fast::UltrasoundImageCropper::New();
     cropper->setInputConnection(port);
     port = cropper->getOutputPort();
     cropper->update();
@@ -61,7 +61,7 @@ void UltrasoundImageProcessing::execute() {
     try {
         addOutputData(0, mRawImage);
         addOutputData(1, mProcessedImage);
-    } catch (ThreadStopped &e) {
+    } catch (fast::ThreadStopped &e) {
         std::cout << "Thread stopped in USImageProcessing" << std::endl;
     }
 

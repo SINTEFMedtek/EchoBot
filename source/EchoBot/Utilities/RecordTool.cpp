@@ -27,9 +27,9 @@ void RecordTool::startRecording(std::string path) {
     mStoragePath = path;
     mFrameCounter = 0;
 
-    createDirectories(mStoragePath);
+    fast::createDirectories(mStoragePath);
     for (auto ch: mRecordChannels)
-        createDirectories((mStoragePath + "/" + ch.first));
+       fast::createDirectories((mStoragePath + "/" + ch.first));
 
     mRecording = true;
     mRecordThread = new std::thread(std::bind(&RecordTool::queueForDataDump, this));
@@ -117,7 +117,7 @@ void RecordTool::dataDumpThread() {
                 meshExporter->setFilename(parentPath + frameNr + ".vtk");
                 meshExporter->update();
             } else if (className == "Image") {
-                MetaImageExporter::pointer imageExporter = MetaImageExporter::New();
+                auto imageExporter = MetaImageExporter::New();
                 imageExporter->setInputData(data.second.data);
                 imageExporter->setFilename(parentPath + "Image-2D_" + frameNr + ".mhd");
                 imageExporter->update();

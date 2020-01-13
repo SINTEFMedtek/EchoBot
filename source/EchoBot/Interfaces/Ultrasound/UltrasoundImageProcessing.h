@@ -5,16 +5,14 @@
 #ifndef ECHOBOT_ULTRASOUNDIMAGEPROCESSING_H
 #define ECHOBOT_ULTRASOUNDIMAGEPROCESSING_H
 
-
-
 #include <thread>
 #include "EchoBot/Core/SmartPointers.h"
+#include "EchoBot/Core/DataTypes.h"
 
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Data/Image.hpp"
 
 namespace echobot {
-using namespace fast;
 
 
 class PixelClassifier;

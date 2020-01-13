@@ -70,9 +70,9 @@ void RecordWidget::toggleRecord() {
         // Create recording pathkom
         std::string path = mStorageDir->text().toUtf8().constData();
         if(mRecordingNameLineEdit->text() != "") {
-            mRecordingName =  currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
+            mRecordingName =  fast::currentDateTime() + " " + mRecordingNameLineEdit->text().toUtf8().constData();
         } else {
-            mRecordingName = currentDateTime();
+            mRecordingName = fast::currentDateTime();
         }
         std::string recordingPath = (QString(path.c_str()) + QDir::separator() + QString(mRecordingName.c_str()) + QDir::separator()).toUtf8().constData();
 

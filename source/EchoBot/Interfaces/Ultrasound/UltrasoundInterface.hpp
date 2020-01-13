@@ -14,7 +14,6 @@
 
 namespace echobot
 {
-using namespace fast;
 
 class UltrasoundInterface : public SensorInterface {
     ECHOBOT_OBJECT(UltrasoundInterface)

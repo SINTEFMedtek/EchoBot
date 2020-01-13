@@ -2,7 +2,9 @@
 #define ECHOBOT_RECORDTOOL_H
 
 #include "EchoBot/Core/SmartPointers.h"
+#include "EchoBot/Core/DataTypes.h"
 #include "EchoBot/Interfaces/SensorInterface.h"
+
 #include "FAST/ProcessObject.hpp"
 #include "FAST/Streamers/Streamer.hpp"
 #include "FAST/Semaphore.hpp"
@@ -12,8 +14,6 @@
 class QElapsedTimer;
 
 namespace echobot {
-using namespace fast;
-
 
 class RecordTool : public ProcessObject {
     ECHOBOT_OBJECT(RecordTool)

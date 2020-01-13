@@ -6,10 +6,11 @@
 #define ECHOBOT_POINTCLOUDEXPORTER_H
 
 #include "EchoBot/Core/SmartPointers.h"
+#include "EchoBot/Core/DataTypes.h"
+
 #include "FAST/Exporters/FileExporter.hpp"
 
 namespace echobot {
-using namespace fast;
 
 class PointCloudExporter : public FileExporter {
     ECHOBOT_OBJECT(PointCloudExporter)

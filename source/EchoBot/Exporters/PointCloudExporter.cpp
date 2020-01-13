@@ -27,18 +27,18 @@ void PointCloudExporter::setWriteColors(bool writeColors)  {
 
 void PointCloudExporter::execute() {
     if(mFilename == "")
-        throw Exception("No filename given to the PointCloudExporter");
+        throw fast::Exception("No filename given to the PointCloudExporter");
 
     auto mesh = getInputData<Mesh>();
 
     // Get transformation
-    auto transform = SceneGraph::getAffineTransformationFromData(mesh)->getTransform();
+    auto transform = fast::SceneGraph::getAffineTransformationFromData(mesh)->getTransform();
 
     FILE *file;
     file = fopen(mFilename.c_str(), "w");
 
     if(!file)
-        throw Exception("Unable to open the file " + mFilename);
+        throw fast::Exception("Unable to open the file " + mFilename);
 
     fmt::memory_buffer buffer;
 
@@ -61,7 +61,7 @@ void PointCloudExporter::execute() {
     }
 
     if (mesh->getNrOfTriangles() > 0) {
-        std::vector<MeshTriangle> triangles = access->getTriangles();
+        std::vector<fast::MeshTriangle> triangles = access->getTriangles();
         // Write triangles
 
         fmt::format_to(buffer, "POLYGONS {0} {1}\n", mesh->getNrOfTriangles(), mesh->getNrOfTriangles() * 4);
