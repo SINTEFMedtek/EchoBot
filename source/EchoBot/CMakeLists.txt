@@ -1,1 +1,1 @@
-project_add_subdirectories(GUI Interfaces Tests Visualization Utilities Exporters)
+project_add_subdirectories(GUI Interfaces Tests Visualization Utilities Exporters Core)
