@@ -54,6 +54,11 @@ void UltrasoundInterface::setStreamer(UltrasoundStreamerType streamer, std::stri
     mPort = port;
 }
 
+UltrasoundInterface::UltrasoundStreamerType UltrasoundInterface::getStreamerType()
+{
+    return mStreamerType;
+}
+
 void UltrasoundInterface::setPlayback(std::string filepath)
 {
     mStreamerType = UltrasoundStreamerType::Playback;

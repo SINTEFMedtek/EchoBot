@@ -35,8 +35,9 @@ class UltrasoundInterface : public SensorInterface {
         Streamer::pointer getStreamObject(){ return mUltrasoundStreamer;};
         UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
         Renderer::pointer getRendererObject();
+        UltrasoundStreamerType getStreamerType();
 
-private:
+    private:
         UltrasoundInterface();
         UltrasoundStreamerType mStreamerType;
         std::string mIP = "localhost";
@@ -49,8 +50,6 @@ private:
 
         bool mConnected = false;
 };
-
-
 
 } // end namespace echobot
 #endif
