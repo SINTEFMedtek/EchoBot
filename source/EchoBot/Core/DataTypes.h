@@ -34,6 +34,8 @@
 #include <FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp>
 #include <FAST/Visualization/SegmentationRenderer/SegmentationRenderer.hpp>
 
+#include <romocc/Robot.h>
+
 namespace echobot{
     using Eigen::Affine3f;
     using Eigen::Matrix3f;
@@ -68,6 +70,9 @@ namespace echobot{
     using fast::VTKMeshFileImporter;
     using fast::SegmentationNetwork;
     using fast::SegmentationRenderer;
+
+    using romocc::TransformUtils::Affine::toVector6D;
+    using romocc::TransformUtils::Affine::toAffine3DFromVector6D;
 }
 
 #endif //ECHOBOT_DATATYPES_H
