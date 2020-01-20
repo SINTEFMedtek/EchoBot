@@ -6,7 +6,7 @@ ExternalProject_Add(romocc
         PREFIX ${ECHOBOT_EXTERNAL_BUILD_DIR}/romocc
         BINARY_DIR ${ECHOBOT_EXTERNAL_BUILD_DIR}/romocc
         GIT_REPOSITORY "https://github.com/SINTEFMedtek/libromocc.git"
-        GIT_TAG "6b39fbe20564eccc6fb3a03af8bb4419037e12b7"
+        GIT_TAG "c0cf431d3716c617a949fe0cffe23da79df3e093"
         CMAKE_ARGS
             -DROMOCC_BUILD_TESTS:BOOL=OFF
             -DROMOCC_BUILD_EXAMPLES:BOOL=OFF
