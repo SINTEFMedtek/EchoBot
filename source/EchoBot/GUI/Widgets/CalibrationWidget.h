@@ -12,6 +12,8 @@
 #include "EchoBot/Utilities/CalibrationTool.h"
 
 class QPushButton;
+class QDoubleSpinBox;
+class QComboBox;
 
 namespace echobot
 {
@@ -38,11 +40,20 @@ class CalibrationWidget : public QTabWidget
         SharedPointer<UltrasoundInterface> mUltrasoundInterface;
         SharedPointer<CalibrationTool> mCalibrationTool;
 
-        QPushButton* mCalibrateButton;
+        QPushButton *mCalibrateButton, *mSaveMatrixButton;
+        QDoubleSpinBox *mRXSpinBox, *mRYSpinBox, *mRZSpinBox, *mXSpinBox, *mYSpinBox, *mZSpinBox;
+        QComboBox *mMatrixComboBox;
 
         QWidget* getCalibrationWidget();
+        QWidget* getCalibrationModificationWidget();
 
         void updateToolToUSTransform();
+        Vector6d getVectorFromSpinboxes();
+
+    private slots:
+        void updateSpinBoxes();
+        void updateCalibration();
+        void saveMatrixToFile();
 };
 
 } // end namespace echobot
