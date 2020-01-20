@@ -11,15 +11,19 @@ RobotInterface::RobotInterface() {
     mRobot = SharedPointer<romocc::Robot>(new romocc::Robot);
 }
 
+RobotInterface::~RobotInterface() {
+    mRobot->disconnect();
+}
+
 void RobotInterface::setConfiguration(romocc::Manipulator manipulator, const std::string& ip_address, const int& port){
-    mManipulatorType = manipulator;
+    mManipulator = manipulator;
     mHost = ip_address;
     mPort = port;
 }
 
 void RobotInterface::connect(){
     mRobot->addUpdateSubscription(std::bind(&RobotInterface::stateUpdated, this));
-    mRobot->configure(mManipulatorType, mHost, mPort);
+    mRobot->configure(mManipulator, mHost, mPort);
     mRobot->connect();
 }
 

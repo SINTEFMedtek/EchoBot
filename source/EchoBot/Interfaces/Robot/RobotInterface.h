@@ -1,7 +1,3 @@
-//
-// Created by androst on 04.10.18.
-//
-
 #ifndef ECHOBOT_ROBOTINTERFACE_H
 #define ECHOBOT_ROBOTINTERFACE_H
 
@@ -22,6 +18,8 @@ class RobotInterface : public QObject, public SensorInterface
 
     public:
         RobotInterface();
+        ~RobotInterface();
+
         Robot::pointer getRobot(){ return mRobot;};
 
         void connect();
@@ -31,10 +29,11 @@ class RobotInterface : public QObject, public SensorInterface
         void setConfiguration(romocc::Manipulator manipulator, const std::string& ip_address, const int& port);
 
         RobotState::pointer getCurrentState();
+        Manipulator getManipulatorInfo(){return mManipulator;};
 
     private:
         SharedPointer<romocc::Robot> mRobot;
-        Manipulator mManipulatorType;
+        Manipulator mManipulator;
         std::string mHost;
         int mPort;
 
