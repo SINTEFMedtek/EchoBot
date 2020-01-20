@@ -12,6 +12,7 @@ namespace echobot{
             std::string mConfigFilename = "";
             std::string mBasePath = "";
             std::string mDataPath;
+            std::string mConfigPath;
             std::string mTestDataPath;
             std::string mLibraryPath;
         }
@@ -43,6 +44,7 @@ namespace echobot{
             // Set default paths
             mDataPath = getPath() + "../data/";
             mLibraryPath = getPath() + "/lib/";
+            mConfigPath = getPath() + "../config/";
 
             // Read and parse configuration file
             // It should reside in the build folder when compiling, and in the root folder when using release
@@ -99,6 +101,11 @@ namespace echobot{
         std::string getTestDataPath() {
             loadConfiguration();
             return mDataPath + "testdata/";
+        }
+
+        std::string getConfigPath() {
+            loadConfiguration();
+            return mConfigPath;
         }
     }
 }
