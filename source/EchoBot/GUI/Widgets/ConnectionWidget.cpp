@@ -59,7 +59,16 @@ void ConnectionWidget::robotToggleConnection()
     mRobotConnected = !mRobotConnected;
     if(mRobotConnected){
         mRobotConnectionButton->setText("Disconnect");
-        mRobotInterface->setConfiguration(romocc::Manipulator::UR5, mRobotIPLineEdit->text().toStdString(), 30003);
+        if(mRobotOptionCBox->currentText().toStdString() == "UR10")
+        {
+            auto manipulator = Manipulator(Manipulator::UR10, "5.3");
+            mRobotInterface->setConfiguration(manipulator, mRobotIPLineEdit->text().toStdString(), 30003);
+        }
+        else if(mRobotOptionCBox->currentText().toStdString() == "UR5")
+        {
+            auto manipulator = Manipulator(Manipulator::UR5, "3.0");
+            mRobotInterface->setConfiguration(manipulator, mRobotIPLineEdit->text().toStdString(), 30003);
+        }
         mRobotInterface->connect();
         emit(this->robotConnected());
     }else{
@@ -149,9 +158,17 @@ QWidget* ConnectionWidget::createRobotConnectionWidget()
     mRobotConnectionButton->setStyleSheet("QPushButton:checked { background-color: white; }");
     mRobotConnectionButton->setFixedWidth(120);
 
+    mRobotOptionCBox = new QComboBox();
+    mRobotOptionCBox->setEditable(true);
+    mRobotOptionCBox->lineEdit()->setReadOnly(true);
+    mRobotOptionCBox->lineEdit()->setAlignment(Qt::AlignCenter);
+    mRobotOptionCBox->addItem(tr("UR5"));
+    mRobotOptionCBox->addItem(tr("UR10"));
+
     row++;
     mRobotShutdownButton = new QPushButton(QIcon(mGraphicsFolderName+"application-exit-4.png"),"Shutdown");
     mainLayout->addWidget(mRobotShutdownButton,row,0,1,1);
+    mainLayout->addWidget(mRobotOptionCBox, row, 2, 1, 1);
 
     return group;
 }

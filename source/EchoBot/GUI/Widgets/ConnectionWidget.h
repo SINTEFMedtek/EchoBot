@@ -51,7 +51,7 @@ class ConnectionWidget : public QTabWidget
 
         QLineEdit *mRobotIPLineEdit, *mUsIPLineEdit, *mCameraMinDepthLineEdit,*mCameraMaxDepthLineEdit;
         QPushButton *mCameraConnectionButton, *mUSConnectionButton, *mRobotConnectionButton, *mRobotShutdownButton;;
-        QComboBox *mUSStreamerOptionCBox;
+        QComboBox *mUSStreamerOptionCBox, *mRobotOptionCBox;
         QLineEdit  *mCameraMinWidthLineEdit, *mCameraMaxWidthLineEdit, *mCameraMinHeightLineEdit, *mCameraMaxHeightLineEdit;
 
         QString mGraphicsFolderName;
