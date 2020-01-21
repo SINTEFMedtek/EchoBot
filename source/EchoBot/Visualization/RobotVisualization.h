@@ -23,7 +23,8 @@ class RobotPart
         RobotPart();
 
         void transform(Eigen::Affine3d transform);
-        void rotate(double x, double y, double z);
+        void rotate(double rx, double ry, double rz);
+        void translate(double x, double y, double z);
 
         void setPart(std::string partName, std::string cadFile);
         void setTransformation(Eigen::Affine3d transform);
@@ -72,6 +73,7 @@ class RobotVisualizator
 
         romocc::Transform3d mPrevious_rMb, mPrevious_eeMt;
         romocc::Vector6d mPreviousJointConfig;
+        std::string mCADModelPath;
 
         void addPart(std::string partName, std::string cadFilepath);
         void addTool(std::string toolName, std::string cadFilepath);
