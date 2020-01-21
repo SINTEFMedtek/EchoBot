@@ -8,3 +8,7 @@ project_add_sources(
         Utilities.cpp
         Utilities.h
 )
+
+project_add_test_sources(
+        Tests/CalibrationToolTests.cpp
+)
