@@ -33,6 +33,7 @@
 #include <FAST/Visualization/ImageRenderer/ImageRenderer.hpp>
 #include <FAST/Visualization/TriangleRenderer/TriangleRenderer.hpp>
 #include <FAST/Visualization/SegmentationRenderer/SegmentationRenderer.hpp>
+#include <FAST/Visualization/LineRenderer/LineRenderer.hpp>
 
 #include <romocc/Robot.h>
 
@@ -54,6 +55,7 @@ namespace echobot{
     using fast::Mesh;
     using fast::VertexRenderer;
     using fast::ImageRenderer;
+    using fast::LineRenderer;
     using fast::RealSenseStreamer;
     using fast::ImageFileStreamer;
     using fast::MeshFileStreamer;
