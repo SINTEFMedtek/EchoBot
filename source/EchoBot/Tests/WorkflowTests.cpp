@@ -240,5 +240,43 @@ TEST_CASE("PhantomPC-PointCloud registration", "[EchoBot][Registration]") {
     window->start();
 }
 
+TEST_CASE("Neural network processing", "[EchoBot][NeuralNetwork]") {
+        auto filepath = "/home/androst/EchoBot_Recordings/2020-01-06-112533 PhantomScan001/Ultrasound/Image-2D_#.mhd";
+
+        auto streamer = ImageFileStreamer::New();
+        streamer->setFilenameFormat(filepath);
+        streamer->setSleepTime(25);
+        streamer->enableLooping();
+
+        auto segmentation = SegmentationNetwork::New();
+        segmentation->setScaleFactor(1.0f / 255.0f);
+        const auto engine = segmentation->getInferenceEngine()->getName();
+        if(engine.substr(0,10) == "TensorFlow") {
+            // TensorFlow needs to know what the output node is called
+            segmentation->setOutputNode(0, "conv2d_23/truediv");
+        }
+
+        segmentation->load(fast::join(Config::getNeuralNetworkModelPath(), "aorta_segmentation.pb"));
+        segmentation->setInputConnection(streamer->getOutputPort());
+        segmentation->enableRuntimeMeasurements();
+
+        auto segmentationRenderer = SegmentationRenderer::New();
+        segmentationRenderer->addInputConnection(segmentation->getOutputPort());
+        segmentationRenderer->setOpacity(0.25);
+        segmentationRenderer->setColor(fast::Segmentation::LABEL_FOREGROUND, Color::Red());
+        segmentationRenderer->setColor(fast::Segmentation::LABEL_BLOOD, Color::Black());
+
+        auto imageRenderer = ImageRenderer::New();
+        imageRenderer->setInputConnection(streamer->getOutputPort());
+
+        auto window = fast::SimpleWindow::New();
+        window->addRenderer(imageRenderer);
+        window->addRenderer(segmentationRenderer);
+        window->set2DMode();
+        window->setTimeout(25000);
+        window->getView()->setBackgroundColor(Color::Black());
+        window->start();
+        segmentation->getAllRuntimes()->printAll();
+}
 
 }
