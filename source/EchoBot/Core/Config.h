@@ -14,6 +14,7 @@ namespace Config{
     ECHOBOT_EXPORT std::string getRegistrationDataPath();
     ECHOBOT_EXPORT std::string getTestDataPath();
     ECHOBOT_EXPORT std::string getConfigPath();
+    ECHOBOT_EXPORT std::string getNeuralNetworkModelPath();
 }
 
 

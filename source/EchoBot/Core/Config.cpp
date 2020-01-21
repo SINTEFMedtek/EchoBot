@@ -103,6 +103,11 @@ namespace echobot{
             return mDataPath + "testdata/";
         }
 
+        std::string getNeuralNetworkModelPath() {
+            loadConfiguration();
+            return mDataPath + "nn_models/";
+        }
+
         std::string getConfigPath() {
             loadConfiguration();
             return mConfigPath;
