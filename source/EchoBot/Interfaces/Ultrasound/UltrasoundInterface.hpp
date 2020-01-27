@@ -29,12 +29,14 @@ class UltrasoundInterface : public SensorInterface {
         void setStreamer(UltrasoundStreamerType streamer, std::string ip = "", uint32_t port = 18944);
         void setPlayback(std::string filepath);
         void setImageTransform(Eigen::Affine3d transform);
+        void enableSegmentation();
 
         DataChannel::pointer getOutputPort(uint portID = 0);
 
         Streamer::pointer getStreamObject(){ return mUltrasoundStreamer;};
         UltrasoundImageProcessing::pointer getProcessObject(){ return mProcessObject;};
-        Renderer::pointer getRendererObject();
+        Renderer::pointer getImageRenderer();
+        Renderer::pointer getSegmentationRenderer();
         UltrasoundStreamerType getStreamerType();
 
     private:
@@ -46,7 +48,7 @@ class UltrasoundInterface : public SensorInterface {
 
         SharedPointer<Streamer> mUltrasoundStreamer;
         SharedPointer<UltrasoundImageProcessing> mProcessObject;
-        SharedPointer<Renderer> mRendererObject;
+        SharedPointer<Renderer> mImageRenderer, mSegmentationRenderer;
 
         bool mConnected = false;
 };

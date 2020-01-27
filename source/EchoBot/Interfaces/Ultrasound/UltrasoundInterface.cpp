@@ -42,7 +42,8 @@ void UltrasoundInterface::connect()
 void UltrasoundInterface::disconnect()
 {
     mUltrasoundStreamer->stopPipeline();
-    mRendererObject->stopPipeline();
+    mImageRenderer->stopPipeline();
+    mSegmentationRenderer->stopPipeline();
     mProcessObject->stopPipeline();
     mConnected = false;
 }
@@ -70,15 +71,30 @@ DataChannel::pointer UltrasoundInterface::getOutputPort(uint portID)
     return mProcessObject->getOutputPort(portID);
 }
 
-Renderer::pointer UltrasoundInterface::getRendererObject()
+Renderer::pointer UltrasoundInterface::getImageRenderer()
 {
-    mRendererObject = fast::ImageRenderer::New();
-    mRendererObject->addInputConnection(mProcessObject->getOutputPort(1));
-    return mRendererObject;
+    mImageRenderer = fast::ImageRenderer::New();
+    mImageRenderer->addInputConnection(mProcessObject->getOutputPort(0));
+    return mImageRenderer;
 }
+
 
 void UltrasoundInterface::setImageTransform(Eigen::Affine3d transform) {
     mProcessObject->setImageTransform(transform);
+}
+
+Renderer::pointer UltrasoundInterface::getSegmentationRenderer() {
+    auto segmentationRenderer = fast::SegmentationRenderer::New();
+    segmentationRenderer->addInputConnection(mProcessObject->getOutputPort(1));
+    segmentationRenderer->setOpacity(0.25);
+    segmentationRenderer->setColor(fast::Segmentation::LABEL_FOREGROUND, Color::Red());
+    segmentationRenderer->setColor(fast::Segmentation::LABEL_BLOOD, Color::Black());
+    mSegmentationRenderer = segmentationRenderer;
+    return mSegmentationRenderer;
+}
+
+void UltrasoundInterface::enableSegmentation() {
+    mProcessObject->setupNeuralNetworks();
 }
 
 }
