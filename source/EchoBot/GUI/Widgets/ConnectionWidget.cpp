@@ -145,7 +145,7 @@ QWidget* ConnectionWidget::createRobotConnectionWidget()
     mainLayout->addWidget(mRobotIPLineEdit, row, 1,1,1);
     mainLayout->addWidget(mRobotConnectionButton,row,2,1,1);
 
-    mRobotIPLineEdit->setText("192.168.153.129"); // 10.218.140.123 10.218.140.114
+    mRobotIPLineEdit->setText("10.218.180.32"); // 10.218.140.123 10.218.140.114
     mRobotIPLineEdit->setAlignment(Qt::AlignCenter);
 
     QIcon icon;
@@ -162,8 +162,8 @@ QWidget* ConnectionWidget::createRobotConnectionWidget()
     mRobotOptionCBox->setEditable(true);
     mRobotOptionCBox->lineEdit()->setReadOnly(true);
     mRobotOptionCBox->lineEdit()->setAlignment(Qt::AlignCenter);
-    mRobotOptionCBox->addItem(tr("UR5"));
     mRobotOptionCBox->addItem(tr("UR10"));
+    mRobotOptionCBox->addItem(tr("UR5"));
 
     row++;
     mRobotShutdownButton = new QPushButton(QIcon(mGraphicsFolderName+"application-exit-4.png"),"Shutdown");
@@ -229,13 +229,13 @@ QWidget* ConnectionWidget::createCameraConnectionWidget()
 
     mCameraMinWidthLineEdit = new QLineEdit();
     mCameraMaxWidthLineEdit = new QLineEdit();
-    mCameraMinWidthLineEdit->setText(QString("-600"));
-    mCameraMaxWidthLineEdit->setText(QString("300"));
+    mCameraMinWidthLineEdit->setText(QString("-400"));
+    mCameraMaxWidthLineEdit->setText(QString("400"));
 
     mCameraMinHeightLineEdit = new QLineEdit();
     mCameraMaxHeightLineEdit = new QLineEdit();
-    mCameraMinHeightLineEdit->setText(QString("-1000"));
-    mCameraMaxHeightLineEdit->setText(QString("1000"));
+    mCameraMinHeightLineEdit->setText(QString("-400"));
+    mCameraMaxHeightLineEdit->setText(QString("400"));
 
     mainLayout->addWidget(new QLabel("Depth range [mm]: "), 0, 0, 1, 1);
     mainLayout->addWidget(mCameraMinDepthLineEdit,0,1,1,1);
