@@ -241,12 +241,15 @@ TEST_CASE("PhantomPC-PointCloud registration", "[EchoBot][Registration]") {
 }
 
 TEST_CASE("Neural network processing", "[EchoBot][NeuralNetwork]") {
-        auto filepath = "/home/androst/EchoBot_Recordings/2020-01-06-112533 PhantomScan001/Ultrasound/Image-2D_#.mhd";
+        auto filepath = "/media/Data/UltrasoundData/2019_ROMO/Interim/Annotationweb/Phantom/Scan001/Image-2D_#.mhd";
 
         auto streamer = ImageFileStreamer::New();
         streamer->setFilenameFormat(filepath);
         streamer->setSleepTime(25);
         streamer->enableLooping();
+
+        auto cropper = fast::UltrasoundImageCropper::New();
+        cropper->setInputConnection(streamer->getOutputPort());
 
         auto segmentation = SegmentationNetwork::New();
         segmentation->setScaleFactor(1.0f / 255.0f);
@@ -256,8 +259,8 @@ TEST_CASE("Neural network processing", "[EchoBot][NeuralNetwork]") {
             segmentation->setOutputNode(0, "conv2d_23/truediv");
         }
 
-        segmentation->load(fast::join(Config::getNeuralNetworkModelPath(), "aorta_segmentation.pb"));
-        segmentation->setInputConnection(streamer->getOutputPort());
+        segmentation->load(fast::join(Config::getNeuralNetworkModelPath(), "aorta_segmentation_new.pb"));
+        segmentation->setInputConnection(cropper->getOutputPort());
         segmentation->enableRuntimeMeasurements();
 
         auto segmentationRenderer = SegmentationRenderer::New();
@@ -267,7 +270,7 @@ TEST_CASE("Neural network processing", "[EchoBot][NeuralNetwork]") {
         segmentationRenderer->setColor(fast::Segmentation::LABEL_BLOOD, Color::Black());
 
         auto imageRenderer = ImageRenderer::New();
-        imageRenderer->setInputConnection(streamer->getOutputPort());
+        imageRenderer->setInputConnection(cropper->getOutputPort());
 
         auto window = fast::SimpleWindow::New();
         window->addRenderer(imageRenderer);
