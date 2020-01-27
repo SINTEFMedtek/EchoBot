@@ -54,7 +54,11 @@ void CalibrationWidget::updateSpinBoxes()
         vec = toVector6D(mCalibrationTool->get_eeMt());
     else if(mMatrixComboBox->currentIndex() == 2)
         vec = toVector6D(mCalibrationTool->get_tMus());
-    
+    else if(mMatrixComboBox->currentIndex() == 3)
+        vec = toVector6D(mCalibrationTool->get_registration_pcMdata());
+    else if(mMatrixComboBox->currentIndex() == 4)
+        vec = toVector6D(mCalibrationTool->get_registration_pcMt());
+
     mXSpinBox->setValue(vec(0));
     mYSpinBox->setValue(vec(1));
     mZSpinBox->setValue(vec(2));
@@ -74,6 +78,10 @@ void CalibrationWidget::updateCalibration()
         mCalibrationTool->set_eeMt(affine);
     else if(mMatrixComboBox->currentIndex() == 2)
         mCalibrationTool->set_tMus(affine);
+    else if(mMatrixComboBox->currentIndex() == 3)
+        mCalibrationTool->set_registration_pcMdata(affine);
+    else if(mMatrixComboBox->currentIndex() == 4)
+        mCalibrationTool->set_registration_pcMt(affine);
 }
 
 void CalibrationWidget::saveMatrixToFile() {
@@ -88,6 +96,10 @@ void CalibrationWidget::saveMatrixToFile() {
         mCalibrationTool->saveCalFile(parent_path+"eeMtool.cal", affine);
     else if(mMatrixComboBox->currentIndex() == 2)
         mCalibrationTool->saveCalFile(parent_path+"toolMus.cal", affine);
+    else if(mMatrixComboBox->currentIndex() == 3)
+        mCalibrationTool->saveCalFile(parent_path+"registration_pcMdata.cal", affine);
+    else if(mMatrixComboBox->currentIndex() == 4)
+        mCalibrationTool->saveCalFile(parent_path+"registration_pcMt.cal", affine);
 }
 
 QWidget* CalibrationWidget::getCalibrationWidget()
@@ -127,8 +139,7 @@ void CalibrationWidget::addInterface(SensorInterface::pointer sensorInterface)
         mRobotInterface = std::dynamic_pointer_cast<RobotInterface>(sensorInterface);
     } else if (sensorInterface->getNameOfClass() == "CameraInterface"){
         mCameraInterface = std::dynamic_pointer_cast<CameraInterface>(sensorInterface);
-    } else if (sensorInterface->getNameOfClass() == "UltrasoundInterface")
-    {
+    } else if (sensorInterface->getNameOfClass() == "UltrasoundInterface"){
         mUltrasoundInterface = std::dynamic_pointer_cast<UltrasoundInterface>(sensorInterface);
     }
 }
@@ -184,6 +195,8 @@ QWidget* CalibrationWidget::getCalibrationModificationWidget()
     mMatrixComboBox->addItem(tr("Camera to robot base"), 0);
     mMatrixComboBox->addItem(tr("End-effector to tool"), 1);
     mMatrixComboBox->addItem(tr("Tool to ultrasound"), 2);
+    mMatrixComboBox->addItem(tr("Registration: Point cloud to data"));
+    mMatrixComboBox->addItem(tr("Registration: Point cloud to surface"));
 
     mSaveMatrixButton = new QPushButton("Save");
 

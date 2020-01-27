@@ -25,8 +25,8 @@ class CalibrationWidget : public QTabWidget
     public:
         CalibrationWidget(int widgetWidth=540, int widgetHeight=220);
         void addInterface(SensorInterface::pointer sensorInterface);
-
         void calibrateSystem();
+        CalibrationTool::pointer getCalibrationTool(){return mCalibrationTool;};
 
     private:
         void setupWidget();
