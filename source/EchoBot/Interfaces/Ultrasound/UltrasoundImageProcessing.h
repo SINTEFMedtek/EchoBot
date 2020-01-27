@@ -15,8 +15,6 @@
 namespace echobot {
 
 
-class PixelClassifier;
-
 class UltrasoundImageProcessing : public ProcessObject {
     ECHOBOT_OBJECT(UltrasoundImageProcessing)
 
@@ -25,6 +23,8 @@ class UltrasoundImageProcessing : public ProcessObject {
 
         SharedPointer<fast::Image> getProcessedImage(){ return mProcessedImage;};
         void setImageTransform(Eigen::Affine3d transform);
+        bool isSegmentationEnabled(){ return mSegmentationEnabled;};
+        void setupNeuralNetworks();
 
     private:
         UltrasoundImageProcessing();
@@ -39,10 +39,9 @@ class UltrasoundImageProcessing : public ProcessObject {
         std::thread *mSegmentationThread;
         std::mutex mFrameBufferMutex;
 
-        bool mSegmentationEnabled = true;
-        SharedPointer<PixelClassifier> mPixelClassifier;
+        bool mSegmentationEnabled = false;
+        SharedPointer<SegmentationNetwork> mSegmentationNetwork;
 
-        void setupNeuralNetworks();
 
         bool mStop = false;
     };

@@ -1,8 +1,5 @@
-//
-// Created by androst on 19.08.19.
-//
-
 #include "UltrasoundImageProcessing.h"
+#include "EchoBot/Core/Config.h"
 
 #include "FAST/Algorithms/UltrasoundImageCropper/UltrasoundImageCropper.hpp"
 #include "FAST/Algorithms/ImageCropper/ImageCropper.hpp"
@@ -19,8 +16,6 @@ UltrasoundImageProcessing::UltrasoundImageProcessing() {
     createOutputPort<Image>(1); // Processed image
 
     mSegmentationThread = new std::thread(std::bind(&UltrasoundImageProcessing::segmentationThread, this));
-    setupNeuralNetworks();
-
     mImageTransform = Eigen::Affine3d::Identity();
 }
 
@@ -39,19 +34,14 @@ void UltrasoundImageProcessing::execute() {
     cropper->setInputConnection(port);
     port = cropper->getOutputPort();
     cropper->update();
+    mRawImage = port->getNextFrame<fast::Image>();
 
-//    Image::pointer segmentation;
-//    if (mSegmentationEnabled) {
-//        mPixelClassifier->setInputData(mCurrentImage);
-//        DataPort::pointer port = mPixelClassifier->getOutputPort(0);
-//        mPixelClassifier->update(0, STREAMING_MODE_NEWEST_FRAME_ONLY);
-//        segmentation = port->getNextFrame<Image>();
-//        segmentation = mCurrentImage;
-//    } else {
-//        segmentation = mCurrentImage;
-//    }
+    if (mSegmentationEnabled) {
+        mSegmentationNetwork->setInputConnection(port);
+        port = mSegmentationNetwork->getOutputPort();
+        mSegmentationNetwork->update();
+    }
 
-    mRawImage = getInputData<fast::Image>(0);
     mProcessedImage = port->getNextFrame<fast::Image>();
 
     AffineTransformation::pointer T = AffineTransformation::New();
@@ -82,12 +72,15 @@ void UltrasoundImageProcessing::setImageTransform(Eigen::Affine3d transform){
 }
 
 void UltrasoundImageProcessing::setupNeuralNetworks() {
-//    mPixelClassifier = PixelClassifier::New();
-//    mPixelClassifier->setNrOfClasses(2);
-//    mPixelClassifier->setResizeBackToOriginalSize(false);
-//    mPixelClassifier->load("/home/androst/Data/NNModels/phantom.pb");
-//    mPixelClassifier->setScaleFactor(1.0f / 255.0f);
-//    mPixelClassifier->addOutputNode(0, "conv2d_23/truediv");
+    mSegmentationNetwork = SegmentationNetwork::New();
+    mSegmentationNetwork->setScaleFactor(1.0f / 255.0f);
+    const auto engine = mSegmentationNetwork->getInferenceEngine()->getName();
+    if(engine.substr(0,10) == "TensorFlow") {
+        // TensorFlow needs to know what the output node is called
+        mSegmentationNetwork->setOutputNode(0, "conv2d_23/truediv");
+    }
+    mSegmentationNetwork->load(fast::join(Config::getNeuralNetworkModelPath(), "aorta_segmentation_new.pb"));
+    mSegmentationEnabled = true;
 }
 
 }
