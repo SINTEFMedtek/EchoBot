@@ -16,10 +16,14 @@ class CalibrationTool {
         Eigen::Affine3d get_rMb(){ return m_rMb;};
         Eigen::Affine3d get_eeMt(){ return m_eeMt;};
         Eigen::Affine3d get_tMus(){ return m_tMus;};
+        Eigen::Affine3d get_registration_pcMdata();
+        Eigen::Affine3d get_registration_pcMt(){ return m_registration_pcMt;};
 
         void set_rMb(Eigen::Affine3d mat);
         void set_eeMt(Eigen::Affine3d mat);
         void set_tMus(Eigen::Affine3d mat);
+        void set_registration_pcMdata(Eigen::Affine3d mat);
+        void set_registration_pcMt(Eigen::Affine3d mat);
 
         std::string getCalibrationFilePath(){return mCalibrationFilePath;};
         void setCalibrationFilePath(std::string path){mCalibrationFilePath = path;};
@@ -28,7 +32,7 @@ class CalibrationTool {
         static void saveCalFile(std::string path, Eigen::Affine3d calMat);
 
     private:
-        Eigen::Affine3d m_rMb, m_eeMt, m_tMus;
+        Eigen::Affine3d m_rMb, m_eeMt, m_tMus, m_registration_pcMdata, m_registration_pcMt;
         std::string mCalibrationFilePath;
 
         CalibrationTool();
