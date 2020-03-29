@@ -16,13 +16,22 @@ Several of the essential components are implemented in the frameworks FAST and l
 EchoBot is written in C++ using CMake, Qt, Eigen, libromocc and FAST.
 
 
-### Build instructions
+### Development instructions
 
+Build and install [FAST](https://github.com/smistad/FAST) on your system. Remember to enable building
+Tensorflow, Realsense and OpenIGTLink in the CMake. Optionally enable the Clarius module. After
+installation, you can build EchoBot on your system by pointing to the FAST install directory. 
+
+Linux (Ubuntu):
 ```bash
 git clone https://github.com/androst/EchoBot.git
 cd EchoBot
 mkdir build
 cd build
-cmake ..
+cmake .. -DFAST_DIR=/path/to/FAST/cmake/
 make -j8
 ```
+
+Windows: 
+
+Coming soon. 
