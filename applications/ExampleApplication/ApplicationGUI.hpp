@@ -9,6 +9,7 @@
 #include "EchoBot/GUI/Widgets/RobotManualMoveWidget.h"
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
 #include "EchoBot/GUI/Widgets/RecordWidget.h"
+#include "EchoBot/GUI/Widgets/CalibrationWidget.h"
 
 #include "FAST/Visualization/Window.hpp"
 #include "FAST/Streamers/Streamer.hpp"
@@ -28,7 +29,7 @@ namespace echobot {
 class MouseListener;
 
 class ApplicationGUI : public Window {
-    FAST_OBJECT(ApplicationGUI)
+    ECHOBOT_OBJECT(ApplicationGUI)
 
 private slots:
     void robotConnectButtonSlot();
@@ -50,6 +51,7 @@ private:
     RobotManualMoveWidget* mRobotMoveWidget;
     ConnectionWidget* mConnectionWidget;
     RecordWidget* mRecordWidget;
+    CalibrationWidget* mCalibrationWidget;
 
     void connectToCamera();
     void disconnectFromCamera();
@@ -61,7 +63,8 @@ private:
     void setupUI();
 
     QString mGraphicsFolderName;
-    QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolManualButton, *moveToolRegisteredButton;
+    QPushButton *calibrateButton, *registerDataButton, *registerTargetButton, *moveToolManualButton;
+    QPushButton *moveToolRegisteredButton, *planMoveToolRegisteredButton, *enableSegmentationButton;
     QTabWidget *tabWidget;
 
     void extractPointCloud();
@@ -70,6 +73,8 @@ private:
     bool mUltrasoundStreaming = false;
     bool mTargetRegistered = false;
     bool mMovingToTarget = false;
+    Vector6d mTargetJointConfig;
+    Transform3d mTargetOpConfig;
 
     QWidget* getWorkflowWidget();
 
@@ -84,11 +89,17 @@ private:
     void calibrateSystem();
     void registerTarget();
     void moveToolToManualTarget();
+    void planMoveToRegisteredTarget();
     void moveToolToRegisteredTarget();
     void registerCloudToData();
+    void enableNeuralNetworkSegmentation();
 
     void loadPreoperativeData();
     Mesh::pointer mPreoperativeData;
+
+    void addCoordinateAxis(Eigen::Affine3f transform);
+    std::vector<Eigen::Affine3f> mCoordinateAxis;
+    void renderCoordinateAxis(float axisLength = 500);
 
     void initializeRenderers();
 };

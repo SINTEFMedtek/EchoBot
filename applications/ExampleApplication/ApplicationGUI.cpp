@@ -22,6 +22,10 @@
 #include "FAST/Algorithms/SegmentationVolumeReconstructor/SegmentationVolumeReconstructor.hpp"
 
 #include "EchoBot/GUI/Widgets/ConnectionWidget.h"
+#include "EchoBot/Utilities/PointCloudUtilities.h"
+#include "EchoBot/Core/Config.h"
+#include "EchoBot/Visualization/VisualizationHelper.h"
+
 
 namespace echobot {
 
@@ -33,7 +37,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event);
 private:
     CameraInterface::pointer mCameraInterface;
-    Vector2i mPreviousMousePosition;
+    Eigen::Vector2i mPreviousMousePosition;
     View* mView;
 };
 
@@ -43,7 +47,6 @@ ApplicationGUI::ApplicationGUI() :
     mRobotInterface = RobotInterface::New();
     mCameraInterface = CameraInterface::New();
     mUltrasoundInterface = UltrasoundInterface::New();
-
     mRobotVisualizator = RobotVisualizator::New();
     mRobotVisualizator->setInterface(mRobotInterface);
 
@@ -64,15 +67,16 @@ void ApplicationGUI::setupConnections()
     QObject::connect(mConnectionWidget, &ConnectionWidget::usConnected, std::bind(&ApplicationGUI::connectToUltrasound, this));
     QObject::connect(mConnectionWidget, &ConnectionWidget::usDisconnected, std::bind(&ApplicationGUI::disconnectFromUltrasound, this));
 
-
     QObject::connect(mRecordWidget, &RecordWidget::playbackStopped, std::bind(&ApplicationGUI::stopPlaybackButtonSlot, this));
     QObject::connect(mRecordWidget, &RecordWidget::playbackStarted, std::bind(&ApplicationGUI::playbackButtonSlot, this));
 
     QObject::connect(calibrateButton, &QPushButton::clicked, std::bind(&ApplicationGUI::calibrateSystem, this));
-//    QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
+    QObject::connect(registerDataButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerCloudToData, this));
 //    QObject::connect(registerTargetButton, &QPushButton::clicked, std::bind(&ApplicationGUI::registerTarget, this));
 //    QObject::connect(moveToolManualButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToManualTarget, this));
-//    QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
+    QObject::connect(planMoveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::planMoveToRegisteredTarget, this));
+    QObject::connect(moveToolRegisteredButton, &QPushButton::clicked, std::bind(&ApplicationGUI::moveToolToRegisteredTarget, this));
+    QObject::connect(enableSegmentationButton, &QPushButton::clicked, std::bind(&ApplicationGUI::enableNeuralNetworkSegmentation, this));
 }
 
 
@@ -83,7 +87,6 @@ void ApplicationGUI::robotConnectButtonSlot()
     stopComputationThread();
     removeAllRenderers();
     setupRobotManipulatorVisualization();
-    calibrateSystem();
 
     if(mCameraStreaming || mCameraPlayback){
         mCameraInterface->connect();
@@ -124,6 +127,7 @@ void ApplicationGUI::robotShutdownButtonSlot()
 
 void ApplicationGUI::setupRobotManipulatorVisualization()
 {
+    mRobotVisualizator->setInterface(mRobotInterface);
     getView(1)->addRenderer(mRobotVisualizator->getRenderer());
     getView(1)->addRenderer(mRobotVisualizator->getTool()->getRenderer());
 }
@@ -222,8 +226,10 @@ void ApplicationGUI::connectToUltrasound() {
     removeAllRenderers();
     setupUltrasoundVisualization();
 
-    if(mRobotInterface->isConnected())
+    if(mRobotInterface->getRobot()->isConnected()){
         setupRobotManipulatorVisualization();
+    }
+
 
     if(mCameraStreaming || mCameraPlayback){
         mCameraInterface->connect();
@@ -234,6 +240,39 @@ void ApplicationGUI::connectToUltrasound() {
     reinitializeViews();
     startComputationThread();
 }
+
+void ApplicationGUI::addCoordinateAxis(Eigen::Affine3f transform) {
+    mCoordinateAxis.push_back(transform);
+}
+
+void ApplicationGUI::renderCoordinateAxis(float axisLength) {
+    stopComputationThread();
+    removeAllRenderers();
+
+    for(auto transform: mCoordinateAxis)
+        getView(1)->addRenderer(VisualizationHelper::createCoordinateFrameRenderer(transform, axisLength));
+
+    if(mRobotInterface->getRobot()->isConnected()){
+        mRobotInterface->disconnect();
+        mRobotInterface->connect();
+        setupRobotManipulatorVisualization();
+    }
+
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
+        setupCameraVisualization();
+    }
+
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
+        setupUltrasoundVisualization();
+    }
+
+
+    reinitializeViews();
+    startComputationThread();
+}
+
 
 void ApplicationGUI::disconnectFromUltrasound() {
     stopComputationThread();
@@ -253,37 +292,17 @@ void ApplicationGUI::disconnectFromUltrasound() {
 
 void ApplicationGUI::setupUltrasoundVisualization()
 {
-    getView(1)->addRenderer(mUltrasoundInterface->getRendererObject());
-    getView(2)->addRenderer(mUltrasoundInterface->getRendererObject());
+    getView(1)->addRenderer(mUltrasoundInterface->getImageRenderer());
+    getView(2)->addRenderer(mUltrasoundInterface->getImageRenderer());
+
+    if(mUltrasoundInterface->getProcessObject()->isSegmentationEnabled())
+        getView(2)->addRenderer(mUltrasoundInterface->getSegmentationRenderer());
 }
 
-// Calibration
+//// Calibration
 void ApplicationGUI::calibrateSystem()
 {
-    std::cout << "Calibrating system" << std::endl;
-    Eigen::Affine3d rMb = Eigen::Affine3d::Identity();
-
-    Eigen::Matrix3d m;
-    m = Eigen::AngleAxisd(0.51*M_PI, Eigen::Vector3d::UnitZ())*
-        Eigen::AngleAxisd(0.96*M_PI, Eigen::Vector3d::UnitX())*
-        Eigen::AngleAxisd(0.0*M_PI, Eigen::Vector3d::UnitY());
-
-    rMb.translate(Eigen::Vector3d(-800,150,950)); // -500, 370, 1000 (y,x,z)
-    rMb.linear() = rMb.linear()*m;
-
-    mRobotInterface->getRobot()->getCoordinateSystem()->set_rMb(rMb);
-
-    Eigen::Affine3d eeMt = Eigen::Affine3d::Identity();
-
-    Eigen::Matrix3d rotProbe;
-    rotProbe = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ())*
-               Eigen::AngleAxisd(-M_PI_2, Eigen::Vector3d::UnitX())*
-               Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY());
-
-    eeMt.translate(Eigen::Vector3d(0,-65,130));
-    eeMt.linear() = eeMt.linear()*rotProbe;
-
-    mRobotInterface->getRobot()->getCoordinateSystem()->set_eeMt(eeMt);
+    mCalibrationWidget->calibrateSystem();
 }
 
 // Registration
@@ -305,27 +324,22 @@ void ApplicationGUI::registerTarget()
 
 void ApplicationGUI::registerCloudToData()
 {
-    auto registration_model_file = "/home/androst/dev/ROMO/FAST-ROMO/data/CT-Abdomen-surface-front.vtk";
+    auto registration_model_file = Config::getRegistrationDataPath() + "accumulated_pc_phantom.vtk";
 
-    auto importer = VTKMeshFileImporter::New();
+    auto importer = fast::VTKMeshFileImporter::New();
     importer->setFilename(registration_model_file);
 
     auto port = importer->getOutputPort();
     importer->update();
     auto registrationCloud = port->getNextFrame<Mesh>();
 
-    DataChannel::pointer streamPort;
-    if(mCameraStreaming){
-        streamPort = mCameraInterface->getStreamObject()->getOutputPort(2);
-    } else{
-        streamPort = mCameraPlaybackStreamers[1]->getOutputPort();
-    }
-    auto currentCloud = streamPort->getNextFrame<Mesh>();
+    DataChannel::pointer dataPort = mCameraInterface->getProcessObject()->getOutputPort(3);
+    mCameraInterface->getProcessObject()->update();
+    auto currentCloud = dataPort->getNextFrame<Mesh>();
 
     // Modify point clouds
-    auto regCloudReduced = mCameraInterface->getProcessObject()->createReducedSample(registrationCloud, (double)2500.0/registrationCloud->getNrOfVertices());
-    //auto regCloudReduced = mCameraInterface->createReducedSample(mPreoperativeData, (double)2500.0/mPreoperativeData->getNrOfVertices());
-    auto currentCloudReduced = mCameraInterface->getProcessObject()->createReducedSample(currentCloud, (double)2500.0/currentCloud->getNrOfVertices());
+    auto regCloudReduced = decimateMesh(registrationCloud, (double) 2500.0 / registrationCloud->getNrOfVertices());
+    auto currentCloudReduced = decimateMesh(currentCloud, (double) 2500.0 / currentCloud->getNrOfVertices());
 
     // Set registration settings
     float uniformWeight = 0.5;
@@ -335,7 +349,7 @@ void ApplicationGUI::registerCloudToData()
     std::cout << currentCloudReduced->getSceneGraphNode()->getTransformation()->getTransform().matrix()  << "\n" << std::endl;
 
     // Run Coherent Point Drift
-    auto cpd = CoherentPointDriftRigid::New();
+    auto cpd = fast::CoherentPointDriftRigid::New();
     cpd->setFixedMesh(regCloudReduced);
     cpd->setMovingMesh(currentCloudReduced);
     cpd->setMaximumIterations(50);
@@ -348,20 +362,11 @@ void ApplicationGUI::registerCloudToData()
     //mPreoperativeData = mesh;
 
     Eigen::Affine3f eigtransform = mesh->getSceneGraphNode()->getTransformation()->getTransform().inverse();
-    Eigen::Affine3f offset = Eigen::Affine3f::Identity();
-
-    Eigen::Matrix3f m;
-    m = Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ())*
-        Eigen::AngleAxisf(0, Eigen::Vector3f::UnitX())*
-        Eigen::AngleAxisf(0, Eigen::Vector3f::UnitY());
-
-    offset.translate(Eigen::Vector3f(163,302,-570));
-    offset.linear() = offset.linear()*m;
-
-    std::cout << eigtransform.matrix()  << "\n" << std::endl;
+    auto calibrationTool = mCalibrationWidget->getCalibrationTool();
+    auto pcMct = calibrationTool->get_registration_pcMdata();
 
     AffineTransformation::pointer transform = AffineTransformation::New();
-    transform->setTransform(eigtransform*offset);
+    transform->setTransform(eigtransform*pcMct.cast<float>());
 
     mPreoperativeData->getSceneGraphNode()->setTransformation(transform);
 }
@@ -390,8 +395,8 @@ void ApplicationGUI::moveToolToManualTarget()
         moveToolManualButton->setText("Move to target");
         mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopj, 50);
     }else{
-        Mesh::pointer targetCloud = mCameraInterface->getProcessObject()->getTargetCloud();
-        MeshAccess::pointer targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
+        auto targetCloud = mCameraInterface->getProcessObject()->getTargetCloud();
+        auto targetCloudAccess = targetCloud->getMeshAccess(ACCESS_READ);
         std::vector<MeshVertex> targetCloudVertices = targetCloudAccess->getVertices();
         Eigen::MatrixXf targetCloudVerticesMat = vertexVectorToMatrix(targetCloudVertices);
         Vector3f pointCloudCentroid = getCentroid(targetCloudVerticesMat);
@@ -403,7 +408,7 @@ void ApplicationGUI::moveToolToManualTarget()
         Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
 
         mRobotInterface->getRobot()->move(romocc::MotionType::movep, new_bMee, 50, 25);
-        moveToolManualButton->setText("Abort move");
+        moveToolManualButton->setText("Pause move");
     }
     mMovingToTarget = !mMovingToTarget;
 }
@@ -415,31 +420,58 @@ void ApplicationGUI::moveToolToRegisteredTarget()
         moveToolRegisteredButton->setText("Move to registered target");
         mRobotInterface->getRobot()->stopMove(romocc::MotionType::stopj, 50);
     }else{
-        Eigen::Affine3f rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
-        Eigen::Affine3d dataMtarget;
-//        dataMtarget.matrix() <<  0.08,   0.04,  -0.89, 160.6,
-//                                 0.99,   1.  ,   0.01,  88.2 ,
-//                                 0.13,   0.06,   0.46, 216.0,
-//                                 0.  ,   0.  ,   0.  ,   1.;
+//        auto rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
+//        auto dataMtarget = Eigen::Affine3f::Identity();
+//        Eigen::Matrix3f m;
+//        m = Eigen::AngleAxisf(-M_PI_2, Eigen::Vector3f::UnitX())*
+//            Eigen::AngleAxisf(0, Eigen::Vector3f::UnitY())*
+//            Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ());
+//
+//        dataMtarget.translate(Eigen::Vector3f(200.0, 150.0, 200.0));
+//        dataMtarget.linear() = dataMtarget.linear()*m;
+//        auto rMtarget = rMdata*dataMtarget;
+//        auto coords = mRobotInterface->getRobot()->getCoordinateSystem();
+//
+//        auto rMt = coords->get_rMb()*mRobotInterface->getCurrentState()->get_bMee()*coords->get_eeMt();
+//        auto new_bMee = coords->get_rMb().inverse()*rMtarget.cast<double>()*coords->get_eeMt().inverse();
+//        auto scaled_new_bMee = TransformUtils::Affine::scaleTranslation(new_bMee, 1.0/1000.0);
+//
+//        this->addCoordinateAxis(coords->get_rMb().cast<float>()*new_bMee.cast<float>());
+//        this->addCoordinateAxis(coords->get_rMb().cast<float>()*new_bMee.cast<float>()*coords->get_eeMt().cast<float>());
+//        this->renderCoordinateAxis(300);
+//
+//        auto target_joint_config = mRobotInterface->getCurrentState()->operationalConfigToJointConfig(scaled_new_bMee);
+//        std::cout << target_joint_config << std::endl;
 
-        dataMtarget.matrix() <<  -1.,   0.,  0., 160.6,
-                                 0.,   0.,  1.,  88.2,
-                                 0.,  1., 0., 216.0,
-                                 0.,   0.,  0.,   1.;
-
-
-        Eigen::Affine3d rMtarget = rMdata.cast<double>()*dataMtarget;
-
-        romocc::RobotCoordinateSystem::pointer coords = mRobotInterface->getRobot()->getCoordinateSystem();
-        Eigen::Affine3d new_bMee = coords->get_rMb().inverse()*rMtarget*coords->get_eeMt().inverse();
-
-        std::cout << new_bMee.matrix() << std::endl;
-
-        mRobotInterface->getRobot()->move(romocc::MotionType::movep, new_bMee, 50, 25);
-        moveToolManualButton->setText("Abort move");
-
+        mRobotInterface->getRobot()->move(romocc::MotionType::movej, mTargetJointConfig, 125, 60);
+        moveToolRegisteredButton->setText("Pause move");
     }
     mMovingToTarget = !mMovingToTarget;
+}
+
+void ApplicationGUI::planMoveToRegisteredTarget() {
+    auto rMdata = mPreoperativeData->getSceneGraphNode()->getTransformation()->getTransform();
+
+    auto dataMtarget = mCalibrationWidget->getCalibrationTool()->get_registration_pcMt();
+
+    std::cout << dataMtarget.matrix() << std::endl;
+    auto rMtarget = rMdata*dataMtarget.cast<float>();
+    auto coords = mRobotInterface->getRobot()->getCoordinateSystem();
+
+    //auto rMt = coords->get_rMb()*mRobotInterface->getCurrentState()->get_bMee()*coords->get_eeMt();
+    auto new_bMee = coords->get_rMb().inverse()*rMtarget.cast<double>()*coords->get_eeMt().inverse();
+    mTargetOpConfig = new_bMee;
+    auto scaled_new_bMee = TransformUtils::Affine::scaleTranslation(new_bMee, 1.0/1000.0);
+
+    this->addCoordinateAxis(coords->get_rMb().cast<float>()*new_bMee.cast<float>());
+    this->addCoordinateAxis(coords->get_rMb().cast<float>()*new_bMee.cast<float>()*coords->get_eeMt().cast<float>());
+
+    mTargetJointConfig = mRobotInterface->getCurrentState()->operationalConfigToJointConfig(scaled_new_bMee);
+    std::cout << mTargetJointConfig << std::endl;
+    auto target_bMee = mRobotInterface->getCurrentState()->jointConfigToOperationalConfig(mTargetJointConfig);
+    this->addCoordinateAxis(coords->get_rMb().cast<float>()*target_bMee.cast<float>());
+
+    this->renderCoordinateAxis(300);
 }
 
 void ApplicationGUI::extractPointCloud() {
@@ -508,16 +540,22 @@ void ApplicationGUI::setupUI()
 
     mRobotMoveWidget = new RobotManualMoveWidget(mRobotInterface);
 
+    mCalibrationWidget = new CalibrationWidget(menuWidth);
+    mCalibrationWidget->addInterface(mRobotInterface);
+    mCalibrationWidget->addInterface(mCameraInterface);
+    mCalibrationWidget->addInterface(mUltrasoundInterface);
+
     QWidget *workflowWidget = getWorkflowWidget();
     workflowWidget->setFixedWidth(menuWidth);
 
     tabWidget = new QTabWidget;
     tabWidget->addTab(workflowWidget, "Workflow");
     tabWidget->addTab(mRobotMoveWidget, "Robot manual motion");
+    tabWidget->addTab(mCalibrationWidget, "Calibration");
     tabWidget->setFixedWidth(menuWidth);
     menuLayout->addWidget(tabWidget);
 
-    mRecordWidget = new RecordWidget(mCameraInterface, mUltrasoundInterface, menuWidth);
+    mRecordWidget = new RecordWidget(mCameraInterface, mUltrasoundInterface, menuWidth, 320);
     menuLayout->addWidget(mRecordWidget);
     menuLayout->addStretch();
 
@@ -563,25 +601,38 @@ QWidget* ApplicationGUI::getWorkflowWidget()
 
     row++;
     registerDataButton = new QPushButton();
-    mainLayout->addWidget(registerDataButton,row,0,1,1);
+    mainLayout->addWidget(registerDataButton,row,0,1,2);
     registerDataButton->setText("Register data");
     registerDataButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
-    registerTargetButton = new QPushButton();
-    mainLayout->addWidget(registerTargetButton,row,1,1,1);
-    registerTargetButton->setText("Register manual target");
-    registerTargetButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+//    registerTargetButton = new QPushButton();
+//    mainLayout->addWidget(registerTargetButton,row,1,1,1);
+//    registerTargetButton->setText("Register manual target");
+//    registerTargetButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
     row++;
-    moveToolManualButton = new QPushButton();
-    mainLayout->addWidget(moveToolManualButton,row,1,1,1);
-    moveToolManualButton->setText("Move to manual target");
-    moveToolManualButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+    planMoveToolRegisteredButton = new QPushButton();
+    mainLayout->addWidget(planMoveToolRegisteredButton, row, 0, 1, 2);
+    planMoveToolRegisteredButton->setText("Plan move to registered target");
+    planMoveToolRegisteredButton->setStyleSheet("QPushButton:checked { background-color: none; }");
 
+    row++;
     moveToolRegisteredButton = new QPushButton();
-    mainLayout->addWidget(moveToolRegisteredButton,row,0,1,1);
+    mainLayout->addWidget(moveToolRegisteredButton,row,0,1,2);
     moveToolRegisteredButton->setText("Move to registered target");
     moveToolRegisteredButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
+//    moveToolManualButton = new QPushButton();
+//    mainLayout->addWidget(moveToolManualButton,row,1,1,1);
+//    moveToolManualButton->setText("Move to manual target");
+//    moveToolManualButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
+    row++;
+    enableSegmentationButton = new QPushButton();
+    mainLayout->addWidget(enableSegmentationButton, row, 0, 1, 2);
+    enableSegmentationButton->setText("Enable segmentation");
+    enableSegmentationButton->setStyleSheet("QPushButton:checked { background-color: none; }");
+
 
     return group;
 }
@@ -629,22 +680,22 @@ void ApplicationGUI::loadPreoperativeData() {
             QString extension = fi.suffix();
 
             stopComputationThread();
-            //clearRenderVectors();
+            removeAllRenderers();
 
             DataChannel::pointer port;
 
             if (extension.toStdString() == "mhd") {
-                ImageFileImporter::pointer importer = ImageFileImporter::New();
+                auto importer = ImageFileImporter::New();
                 importer->setFilename(filename);
 
-                ImageResizer::pointer resizer = ImageResizer::New();
+                auto resizer = ImageResizer::New();
                 resizer->setInputConnection(importer->getOutputPort());
                 resizer->setDepth(150);
                 resizer->setWidth(150);
                 resizer->setHeight(150);
 
                 // Extract surface mesh using a threshold value
-                SurfaceExtraction::pointer extraction = SurfaceExtraction::New();
+                auto extraction = SurfaceExtraction::New();
                 extraction->setInputConnection(resizer->getOutputPort());
                 extraction->setThreshold(300);
                 port = extraction->getOutputPort();
@@ -654,7 +705,7 @@ void ApplicationGUI::loadPreoperativeData() {
 
                 auto surfaceRenderer = TriangleRenderer::New();
                 surfaceRenderer->setInputData(mPreoperativeData);
-                //mView3DRenderers.push_back(surfaceRenderer);
+                getView(1)->addRenderer(surfaceRenderer);
 
             } else{
                 auto importer = VTKMeshFileImporter::New();
@@ -665,19 +716,27 @@ void ApplicationGUI::loadPreoperativeData() {
                 mPreoperativeData = port->getNextFrame<Mesh>();
                 auto vertexRenderer = VertexRenderer::New();
                 vertexRenderer->addInputData(mPreoperativeData, Color::Green(), 3.0);
-                //mView3DRenderers.push_back(vertexRenderer);
+                getView(1)->addRenderer(vertexRenderer);
             }
 
-            if(mUltrasoundStreaming)
+            if(mUltrasoundStreaming){
+                mUltrasoundInterface->connect();
                 setupUltrasoundVisualization();
+            }
 
-            if(mRobotInterface->getRobot()->isConnected())
+            if(mRobotInterface->getRobot()->isConnected()){
+                mRobotInterface->disconnect();
+                mRobotInterface->connect();
                 setupRobotManipulatorVisualization();
+            }
 
-            if(mCameraStreaming || mCameraPlayback)
+            if(mCameraStreaming || mCameraPlayback){
+                mCameraInterface->connect();
                 setupCameraVisualization();
+                mConnectionWidget->updateCameraROI();
+            }
 
-            //updateRenderers(mView3DRenderers, mView2DRenderers, mViewUSRenderers);
+            reinitializeViews();
             startComputationThread();
         }
     }
@@ -699,5 +758,25 @@ void ApplicationGUI::initializeRenderers()
     });
 }
 
+void ApplicationGUI::enableNeuralNetworkSegmentation() {
+    stopComputationThread();
+    removeAllRenderers();
 
+    if(mRobotInterface->getRobot()->isConnected()){
+        setupRobotManipulatorVisualization();
+    }
+
+    if(mCameraStreaming || mCameraPlayback){
+        mCameraInterface->connect();
+        setupCameraVisualization();
+    }
+
+    if(mUltrasoundStreaming){
+        mUltrasoundInterface->connect();
+        mUltrasoundInterface->enableSegmentation();
+        setupUltrasoundVisualization();
+    }
+
+    reinitializeViews();
+    startComputationThread();}
 }
