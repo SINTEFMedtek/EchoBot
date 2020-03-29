@@ -129,7 +129,7 @@ void RecordApplicationGUI::disconnectFromUltrasound() {
 
 void RecordApplicationGUI::setupUltrasoundVisualization()
 {
-    getView(2)->addRenderer(mUltrasoundInterface->getRendererObject());
+    getView(2)->addRenderer(mUltrasoundInterface->getImageRenderer());
 }
 
 // UI Setup
