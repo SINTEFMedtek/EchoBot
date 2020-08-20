@@ -61,12 +61,12 @@ void ConnectionWidget::robotToggleConnection()
         mRobotConnectionButton->setText("Disconnect");
         if(mRobotOptionCBox->currentText().toStdString() == "UR10")
         {
-            auto manipulator = Manipulator(Manipulator::UR10, "5.3");
+            auto manipulator = Manipulator(ManipulatorType::UR10, "5.3");
             mRobotInterface->setConfiguration(manipulator, mRobotIPLineEdit->text().toStdString(), 30003);
         }
         else if(mRobotOptionCBox->currentText().toStdString() == "UR5")
         {
-            auto manipulator = Manipulator(Manipulator::UR5, "3.0");
+            auto manipulator = Manipulator(ManipulatorType::UR5, "3.0");
             mRobotInterface->setConfiguration(manipulator, mRobotIPLineEdit->text().toStdString(), 30003);
         }
         mRobotInterface->connect();

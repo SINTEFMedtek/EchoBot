@@ -14,7 +14,7 @@ TEST_CASE("Create RobotInterface object", "[EchoBot][Interfaces]") {
 
 TEST_CASE("Connect and listen to new states", "[EchoBot][Interfaces]"){
     auto robotInterface = echobot::RobotInterface::New();
-    robotInterface->setConfiguration(Manipulator::UR10, "10.218.180.32", 30003);
+    robotInterface->setConfiguration(ManipulatorType::UR10, "10.218.180.32", 30003);
     robotInterface->connect();
 
     for(int i = 0; i<50; i++)

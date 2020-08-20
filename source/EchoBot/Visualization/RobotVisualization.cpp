@@ -19,7 +19,7 @@ void RobotVisualizator::setInterface(RobotInterface::pointer robotInterface)
     auto subpath = "ur5/";
     auto probe_filename = "clarius_probe_with_holder_ur5.vtk";
 
-    if(mRobotInterface->getManipulatorInfo().manipulator == Manipulator::UR10)
+    if(mRobotInterface->getManipulatorInfo().manipulator == ManipulatorType::UR10)
     {
         subpath = "ur10e/";
         probe_filename = "clarius_probe_with_holder_ur10.vtk";
@@ -48,7 +48,7 @@ void RobotVisualizator::updatePositions()
     || rMb.matrix() != mPrevious_rMb.matrix()
     || eeMt.matrix() != mPrevious_eeMt.matrix())
     {
-        if(mRobotInterface->getManipulatorInfo().manipulator == Manipulator::UR5)
+        if(mRobotInterface->getManipulatorInfo().manipulator == ManipulatorType::UR5)
         {
             Eigen::Affine3d offset_link2 = Eigen::Affine3d::Identity();
             offset_link2.translate(Eigen::Vector3d(0.0,0.0,121.0));
@@ -63,7 +63,7 @@ void RobotVisualizator::updatePositions()
             mParts["wrist2"]->setTransformation(rMb*currentState->getTransformToJoint(5));
             mParts["wrist3"]->setTransformation(rMb*currentState->getTransformToJoint(6));
             mTool->setTransformation(rMb*currentState->getTransformToJoint(6)*eeMt);
-        } else if(mRobotInterface->getManipulatorInfo().manipulator == Manipulator::UR10)
+        } else if(mRobotInterface->getManipulatorInfo().manipulator == ManipulatorType::UR10)
         {
             mParts["base"]->setTransformation(rMb*currentState->getTransformToJoint(0));
             mParts["base"]->rotate(90, 0, 0);

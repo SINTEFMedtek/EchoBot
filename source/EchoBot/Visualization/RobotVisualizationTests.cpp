@@ -15,7 +15,7 @@ namespace echobot {
 
 TEST_CASE("Visualize robot joints", "[EchoBot][Visualization]") {
     auto robotInterface = RobotInterface::New();
-    robotInterface->setConfiguration(Manipulator::UR10, "192.168.153.131", 30003);
+    robotInterface->setConfiguration(ManipulatorType::UR10, "192.168.153.131", 30003);
     robotInterface->connect();
 
     auto robotVisualizator = RobotVisualizator::New();
