@@ -18,11 +18,13 @@ EchoBot is written in C++ using CMake, Qt, Eigen, libromocc and FAST.
 
 ### Development instructions
 
-Build and install [FAST](https://github.com/smistad/FAST) on your system. Remember to enable building
-Tensorflow, Realsense and OpenIGTLink in the CMake. Optionally enable the Clarius module. After
-installation, you can build EchoBot on your system by pointing to the FAST install directory. 
+#### Option 1. Install with FAST preinstalled on your system
 
-Linux (Ubuntu):
+Build and install the echobot branch of [FAST](https://github.com/androst/FAST/tree/echobot) on your system. Remember to enable building
+Tensorflow, Realsense and OpenIGTLink in the CMake. Optionally enable the Clarius module. After installation, you can build EchoBot on 
+your system by pointing to the FAST install directory. 
+
+Linux (Ubuntu 18.04):
 ```bash
 git clone https://github.com/androst/EchoBot.git
 cd EchoBot
@@ -32,6 +34,6 @@ cmake .. -DFAST_DIR=/path/to/FAST/cmake/
 make -j8
 ```
 
-Windows: 
+#### Option 2. Build FAST with EchoBot
 
-Coming soon. 
+This is not working as intended at the moment. 
